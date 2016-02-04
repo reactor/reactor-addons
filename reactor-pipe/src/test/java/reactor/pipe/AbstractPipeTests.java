@@ -1,6 +1,7 @@
 package reactor.pipe;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -159,7 +160,6 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
         // after the __first__ call.
         AVar<Integer> res = new AVar<>(1);
 
-        long start = System.nanoTime();
         AtomicLong end = new AtomicLong();
         subscribeAndDispatch(
             integerPipe.throttle(1, TimeUnit.SECONDS)
@@ -169,18 +169,35 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
                 }),
             Arrays.asList(1, 2));
 
-        Thread.sleep(200);
-        firehose.notify(Key.wrap("source", "first"),
-                        3);
+        long start = System.nanoTime();
+        for (int i = 0; i <= 100; i++) {
+            firehose.notify(Key.wrap("source", "first"),
+                            i);
+            Thread.sleep(10);
+        }
 
-        // ensure that the last event processed is "3"
-        assertThat(res.get(LATCH_TIMEOUT, LATCH_TIME_UNIT), is(3));
+        // ensure that the last event processed is "100"
+        assertTrue(res.get(LATCH_TIMEOUT, LATCH_TIME_UNIT) < 100);
         // The end time should be close to 1 second after the first.
         // It should be exactly 1, but to timer inaccuracies >1, never <1.
         assertTrue(TimeUnit.SECONDS.convert(end.get() - start, NANOSECONDS) >= 1);
     }
 
-    /*@Test
+    @Test
+    public void testThrottleFireFirst() throws InterruptedException {
+        AVar<Integer> res = new AVar<>(1);
+
+        subscribeAndDispatch(
+            integerPipe.throttle(1, TimeUnit.SECONDS, true)
+                .consume((v) -> {
+                    res.set(v);
+                }),
+            Arrays.asList(500, 2));
+
+        assertThat(res.get(LATCH_TIMEOUT, LATCH_TIME_UNIT), is(500));
+    }
+
+    @Test
     public void testDebounce() throws InterruptedException {
         // With Debounce, we'd like to verify that consequent calls
         // forced scheduling of the execution a `timeout value` after
@@ -194,19 +211,36 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
                     res.set(v);
                     end.set(System.nanoTime());
                 }),
-            Arrays.asList(1, 2));
+            Collections.emptyList());
 
-        Thread.sleep(200);
         long start = System.nanoTime();
-        firehose.notify(Key.wrap("source", "first"),
-                        3);
+        for (int i = 0; i <= 100; i++) {
+            firehose.notify(Key.wrap("source", "first"),
+                            i);
+            Thread.sleep(10);
+        }
 
-        // ensure that the last event processed is "3"
-        assertThat(res.get(LATCH_TIMEOUT, LATCH_TIME_UNIT), is(3));
-        // The end time should be close to 1 second after sending the last item "3".
+        // ensure that the last event processed is "100"
+        assertThat(res.get(LATCH_TIMEOUT, LATCH_TIME_UNIT), is(100));
+        // The end time should be close to 1 second after sending the last item "100".
         // It should be exactly 1, but to timer inaccuracies >1, never <1.
         assertTrue(TimeUnit.SECONDS.convert(end.get() - start, NANOSECONDS) >= 1);
-    }*/
+    }
+
+    @Test
+    public void testDebounceFirst() throws InterruptedException {
+        AVar<Integer> res = new AVar<>(1);
+
+        subscribeAndDispatch(
+            integerPipe.debounce(1, TimeUnit.SECONDS, true)
+                .consume((v) -> {
+                    res.set(v);
+                }),
+            Arrays.asList(500, 2));
+
+        assertThat(res.get(LATCH_TIMEOUT, LATCH_TIME_UNIT), is(500));
+    }
+
 
 
     @Test
