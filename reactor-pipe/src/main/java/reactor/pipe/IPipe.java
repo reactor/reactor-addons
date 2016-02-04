@@ -86,6 +86,19 @@ public interface IPipe<COVARIANT extends IPipe, INIT, CURRENT> {
     IPipe<COVARIANT, INIT, CURRENT> debounce(long period, TimeUnit timeUnit);
 
     /**
+     * Debounces the stream, which postpones calling the next step within current pipe
+     * until after wait time specified by {@code period} and {@code timeUnit} elapsed since
+     * the last time it was called. Useful for implementing behaviours like when
+     * the action should occur only in case the data stopped arriving.
+     *
+     * @param period time period
+     * @param timeUnit time period unit
+     * @param fireFirst whether to fire the first received item right away
+     * @return pipe of the {@code CURRENT} type
+     */
+    IPipe<COVARIANT, INIT, CURRENT> debounce(long period, TimeUnit timeUnit, boolean fireFirst);
+
+    /**
      * Throttles the stream, which postpones calling the next step within current pipe
      * until after wait time specified by {@code period} and {@code timeUnit} elapsed since
      * the first time it was called. The function will be executed at most once per
@@ -96,6 +109,19 @@ public interface IPipe<COVARIANT extends IPipe, INIT, CURRENT> {
      * @return pipe of the {@code CURRENT} type
      */
     IPipe<COVARIANT, INIT, CURRENT> throttle(long period, TimeUnit timeUnit);
+
+    /**
+     * Throttles the stream, which postpones calling the next step within current pipe
+     * until after wait time specified by {@code period} and {@code timeUnit} elapsed since
+     * the first time it was called. The function will be executed at most once per
+     * {@code period} / {@code timeUnit}.
+     *
+     * @param period time period
+     * @param timeUnit time period unit
+     * @param fireFirst whether to fire the first received item right away
+     * @return pipe of the {@code CURRENT} type
+     */
+    IPipe<COVARIANT, INIT, CURRENT> throttle(long period, TimeUnit timeUnit, boolean fireFirst);
 
     /**
      * Filters the stream. Next step within the current pipe will be called only for the

@@ -17,6 +17,7 @@ package reactor.pipe;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.pcollections.PVector;
@@ -155,16 +156,25 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
     @Override
     public Pipe<INIT, CURRENT> throttle(final long period,
                                         final TimeUnit timeUnit) {
+        return throttle(period, timeUnit, false);
+    }
+
+    @Override
+    public Pipe<INIT, CURRENT> throttle(final long period,
+                                        final TimeUnit timeUnit,
+                                        final boolean fireFirst) {
         return next(new StreamSupplier<Key, CURRENT>() {
             @Override
             public BiConsumer<Key, CURRENT> get(Key src, final Key dst, final Bus<Key, Object> firehose) {
-                final Atom<CURRENT> debounced = stateProvider.makeAtom(src, null);
+                final Atom<CURRENT> throttledValue = stateProvider.makeAtom(src, null);
                 final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
+                final AtomicBoolean fire = new AtomicBoolean(fireFirst);
 
-                Consumer<Long> notifyConsumer = new Consumer<Long>() {
+                final Consumer<Long> notifyConsumer = new Consumer<Long>() {
                     @Override
                     public void accept(Long v) {
-                        firehose.notify(dst, debounced.deref());
+                        firehose.notify(dst, throttledValue.deref());
+                        pausable.set(null);
                     }
                 };
 
@@ -172,7 +182,12 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
                     @Override
                     public void accept(final Key key,
                                        final CURRENT value) {
-                        debounced.reset(value);
+                        if (fire.getAndSet(false)) {
+                            firehose.notify(dst, value);
+                            return;
+                        }
+
+                        throttledValue.reset(value);
 
                         if (pausable.get() == null) {
                             pausable.set(timer.get().submit(notifyConsumer, period, timeUnit));
@@ -186,11 +201,19 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
     @Override
     public Pipe<INIT, CURRENT> debounce(final long period,
                                         final TimeUnit timeUnit) {
+        return debounce(period, timeUnit, false);
+    }
+
+    @Override
+    public Pipe<INIT, CURRENT> debounce(final long period,
+                                        final TimeUnit timeUnit,
+                                        final boolean fireFirst) {
         return next(new StreamSupplier<Key, CURRENT>() {
             @Override
             public BiConsumer<Key, CURRENT> get(Key src, final Key dst, final Bus<Key, Object> firehose) {
                 final Atom<CURRENT> debouncedValue = stateProvider.makeAtom(src, null);
                 final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
+                final AtomicBoolean fire = new AtomicBoolean(fireFirst);
 
                 final Consumer<Long> notifyConsumer = new Consumer<Long>() {
                     @Override
@@ -203,6 +226,11 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
                     @Override
                     public void accept(final Key key,
                                        final CURRENT value) {
+                        if (fire.getAndSet(false)) {
+                            firehose.notify(dst, value);
+                            return;
+                        }
+
                         debouncedValue.reset(value);
 
                         Pausable oldScheduled = pausable.getAndSet(timer.get().submit(notifyConsumer, period, timeUnit));
