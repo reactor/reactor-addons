@@ -54,7 +54,7 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
        // compile "io.projectreactor:reactor-codec:$reactorVersion"
 
        // Netty for Reactor Net (auto detects if in classpath)
-       // compile 'io.netty:netty-all:4.0.27.Final'
+       // compile 'io.netty:netty-all:4.0.34.Final'
     }
 
 
