@@ -159,7 +159,7 @@ Cold Data Sources will be replayed from start for every fresh Subscriber passed 
 |T
 2+|Never emit anything. Useful for keep-alive behaviors.
 
-|Streams.<T, Throwable>fail(*Throwable*)
+|Streams.<T, Throwable>error(*Throwable*)
 |T
 2+|Only emit `onError(Throwable)`.
 

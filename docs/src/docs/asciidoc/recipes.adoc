@@ -66,7 +66,7 @@ Publisher<String> fileStream = new Publisher<String>() { // <1>
 			});
 
 		} catch (FileNotFoundException e) {
-			Streams.<String, FileNotFoundException> fail(e)
+			Streams.<String, FileNotFoundException> error(e)
 				.subscribe(subscriber); // <8>
 		}
 	}
@@ -94,7 +94,7 @@ Streams.from(fileStream)
 <10> `consumeOn` takes an extra argument to run the requests on a dispatcher in addition to the 3 possible `Consumer` reacting to each type of signal.
 
 
-.Obviously there are ways to make that code more efficient but also do more with less. Let's take a look at Reactor alternative `PublisherFactory` from core module, which is used by `Streams.createWith()` methods from stream module as well.
+.Obviously there are ways to make that code more efficient but also do more with less. Let's take a look at Reactor alternative `PublisherFactory` from core module, which is used by `StreamcreateWith()` methods from stream module as well.
 
 
 .Build a lazy file read with Core Flux and compose with Stream API
