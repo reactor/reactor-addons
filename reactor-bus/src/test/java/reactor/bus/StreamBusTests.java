@@ -25,7 +25,7 @@ import reactor.bus.stream.StreamCoordinator;
 import reactor.core.publisher.TopicProcessor;
 import reactor.fn.Function;
 import reactor.rx.Stream;
-import reactor.rx.subscriber.Tap;
+import reactor.rx.StreamTap;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -85,12 +85,9 @@ public class StreamBusTests {
 		Selector key = Selectors.$();
 
 		final CountDownLatch latch = new CountDownLatch(5);
-		final Tap<Event<Integer>> tap = Tap.create();
 
-		r.on(key, (Event<Integer> d) -> {
-			tap.accept(d);
-			latch.countDown();
-		});
+		StreamTap<? extends Event<?>> tap = r.on(key).doOnNext(d -> latch.countDown()).tap();
+		tap.subscribe();
 
 		r.notify(Stream.just("1", "2", "3", "4", "5")
 		                .map(Integer::parseInt), key.getObject());

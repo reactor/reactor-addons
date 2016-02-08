@@ -30,7 +30,7 @@ Streams.from(aListOfString)
     BiStreams.reduceByKey(words, (prev, next) -> prev + next)
       .sort((wordWithCountA, wordWithCountB) -> -wordWithCountA.t2.compareTo(wordWithCountB.t2))
       .take(10)
-      .finallyDo(event -> LOG.info("---- window complete! ----"))
+      .doAfterTerminate(() -> LOG.info("---- window complete! ----"))
   )
   .consume(
     wordWithCount -> LOG.info(wordWithCount.t1 + ": " + wordWithCount.t2),
@@ -572,7 +572,7 @@ Stream<String> actionChain1 = stream.map(String::toUpperCase).filter(w -> w.equa
 Stream<Long> actionChain2 = stream.dispatchOn(sharedDispatcher()).take(5).count();
 
 actionChain1.consume(System.out::println); //start chain1
-Control c = actionChain2.consume(System.out::println); //start chain2
+InterruptableSubscriber<?> c = actionChain2.consume(System.out::println); //start chain2
 //...
 c.cancel(); //force this consumer to stop receiving data
 ----
@@ -633,10 +633,6 @@ _consumeOn_
 h|consumeLater()
 |Control
 2+|Similar to `consume` but does not fire an initial `Subscription.request(long)`. The returned `Control` can be used to `request(long)` anytime.
-
-h|tap()
-|TapAndControls
-2+|Similar to `consume` but returns a `TapAndControls` that will be dynamically updated each time a new `onNext(T)` is signalled or canceled.
 
 
 h|batchConsume(*Consumer<T>*, _Consumer<T>, Consumer<T>_, *Function<Long,Long>*)
@@ -1103,13 +1099,13 @@ Stream<Integer> sensorDataStream = Streams.from(createTestDataset(1000));
 //wait for all windows of 100 to finish
 CountDownLatch endLatch = new CountDownLatch(1000 / 100);
 
-Control controls = sensorDataStream
+InterruptableSubscriber<?> controls = sensorDataStream
   .window(100)
   .consume(window -> {
     System.out.println("New window starting");
     window
       .reduce(Integer.MAX_VALUE, (acc, next) -> Math.min(acc, next))
-      .finallyDo(o -> endLatch.countDown())
+      .doAfterTerminate(endLatch::countDown)
       .consume(i -> System.out.println("Minimum " + i));
   });
 
