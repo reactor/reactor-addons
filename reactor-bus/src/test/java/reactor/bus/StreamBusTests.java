@@ -86,7 +86,11 @@ public class StreamBusTests {
 
 		final CountDownLatch latch = new CountDownLatch(5);
 
-		StreamTap<? extends Event<?>> tap = r.on(key).doOnNext(d -> latch.countDown()).tap();
+		StreamTap<? extends Event<?>> tap = r
+				.on(key)
+				.doOnNext(d -> latch.countDown())
+				.tap();
+
 		tap.subscribe();
 
 		r.notify(Stream.just("1", "2", "3", "4", "5")
