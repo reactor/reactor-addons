@@ -36,7 +36,7 @@ import reactor.bus.selector.ClassSelector;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
 import reactor.bus.spec.EventBusSpec;
-import reactor.bus.stream.BusStream;
+import reactor.bus.fluxion.BusFluxion;
 import reactor.core.flow.Loopback;
 import reactor.core.flow.Producer;
 import reactor.core.state.Introspectable;
@@ -51,7 +51,7 @@ import reactor.fn.BiConsumer;
 import reactor.fn.Consumer;
 import reactor.fn.Function;
 import reactor.fn.Supplier;
-import reactor.rx.Stream;
+import reactor.rx.Fluxion;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -281,11 +281,11 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * Attach a Stream to the {@link Bus} with the specified {@link Selector}.
 	 *
 	 * @param broadcastSelector the {@link Selector}/{@literal Object} tuple to listen to
-	 * @return a new {@link Stream}
+	 * @return a new {@link Fluxion}
 	 * @since 2.0
 	 */
-	public Stream<? extends Event<?>> on(Selector broadcastSelector) {
-		return new BusStream<>(this, broadcastSelector);
+	public Fluxion<? extends Event<?>> on(Selector broadcastSelector) {
+		return new BusFluxion<>(this, broadcastSelector);
 	}
 
 	protected void accept(Object key, Event<?> ev) {

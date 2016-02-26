@@ -21,11 +21,11 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
-import reactor.bus.stream.StreamCoordinator;
+import reactor.bus.fluxion.FluxionCoordinator;
 import reactor.core.publisher.TopicProcessor;
 import reactor.fn.Function;
-import reactor.rx.Stream;
-import reactor.rx.StreamTap;
+import reactor.rx.Fluxion;
+import reactor.rx.FluxionTap;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,7 +34,7 @@ import static reactor.bus.selector.Selectors.$;
 /**
  * @author Stephane Maldini
  */
-public class StreamBusTests {
+public class FluxionBusTests {
 
 	@Test
 	public void barrierStreamWaitsForAllDelegatesToBeInvoked() throws Exception {
@@ -42,7 +42,7 @@ public class StreamBusTests {
 		CountDownLatch latch2 = new CountDownLatch(1);
 		CountDownLatch latch3 = new CountDownLatch(1);
 
-		StreamCoordinator streamCoordinator = new StreamCoordinator();
+		FluxionCoordinator streamCoordinator = new FluxionCoordinator();
 
 		EventBus bus = EventBus.create(TopicProcessor.create());
 		bus.on($("hello"), streamCoordinator.wrap((Event<String> ev) -> {
@@ -54,7 +54,7 @@ public class StreamBusTests {
 			latch1.countDown();
 		}));
 
-		Stream.just("Hello World!")
+		Fluxion.just("Hello World!")
 		       .map(streamCoordinator.wrap((Function<String, String>) String::toUpperCase))
 		       .consume(s -> {
 			       latch2.countDown();
@@ -86,14 +86,14 @@ public class StreamBusTests {
 
 		final CountDownLatch latch = new CountDownLatch(5);
 
-		StreamTap<? extends Event<?>> tap = r
+		FluxionTap<? extends Event<?>> tap = r
 				.on(key)
 				.doOnNext(d -> latch.countDown())
 				.tap();
 
 		tap.subscribe();
 
-		r.notify(Stream.just("1", "2", "3", "4", "5")
+		r.notify(Fluxion.just("1", "2", "3", "4", "5")
 		                .map(Integer::parseInt), key.getObject());
 
 		//await(s, is(5));

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package reactor.bus.stream;
+package reactor.bus.fluxion;
 
 import javax.annotation.Nonnull;
 
@@ -28,7 +28,7 @@ import reactor.core.flow.Producer;
 import reactor.core.state.Introspectable;
 import reactor.fn.BiConsumer;
 import reactor.fn.Consumer;
-import reactor.rx.Stream;
+import reactor.rx.Fluxion;
 import reactor.rx.subscriber.SerializedSubscriber;
 
 /**
@@ -45,14 +45,14 @@ import reactor.rx.subscriber.SerializedSubscriber;
  *
  * @author Stephane Maldini
  */
-public final class BusStream<T> extends Stream<T> {
+public final class BusFluxion<T> extends Fluxion<T> {
 
 	private final Selector  selector;
 	private final Bus<?, T> observable;
 	private final boolean   ordering;
 
 
-	public BusStream(final @Nonnull Bus<?, T> observable,
+	public BusFluxion(final @Nonnull Bus<?, T> observable,
 	                    final @Nonnull Selector selector) {
 
 		this.selector = selector;

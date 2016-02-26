@@ -63,7 +63,7 @@ ext {
 			"http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
 			"http://www.reactive-streams.org/reactive-streams-1.0.0-javadoc/",
 			"http://projectreactor.io/core/docs/api/",
-			"http://projectreactor.io/stream/docs/api/",
+			"http://projectreactor.io/fluxion/docs/api/",
 	] as String[]
 }
 
@@ -226,7 +226,7 @@ project('reactor-bus') {
 	dependencies {
 		jarjar("com.googlecode.jarjar:jarjar:1.3")
 
-		compile "io.projectreactor:reactor-stream:$version"
+		compile "io.projectreactor:reactor-fluxion:$version"
 		optional "io.projectreactor:reactor-io:$version"
 
 		jsr166e "io.gatling:jsr166e:1.0@jar"

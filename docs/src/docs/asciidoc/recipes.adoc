@@ -66,13 +66,13 @@ Publisher<String> fileStream = new Publisher<String>() { // <1>
 			});
 
 		} catch (FileNotFoundException e) {
-			Stream.<String, FileNotFoundException> error(e)
+			Fluxion.<String, FileNotFoundException> error(e)
 				.subscribe(subscriber); // <8>
 		}
 	}
 };
 
-Stream.from(fileStream)
+Fluxion.from(fileStream)
 	.capacity(4L) // <9>
 	.consumeOn( // <10>
 		Environment.sharedDispatcher(),
@@ -101,7 +101,7 @@ Stream.from(fileStream)
 [source, java]
 ----
 final String filename = "settings.gradle";
-Publisher<String> fileStream = Flux.create(
+Publisher<String> fileStream = Flux.generate(
 	(n, sub) -> { // <1>
 		String line;
 		final BufferedReader inputStream = sub.context() // <2>
@@ -109,7 +109,7 @@ Publisher<String> fileStream = Flux.create(
 		while ((requestCursor++ < n || n == Long.MAX_VALUE) && !sub.isCancelled()) { // <3>
 
 			try {
-				line = inputStream.readLine();
+				line = inputFluxion.readLine();
 				if (line != null) {
 					sub.onNext(line);
 				} else {
@@ -123,11 +123,11 @@ Publisher<String> fileStream = Flux.create(
 		}
 	},
 	sub -> new BufferedReader(new FileReader(filename)), // <5>
-	inputStream -> inputStream.close() // <6>
+	inputStream -> inputFluxion.close() // <6>
 );
 
-Streams
-	.wrap(fileStream)
+Stream
+	.from(fileStream)
 	.process(TopicProcessor.create())
 	.capacity(4L)
 	.consume(
@@ -144,7 +144,7 @@ Streams
 <5> Define a context once for a new `Subscriber` that will be available later for each request `SubscriberWithContext.context()`
 <6> Define a terminal callback once intercepting `cancel()`, `onComplete()` or `onError(e)`.
 
-We can use `Flux`, or <<streams.adoc#streams-basics, Streams factories>> like `Stream.generate()` to quickly achieve common use cases:
+We can use `Flux`, or <<streams.adoc#streams-basics, Streams factories>> like `Fluxion.generate()` to quickly achieve common use cases:
 
 * Open IO once
 * React on requests
@@ -153,7 +153,7 @@ We can use `Flux`, or <<streams.adoc#streams-basics, Streams factories>> like `S
 [[recipes-circuitbreaker]]
 === Building a Quick Circuit Breaker
 
-In this other exercise, we will focus more on the composition power in your hands with *Reactor Stream* module. A classic use-case is to build self-healing data pipelines using the http://martinfowler.com/bliki/CircuitBreaker.html[Circuit Breaker Pattern] (maybe soon available in `Stream` API, maybe).
+In this other exercise, we will focus more on the composition power in your hands with *Reactor Fluxion* module. A classic use-case is to build self-healing data pipelines using the http://martinfowler.com/bliki/CircuitBreaker.html[Circuit Breaker Pattern] (maybe soon available in `Stream` API, maybe).
 
 In this scenario, we want to keep alive a `Stream` even if errors might fly in. When a certain number of errors is reached, we want to stop consuming from the main _circuit_, the actual `Stream`. For a short period, we will _trip_ the circuit and use a fallback publisher `Stream`. This fallback can actually be any sort of `Publisher`, we will just emit an alternative message. The point is to avoid new access to the failing `Stream` for a while and give it a chance to recover.
 
@@ -161,9 +161,9 @@ In this scenario, we want to keep alive a `Stream` even if errors might fly in. 
 [source,java]
 ----
 final Broadcaster<String> closeCircuit = Broadcaster.create(); // <1>
-final Stream<String> openCircuit = Stream.just("Alternative Message"); // <2>
+final Fluxion<String> openCircuit = Fluxion.just("Alternative Message"); // <2>
 
-final Action<Publisher<? extends String>, String> circuitSwitcher = Stream.switchOnNext(); // <3>
+final Action<Publisher<? extends String>, String> circuitSwitcher = Fluxion.switchOnNext(); // <3>
 
 final AtomicInteger successes = new AtomicInteger(); // <4>
 final AtomicInteger failures = new AtomicInteger();
@@ -217,7 +217,7 @@ Assert.assertEquals(promise.get().get(5), "test8");
 <2> Create a simple fallback stream when sh*t hits the fan.
 <3> Create a `SwitchAction` which is a `Processor` accepting new `Publisher` to consume data from.
 <4> Prepare shared counters for successes and failures.
-<5> Return a `Promise` from `Stream.toList()` to convert the `Stream` into an eventual `List`
+<5> Return a `Promise` from `Fluxion.toList()` to convert the `Stream` into an eventual `List`
 <6> Consume data from the circuitSwitcher `Processor` proxy that will be updated depending on the failures number.
 <7> Count success on every valid `onNext(String)` and count errors on every `Throwable` exception
 <8> Monitor `onSubscribe(Subscription)` call which is called after successful stream start.
@@ -254,7 +254,7 @@ If you made it that far, here a simple non blocking stream to scale up your Kona
 ----
 final Processor<Integer, Integer> keyboardStream = TopicProcessor.create();
 
-NetStream.<String, String>httpServer(spec ->
+NetFluxion.<String, String>httpServer(spec ->
 		spec
 			.codec(StandardCodecs.STRING_CODEC)
 			.listen(3000)
@@ -287,19 +287,19 @@ NetStream.<String, String>httpServer(spec ->
 	.start()
 	.await();
 
-keyboardStream.onNext(KeyEvent.VK_RIGHT);
-keyboardStream.onNext(KeyEvent.VK_UP);
-keyboardStream.onNext(KeyEvent.VK_UP);
-keyboardStream.onNext(KeyEvent.VK_DOWN);
-keyboardStream.onNext(KeyEvent.VK_DOWN);
-keyboardStream.onNext(KeyEvent.VK_LEFT);
-keyboardStream.onNext(KeyEvent.VK_RIGHT);
-keyboardStream.onNext(KeyEvent.VK_LEFT);
-keyboardStream.onNext(KeyEvent.VK_RIGHT);
-keyboardStream.onNext(KeyEvent.VK_B);
-keyboardStream.onNext(KeyEvent.VK_A);
-keyboardStream.onNext(KeyEvent.VK_C);
-keyboardStream.onComplete();
+keyboardFluxion.onNext(KeyEvent.VK_RIGHT);
+keyboardFluxion.onNext(KeyEvent.VK_UP);
+keyboardFluxion.onNext(KeyEvent.VK_UP);
+keyboardFluxion.onNext(KeyEvent.VK_DOWN);
+keyboardFluxion.onNext(KeyEvent.VK_DOWN);
+keyboardFluxion.onNext(KeyEvent.VK_LEFT);
+keyboardFluxion.onNext(KeyEvent.VK_RIGHT);
+keyboardFluxion.onNext(KeyEvent.VK_LEFT);
+keyboardFluxion.onNext(KeyEvent.VK_RIGHT);
+keyboardFluxion.onNext(KeyEvent.VK_B);
+keyboardFluxion.onNext(KeyEvent.VK_A);
+keyboardFluxion.onNext(KeyEvent.VK_C);
+keyboardFluxion.onComplete();
 
 System.out.println(konamis.await());
 ----
