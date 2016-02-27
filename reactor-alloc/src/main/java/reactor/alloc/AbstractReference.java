@@ -34,12 +34,12 @@ public abstract class AbstractReference<T extends Recyclable> implements Referen
 
 	protected AbstractReference(T obj) {
 		this.obj = obj;
-		this.inception = Timer.currentTimeMillisResolver().get();
+		this.inception = Timer.currentTimeMillisResolver().getAsLong();
 	}
 
 	@Override
 	public long getAge() {
-		return Timer.currentTimeMillisResolver().get() - inception;
+		return Timer.currentTimeMillisResolver().getAsLong() - inception;
 	}
 
 	@Override
