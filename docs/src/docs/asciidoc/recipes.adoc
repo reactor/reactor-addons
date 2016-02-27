@@ -153,7 +153,8 @@ We can use `Flux`, or <<streams.adoc#streams-basics, Streams factories>> like `F
 [[recipes-circuitbreaker]]
 === Building a Quick Circuit Breaker
 
-In this other exercise, we will focus more on the composition power in your hands with *Reactor Fluxion* module. A classic use-case is to build self-healing data pipelines using the http://martinfowler.com/bliki/CircuitBreaker.html[Circuit Breaker Pattern] (maybe soon available in `Stream` API, maybe).
+In this other exercise, we will focus more on the composition power in your hands with *Reactor Stream* module. A
+classic use-case is to build self-healing data pipelines using the http://martinfowler.com/bliki/CircuitBreaker.html[Circuit Breaker Pattern] (maybe soon available in `Stream` API, maybe).
 
 In this scenario, we want to keep alive a `Stream` even if errors might fly in. When a certain number of errors is reached, we want to stop consuming from the main _circuit_, the actual `Stream`. For a short period, we will _trip_ the circuit and use a fallback publisher `Stream`. This fallback can actually be any sort of `Publisher`, we will just emit an alternative message. The point is to avoid new access to the failing `Stream` for a while and give it a chance to recover.
 
