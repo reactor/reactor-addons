@@ -26,11 +26,11 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import reactor.core.state.Recyclable;
+import reactor.core.tuple.Tuple;
+import reactor.core.tuple.Tuple2;
 import reactor.core.util.Assert;
 import reactor.core.util.UUIDUtils;
 import reactor.fn.Consumer;
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
 
 /**
  * Wrapper for an object that needs to be processed by {@link reactor.fn.Consumer}s.
