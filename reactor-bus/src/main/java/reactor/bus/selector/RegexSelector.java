@@ -16,13 +16,12 @@
 
 package reactor.bus.selector;
 
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import reactor.fn.Function;
+import javax.annotation.Nullable;
 
 /**
  * A {@link Selector} implementation based on the given regular expression. Parses it into a {@link Pattern} for

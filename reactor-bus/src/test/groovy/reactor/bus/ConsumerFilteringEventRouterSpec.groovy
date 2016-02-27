@@ -21,9 +21,10 @@ import reactor.bus.filter.PassThroughFilter
 import reactor.bus.registry.Registration
 import reactor.bus.routing.ConsumerFilteringRouter
 import reactor.bus.selector.Selector
-import reactor.fn.BiConsumer
-import reactor.fn.Consumer
 import spock.lang.Specification
+
+import java.util.function.BiConsumer
+import java.util.function.Consumer
 
 class ConsumerFilteringEventRouterSpec extends Specification {
 

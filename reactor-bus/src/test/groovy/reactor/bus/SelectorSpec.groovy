@@ -19,14 +19,14 @@ package reactor.bus
 import reactor.bus.selector.MatchAllSelector
 import reactor.bus.selector.SetMembershipSelector
 import reactor.bus.selector.UriSelector
-import reactor.fn.Consumer
 import spock.lang.Ignore
 import spock.lang.Specification
+
+import java.util.function.Consumer
 
 import static GroovyTestUtils.$
 import static org.hamcrest.CoreMatchers.*
 import static org.hamcrest.MatcherAssert.assertThat
-import static reactor.bus.GroovyTestUtils.consumer
 import static reactor.bus.selector.Selectors.*
 
 /**

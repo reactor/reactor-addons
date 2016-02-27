@@ -19,18 +19,21 @@ package reactor.bus;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import reactor.bus.filter.PassThroughFilter;
+import reactor.bus.fluxion.BusFluxion;
 import reactor.bus.registry.Registration;
 import reactor.bus.registry.Registry;
 import reactor.bus.routing.ConsumerFilteringRouter;
 import reactor.bus.routing.Router;
 import reactor.bus.selector.Selector;
-import reactor.bus.fluxion.BusFluxion;
 import reactor.core.flow.MultiProducer;
 import reactor.core.flow.Producer;
 import reactor.core.state.Introspectable;
@@ -38,9 +41,6 @@ import reactor.core.util.Assert;
 import reactor.core.util.Exceptions;
 import reactor.core.util.Logger;
 import reactor.core.util.UUIDUtils;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
-import reactor.fn.Supplier;
 import reactor.rx.Fluxion;
 
 /**

@@ -15,7 +15,7 @@
  */
 
 /**
- * Event routing means sending a given {@link reactor.bus.Event} to the correct {@link reactor.fn.Consumer
+ * Event routing means sending a given {@link reactor.bus.Event} to the correct {@link java.util.function.Consumer
  * Consumers}.
  */
 package reactor.bus.routing;

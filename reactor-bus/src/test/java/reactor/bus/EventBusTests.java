@@ -2,12 +2,12 @@ package reactor.bus;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.junit.Test;
 import reactor.bus.selector.Selectors;
 import reactor.core.publisher.WorkQueueProcessor;
 import reactor.core.util.Assert;
-import reactor.fn.Consumer;
 
 public class EventBusTests {
 

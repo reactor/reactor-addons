@@ -16,6 +16,11 @@
 
 package reactor.bus.registry;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
 import com.gs.collections.api.block.procedure.Procedure;
 import com.gs.collections.api.list.MutableList;
 import com.gs.collections.impl.list.mutable.FastList;
@@ -23,12 +28,7 @@ import com.gs.collections.impl.list.mutable.MultiReaderFastList;
 import com.gs.collections.impl.map.mutable.UnifiedMap;
 import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
-import reactor.fn.Consumer;
 import reactor.jarjar.jsr166e.ConcurrentHashMapV8;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of {@link Registry} that uses a partitioned cache that partitions on thread

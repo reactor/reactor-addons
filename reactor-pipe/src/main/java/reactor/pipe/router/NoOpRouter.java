@@ -1,11 +1,11 @@
 package reactor.pipe.router;
 
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 import reactor.bus.registry.Registration;
 import reactor.bus.routing.Router;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
-
-import java.util.List;
 
 public class NoOpRouter<K, V> implements Router<K, V> {
 

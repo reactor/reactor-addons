@@ -16,15 +16,15 @@
 
 package reactor.bus.registry;
 
-import reactor.bus.selector.ObjectSelector;
-import reactor.bus.selector.Selector;
-import reactor.fn.Consumer;
-import reactor.jarjar.jsr166e.ConcurrentHashMapV8;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
+
+import reactor.bus.selector.ObjectSelector;
+import reactor.bus.selector.Selector;
+import reactor.jarjar.jsr166e.ConcurrentHashMapV8;
 
 /**
  * A naive caching Registry implementation for use in situations that the default {@code CachingRegistry} can't be used

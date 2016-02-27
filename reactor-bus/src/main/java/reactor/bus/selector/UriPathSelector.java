@@ -16,10 +16,9 @@
 
 package reactor.bus.selector;
 
-import javax.annotation.Nullable;
 import java.util.Map;
-
-import reactor.fn.Function;
+import java.util.function.Function;
+import javax.annotation.Nullable;
 
 /**
  * A {@link Selector} implementation based on a {@link UriPathTemplate}.

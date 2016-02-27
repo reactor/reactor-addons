@@ -1,5 +1,10 @@
 package reactor.pipe.registry;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.UnaryOperator;
 
 import org.pcollections.HashTreePMap;
 import org.pcollections.PMap;
@@ -8,13 +13,7 @@ import org.pcollections.TreePVector;
 import reactor.bus.registry.Registration;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
-import reactor.fn.UnaryOperator;
 import reactor.pipe.concurrent.Atom;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 
 public class ConcurrentRegistry<K, V> implements Registry<K, V> {
 

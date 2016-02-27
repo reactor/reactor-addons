@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import reactor.core.state.Recyclable;
-import reactor.fn.Supplier;
 
 /**
  * An implementation of {@link Allocator} that uses reference counting to determine when an object

@@ -1,6 +1,8 @@
 package reactor.pipe;
 
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -11,8 +13,6 @@ import reactor.bus.registry.Registry;
 import reactor.bus.routing.Router;
 import reactor.core.subscriber.Subscribers;
 import reactor.core.subscriber.SubscriptionWithContext;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
 import reactor.pipe.registry.DelayedRegistration;
 import reactor.pipe.stream.FirehoseSubscription;
 

@@ -16,8 +16,9 @@
 
 package reactor.alloc;
 
+import java.util.function.Supplier;
+
 import reactor.bus.Event;
-import reactor.fn.Supplier;
 
 /**
  * A {@link Supplier} implementation that instantiates Events

@@ -20,17 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.util.Exceptions;
-import reactor.fn.Consumer;
-import reactor.fn.Function;
 import reactor.rx.Fluxion;
 
 /**
- * A {@code StreamCoordinator} provides a type of {@code Stream} into which you can bind {@link reactor.fn.Consumer
- * Consumers} and {@link reactor.fn.Function Functions} from arbitrary components. This allows you to create a {@code
+ * A {@code StreamCoordinator} provides a type of {@code Stream} into which you can bind {@link java.util.function.Consumer
+ * Consumers} and {@link java.util.function.Function Functions} from arbitrary components. This allows you to create a {@code
  * Stream} that will be triggered when all bound callbacks have been invoked. The {@code List&lt;Object&gt;} passed
  * downstream will be the accumulation of all the values either passed into a {@code Consumer} or the return value from
  * a bound {@code Function}. This provides a way for the user to cleanly create a dependency chain of arbitrary

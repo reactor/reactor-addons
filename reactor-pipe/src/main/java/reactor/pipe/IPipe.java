@@ -1,14 +1,19 @@
 package reactor.pipe;
 
-import reactor.bus.AbstractBus;
-import reactor.bus.Bus;
-import reactor.bus.selector.Selector;
-import reactor.fn.*;
-import reactor.pipe.concurrent.Atom;
-import reactor.pipe.key.Key;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+
+import reactor.bus.AbstractBus;
+import reactor.bus.selector.Selector;
+import reactor.pipe.concurrent.Atom;
+import reactor.pipe.key.Key;
 
 /**
  * Pipe represents a streaming transformation from `INIT` type,

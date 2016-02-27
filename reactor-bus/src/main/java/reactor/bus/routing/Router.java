@@ -16,11 +16,11 @@
 
 package reactor.bus.routing;
 
-import reactor.bus.registry.Registration;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
-
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import reactor.bus.registry.Registration;
 
 /**
  * An {@code Router} is used to route an {@code Object} to {@link Consumer Consumers}.

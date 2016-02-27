@@ -17,13 +17,13 @@ package reactor.bus;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.junit.Test;
+import reactor.bus.fluxion.FluxionCoordinator;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
-import reactor.bus.fluxion.FluxionCoordinator;
 import reactor.core.publisher.TopicProcessor;
-import reactor.fn.Function;
 import reactor.rx.Fluxion;
 import reactor.rx.FluxionTap;
 

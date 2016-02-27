@@ -2,6 +2,7 @@ package reactor.pipe;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.junit.After;
 import org.junit.Before;
@@ -9,7 +10,6 @@ import org.pcollections.TreePVector;
 import reactor.bus.AbstractBus;
 import reactor.core.publisher.WorkQueueProcessor;
 import reactor.core.timer.Timer;
-import reactor.fn.Supplier;
 import reactor.pipe.key.Key;
 import reactor.pipe.registry.ConcurrentRegistry;
 import reactor.pipe.router.NoOpRouter;

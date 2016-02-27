@@ -15,8 +15,10 @@
  */
 package reactor.bus.spec;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.filter.Filter;
@@ -33,9 +35,6 @@ import reactor.bus.routing.TraceableDelegatingRouter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxProcessor;
 import reactor.core.util.Assert;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
-import reactor.fn.Function;
 
 /**
  * A generic processor-aware class for specifying components that need to be configured with a

@@ -1,14 +1,14 @@
 package reactor.pipe.operation;
 
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.UnaryOperator;
+
 import org.pcollections.PVector;
 import org.pcollections.TreePVector;
 import reactor.bus.Bus;
-import reactor.fn.BiConsumer;
-import reactor.fn.UnaryOperator;
 import reactor.pipe.concurrent.Atom;
 import reactor.pipe.key.Key;
-
-import java.util.List;
 
 public class SlidingWindowOperation<SRC extends Key, DST extends Key, V> implements BiConsumer<SRC, V> {
 

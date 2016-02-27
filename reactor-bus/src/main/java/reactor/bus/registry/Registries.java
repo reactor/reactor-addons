@@ -16,7 +16,7 @@
 
 package reactor.bus.registry;
 
-import reactor.fn.Consumer;
+import java.util.function.Consumer;
 
 /**
  * @author jbrisbin on 1/27/15.

@@ -15,6 +15,8 @@
  */
 package reactor.bus.fluxion;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import org.reactivestreams.Subscriber;
@@ -23,11 +25,9 @@ import reactor.bus.Bus;
 import reactor.bus.EventBus;
 import reactor.bus.registry.Registration;
 import reactor.bus.selector.Selector;
-import reactor.core.flow.Receiver;
 import reactor.core.flow.Producer;
+import reactor.core.flow.Receiver;
 import reactor.core.state.Introspectable;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
 import reactor.rx.Fluxion;
 import reactor.rx.subscriber.SerializedSubscriber;
 

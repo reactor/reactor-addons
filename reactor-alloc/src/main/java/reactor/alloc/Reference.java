@@ -16,8 +16,9 @@
 
 package reactor.alloc;
 
+import java.util.function.Supplier;
+
 import reactor.core.state.Recyclable;
-import reactor.fn.Supplier;
 
 /**
  * A {@code Reference} provides access to and metadata about a poolable object.

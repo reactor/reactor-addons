@@ -16,14 +16,13 @@
 
 package reactor.bus.selector;
 
-import javax.annotation.Nullable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
-
-import reactor.fn.Function;
+import java.util.function.Function;
+import javax.annotation.Nullable;
 
 /**
  * A {@link Selector} implementation that matches on various components of a full URI.

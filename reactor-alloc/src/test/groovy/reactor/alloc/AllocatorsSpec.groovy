@@ -16,7 +16,6 @@
 package reactor.alloc
 
 import reactor.core.state.Recyclable
-import reactor.fn.Supplier
 import spock.lang.Specification
 
 import java.lang.reflect.ParameterizedType
@@ -24,6 +23,7 @@ import java.lang.reflect.Type
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.function.Supplier
 
 /**
  * @author Jon Brisbin

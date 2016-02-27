@@ -16,9 +16,10 @@
 
 package reactor.bus.spec;
 
+import java.util.function.Supplier;
+
 import org.reactivestreams.Processor;
 import reactor.core.publisher.FluxProcessor;
-import reactor.fn.Supplier;
 
 /**
  * A generic processor-aware class for specifying components that need to be configured

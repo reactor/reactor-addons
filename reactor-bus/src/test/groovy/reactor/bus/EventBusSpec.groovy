@@ -21,14 +21,14 @@ import reactor.bus.filter.RoundRobinFilter
 import reactor.bus.routing.ConsumerFilteringRouter
 import reactor.bus.selector.Selectors
 import reactor.core.publisher.WorkQueueProcessor
-import reactor.fn.Consumer
-import reactor.rx.Promise
 import reactor.rx.Fluxion
+import reactor.rx.Promise
 import spock.lang.Specification
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Consumer
 
 import static reactor.bus.GroovyTestUtils.*
 import static reactor.bus.selector.Selectors.*

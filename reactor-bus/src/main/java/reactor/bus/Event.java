@@ -24,16 +24,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import reactor.core.state.Recyclable;
 import reactor.core.tuple.Tuple;
 import reactor.core.tuple.Tuple2;
 import reactor.core.util.Assert;
 import reactor.core.util.UUIDUtils;
-import reactor.fn.Consumer;
 
 /**
- * Wrapper for an object that needs to be processed by {@link reactor.fn.Consumer}s.
+ * Wrapper for an object that needs to be processed by {@link java.util.function.Consumer}s.
  *
  * @param <T> The type of the wrapped object
  * @author Jon Brisbin
@@ -74,7 +74,7 @@ public class Event<T> implements Serializable, Recyclable {
 	}
 
 	/**
-	 * Creates a new Event with the given {@code headers}, {@code data} and {@link reactor.fn.Consumer <java.lang
+	 * Creates a new Event with the given {@code headers}, {@code data} and {@link java.util.function.Consumer <java.lang
 	 * .Throwable>}.
 	 *
 	 * @param headers       The headers

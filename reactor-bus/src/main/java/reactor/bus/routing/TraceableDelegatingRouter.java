@@ -17,12 +17,12 @@
 package reactor.bus.routing;
 
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import reactor.bus.registry.Registration;
 import reactor.core.util.Assert;
 import reactor.core.util.Logger;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
 
 /**
  * @author Jon Brisbin
