@@ -33,7 +33,7 @@ import reactor.bus.selector.Selector;
  * due to its reliance on the gs-collections library. Not designed for high throughput but for use on things like
  * handheld devices, where the synchronized nature of the registry won't affect performance much.
  */
-public class SimpleCachingRegistry<K, V> implements Registry<K, V> {
+final class SimpleCachingRegistry<K, V> implements Registry<K, V> {
 
 	private final ConcurrentHashMap<Object, List<Registration<K, ? extends V>>>      cache         = new
 	  ConcurrentHashMap<>();

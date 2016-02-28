@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package reactor.bus.fluxion;
+package reactor.bus;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -21,8 +21,6 @@ import javax.annotation.Nonnull;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-import reactor.bus.Bus;
-import reactor.bus.EventBus;
 import reactor.bus.registry.Registration;
 import reactor.bus.selector.Selector;
 import reactor.core.flow.Producer;
@@ -45,7 +43,7 @@ import reactor.rx.subscriber.SerializedSubscriber;
  *
  * @author Stephane Maldini
  */
-public final class BusFluxion<T> extends Fluxion<T> {
+final class BusFluxion<T> extends Fluxion<T> {
 
 	private final Selector  selector;
 	private final Bus<?, T> observable;

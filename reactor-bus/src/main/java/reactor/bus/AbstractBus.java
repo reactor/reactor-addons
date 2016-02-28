@@ -28,7 +28,6 @@ import javax.annotation.Nullable;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import reactor.bus.filter.PassThroughFilter;
-import reactor.bus.fluxion.BusFluxion;
 import reactor.bus.registry.Registration;
 import reactor.bus.registry.Registry;
 import reactor.bus.routing.ConsumerFilteringRouter;
