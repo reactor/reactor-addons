@@ -64,7 +64,7 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 	 * @return {@code this}
 	 */
 	public final SPEC eventFilter(Filter filter) {
-		Assert.isNull(router, "Cannot set both a filter and a router. Use one or the other.");
+		Assert.state(router != null, "Cannot set both a filter and a router. Use one or the other.");
 		this.eventFilter = filter;
 		return (SPEC) this;
 	}
@@ -75,7 +75,7 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 	 * @return {@code this}
 	 */
 	public final SPEC eventRouter(Router router) {
-		Assert.isNull(eventFilter, "Cannot set both a filter and a router. Use one or the other.");
+		Assert.state(eventFilter != null, "Cannot set both a filter and a router. Use one or the other.");
 		this.router = router;
 		return (SPEC) this;
 	}
