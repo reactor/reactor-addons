@@ -96,10 +96,6 @@ public class CachableRegistration<K, V> implements Registration<K, V>, Producer,
 		return INNER;
 	}
 
-	@Override
-	public String getName() {
-		return CachableRegistration.class.getSimpleName();
-	}
 
 	@Override
 	public boolean isCancelled() {
