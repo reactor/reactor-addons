@@ -16,21 +16,29 @@
 
 package reactor.bus.selector;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.jayway.jsonpath.*;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Filter;
+import com.jayway.jsonpath.InvalidJsonException;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-
-import reactor.io.buffer.Buffer;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.*;
 
 /**
  * @author Jon Brisbin
@@ -88,9 +96,9 @@ public class JsonPathSelector extends ObjectSelector<Object, JsonPath> {
 		if (type == String.class) {
 			return getObject().read((String) key, jsonPathConfig);
 		} else if (type == byte[].class) {
-			return getObject().read(Buffer.wrap((byte[]) key).asString(), jsonPathConfig);
-		} else if (type == Buffer.class) {
-			return getObject().read(((Buffer) key).asString(), jsonPathConfig);
+			return getObject().read(new String((byte[]) key), jsonPathConfig);
+		} else if (type == ByteBuffer.class) {
+			return getObject().read(new String(((ByteBuffer) key).array()), jsonPathConfig);
 		} else if (JsonNode.class.isAssignableFrom(type)) {
 			return getObject().read(key, jsonPathConfig);
 		} else {
