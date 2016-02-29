@@ -73,7 +73,7 @@ Publisher<String> fileStream = new Publisher<String>() { // <1>
 };
 
 Fluxion.from(fileStream)
-	.capacity(4L) // <9>
+	.useCapacity(4L) // <9>
 	.consumeOn( // <10>
 		Environment.sharedDispatcher(),
 		System.out::println,
@@ -129,7 +129,7 @@ Publisher<String> fileStream = Flux.generate(
 Stream
 	.from(fileStream)
 	.process(TopicProcessor.create())
-	.capacity(4L)
+	.useCapacity(4L)
 	.consume(
 		System.out::println,
 		Throwable::printStackTrace,
