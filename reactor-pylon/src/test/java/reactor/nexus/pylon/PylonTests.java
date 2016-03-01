@@ -16,7 +16,6 @@
 package reactor.nexus.pylon;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import reactor.core.subscriber.SignalEmitter;
@@ -46,7 +45,7 @@ public class PylonTests {
 			      else {
 				      Exceptions.failWithCancel();
 			      }
-		      }, 200, TimeUnit.MILLISECONDS);
+		      }, 200);
 
 		CountDownLatch latch = new CountDownLatch(1);
 
