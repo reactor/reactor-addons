@@ -19,19 +19,19 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import org.pcollections.PVector;
 import org.pcollections.TreePVector;
 import reactor.bus.Bus;
 import reactor.core.state.Pausable;
 import reactor.core.timer.Timer;
-import reactor.fn.BiConsumer;
-import reactor.fn.BiFunction;
-import reactor.fn.Consumer;
-import reactor.fn.Function;
-import reactor.fn.Predicate;
-import reactor.fn.Supplier;
-import reactor.fn.UnaryOperator;
 import reactor.pipe.concurrent.Atom;
 import reactor.pipe.concurrent.LazyVar;
 import reactor.pipe.key.Key;
@@ -163,38 +163,36 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
     public Pipe<INIT, CURRENT> throttle(final long period,
                                         final TimeUnit timeUnit,
                                         final boolean fireFirst) {
-        return next(new StreamSupplier<Key, CURRENT>() {
-            @Override
-            public BiConsumer<Key, CURRENT> get(Key src, final Key dst, final Bus<Key, Object> firehose) {
-                final Atom<CURRENT> throttledValue = stateProvider.makeAtom(src, null);
-                final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
-                final AtomicBoolean fire = new AtomicBoolean(fireFirst);
+        return next((StreamSupplier<Key, CURRENT>) (src, dst, firehose) -> {
+            final Atom<CURRENT> throttledValue = stateProvider.makeAtom(src, null);
+            final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
+            final AtomicBoolean fire = new AtomicBoolean(fireFirst);
 
-                final Consumer<Long> notifyConsumer = new Consumer<Long>() {
-                    @Override
-                    public void accept(Long v) {
-                        firehose.notify(dst, throttledValue.deref());
-                        pausable.set(null);
+            final Consumer<Long> notifyConsumer = new Consumer<Long>() {
+                @Override
+                public void accept(Long v) {
+                    firehose.notify(dst, throttledValue.deref());
+                    pausable.set(null);
+                }
+            };
+
+            return new BiConsumer<Key, CURRENT>() {
+                @Override
+                public void accept(final Key key,
+                                   final CURRENT value) {
+                    if (fire.getAndSet(false)) {
+                        firehose.notify(dst, value);
+                        return;
                     }
-                };
 
-                return new BiConsumer<Key, CURRENT>() {
-                    @Override
-                    public void accept(final Key key,
-                                       final CURRENT value) {
-                        if (fire.getAndSet(false)) {
-                            firehose.notify(dst, value);
-                            return;
-                        }
+                    throttledValue.reset(value);
 
-                        throttledValue.reset(value);
-
-                        if (pausable.get() == null) {
-                            pausable.set(timer.get().submit(notifyConsumer, period, timeUnit));
-                        }
+                    if (pausable.get() == null) {
+                        pausable.set(timer.get().submit(notifyConsumer, TimeUnit.MILLISECONDS.convert(period,
+                                timeUnit)));
                     }
-                };
-            }
+                }
+            };
         });
     }
 
@@ -233,7 +231,8 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
 
                         debouncedValue.reset(value);
 
-                        Pausable oldScheduled = pausable.getAndSet(timer.get().submit(notifyConsumer, period, timeUnit));
+                        Pausable oldScheduled = pausable.getAndSet(timer.get().submit(notifyConsumer, TimeUnit.MILLISECONDS.convert(period,
+                                timeUnit)));
 
                         if (oldScheduled != null) {
                             oldScheduled.cancel();

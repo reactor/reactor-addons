@@ -17,9 +17,8 @@
 package reactor.bus.selector;
 
 import java.util.Map;
-
-import reactor.fn.Function;
-import reactor.fn.Predicate;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * {@link Selector} implementation that uses the {@link #hashCode()} and {@link #equals(Object)}

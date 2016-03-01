@@ -17,8 +17,7 @@
 package reactor.bus.selector;
 
 import java.util.Map;
-
-import reactor.fn.Function;
+import java.util.function.Function;
 
 /**
  * A {@literal Selector} is a wrapper around an arbitrary object.

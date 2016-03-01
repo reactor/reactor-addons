@@ -20,7 +20,6 @@ import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
 import reactor.core.flow.Producer;
 import reactor.core.state.Cancellable;
-import reactor.core.state.Groupable;
 import reactor.core.state.Introspectable;
 import reactor.core.state.Pausable;
 
@@ -28,8 +27,7 @@ import reactor.core.state.Pausable;
  * @author Jon Brisbin
  * @author Stephane Maldini
  */
-public class CachableRegistration<K, V> implements Registration<K, V>, Producer,
-                                                   Groupable<Selector>,
+final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
                                                    Cancellable,
                                                    Introspectable {
 
@@ -96,10 +94,6 @@ public class CachableRegistration<K, V> implements Registration<K, V>, Producer,
 		return INNER;
 	}
 
-	@Override
-	public String getName() {
-		return CachableRegistration.class.getSimpleName();
-	}
 
 	@Override
 	public boolean isCancelled() {

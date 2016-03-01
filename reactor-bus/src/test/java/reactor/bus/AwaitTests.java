@@ -16,13 +16,12 @@
 
 package reactor.bus;
 
-import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.junit.Test;
 import reactor.bus.selector.Selectors;
 import reactor.core.publisher.TopicProcessor;
 import reactor.core.publisher.WorkQueueProcessor;
-import reactor.fn.Consumer;
 import reactor.rx.Broadcaster;
 import reactor.rx.Promise;
 
@@ -52,7 +51,7 @@ public class AwaitTests extends AbstractReactorTest {
 
 			}, null);
 
-			String latchRes = deferred.await(10, TimeUnit.SECONDS);
+			String latchRes = deferred.await(10_0000);
 			assertThat("latch is not counted down : " + deferred.debug(), "foo".equals(latchRes));
 		}
 	}
@@ -78,7 +77,7 @@ public class AwaitTests extends AbstractReactorTest {
 		for (int i = 0; i < 16; i++) {
 			r.notify("test", Event.wrap("test"));
 		}
-		promise.await(5, TimeUnit.SECONDS);
+		promise.await(5000);
 
 		assert promise.peek() == 16;
 		try{

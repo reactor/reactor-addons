@@ -16,27 +16,29 @@
 
 package reactor.bus.registry;
 
-import reactor.bus.selector.ObjectSelector;
-import reactor.bus.selector.Selector;
-import reactor.fn.Consumer;
-import reactor.jarjar.jsr166e.ConcurrentHashMapV8;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import reactor.bus.selector.ObjectSelector;
+import reactor.bus.selector.Selector;
 
 /**
  * A naive caching Registry implementation for use in situations that the default {@code CachingRegistry} can't be used
  * due to its reliance on the gs-collections library. Not designed for high throughput but for use on things like
  * handheld devices, where the synchronized nature of the registry won't affect performance much.
  */
-public class SimpleCachingRegistry<K, V> implements Registry<K, V> {
+final class SimpleCachingRegistry<K, V> implements Registry<K, V> {
 
-	private final ConcurrentHashMapV8<Object, List<Registration<K, ? extends V>>>      cache         = new
-	  ConcurrentHashMapV8<>();
-	private final ConcurrentHashMapV8<Selector<K>, List<Registration<K, ? extends V>>> registrations = new
-	  ConcurrentHashMapV8<>();
+	private final ConcurrentHashMap<Object, List<Registration<K, ? extends V>>>      cache         = new
+	  ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Selector<K>, List<Registration<K, ? extends V>>> registrations = new
+	  ConcurrentHashMap<>();
 
 	private final boolean     useCache;
 	private final boolean     cacheNotFound;
@@ -53,7 +55,7 @@ public class SimpleCachingRegistry<K, V> implements Registry<K, V> {
 		List<Registration<K, ? extends V>> regs;
 		if (null == (regs = registrations.get(sel))) {
 			regs = registrations.computeIfAbsent(sel,
-			  new ConcurrentHashMapV8.Fun<Selector<K>, List<Registration<K, ? extends V>>>() {
+			  new Function<Selector<K>, List<Registration<K,? extends V>>>() {
 				  @Override
 				  public List<Registration<K, ? extends V>> apply(Selector<K> selector) {
 					  return new ArrayList<Registration<K, ? extends V>>();
@@ -104,9 +106,9 @@ public class SimpleCachingRegistry<K, V> implements Registry<K, V> {
 		}
 
 		final List<Registration<K, ? extends V>> regs = new ArrayList<Registration<K, ? extends V>>();
-		registrations.forEach(new ConcurrentHashMapV8.BiAction<Selector<K>, List<Registration<K, ? extends V>>>() {
+		registrations.forEach(new BiConsumer<Selector<K>, List<Registration<K,? extends V>>>() {
 			@Override
-			public void apply(Selector<K> selector, List<Registration<K, ? extends V>> registrations) {
+			public void accept(Selector<K> selector, List<Registration<K, ? extends V>> registrations) {
 				if (selector.matches(key)) {
 					regs.addAll(registrations);
 				}
@@ -169,9 +171,9 @@ public class SimpleCachingRegistry<K, V> implements Registry<K, V> {
 	@Override
 	public synchronized Iterator<Registration<K, ? extends V>> iterator() {
 		final List<Registration<K, ? extends V>> regs = new ArrayList<Registration<K, ? extends V>>();
-		registrations.forEach(new ConcurrentHashMapV8.BiAction<Selector<K>, List<Registration<K, ? extends V>>>() {
+		registrations.forEach(new BiConsumer<Selector<K>, List<Registration<K,? extends V>>>() {
 			@Override
-			public void apply(Selector<K> selector, List<Registration<K, ? extends V>> registrations) {
+			public void accept(Selector<K> selector, List<Registration<K, ? extends V>> registrations) {
 				regs.addAll(registrations);
 			}
 		});

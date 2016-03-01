@@ -20,6 +20,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -36,7 +40,6 @@ import reactor.bus.selector.ClassSelector;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
 import reactor.bus.spec.EventBusSpec;
-import reactor.bus.stream.BusStream;
 import reactor.core.flow.Loopback;
 import reactor.core.flow.Producer;
 import reactor.core.state.Introspectable;
@@ -47,11 +50,7 @@ import reactor.core.util.BackpressureUtils;
 import reactor.core.util.EmptySubscription;
 import reactor.core.util.Logger;
 import reactor.core.util.ReactiveStateUtils;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
-import reactor.fn.Function;
-import reactor.fn.Supplier;
-import reactor.rx.Stream;
+import reactor.rx.Fluxion;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -281,11 +280,11 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * Attach a Stream to the {@link Bus} with the specified {@link Selector}.
 	 *
 	 * @param broadcastSelector the {@link Selector}/{@literal Object} tuple to listen to
-	 * @return a new {@link Stream}
+	 * @return a new {@link Fluxion}
 	 * @since 2.0
 	 */
-	public Stream<? extends Event<?>> on(Selector broadcastSelector) {
-		return new BusStream<>(this, broadcastSelector);
+	public Fluxion<? extends Event<?>> on(Selector broadcastSelector) {
+		return new BusFluxion<>(this, broadcastSelector);
 	}
 
 	protected void accept(Object key, Event<?> ev) {
@@ -334,10 +333,10 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	}
 
 	/**
-	 * Assign a {@link reactor.fn.Function} to receive an {@link Event} and produce a reply of the given type.
+	 * Assign a {@link java.util.function.Function} to receive an {@link Event} and produce a reply of the given type.
 	 *
 	 * @param sel The {@link Selector} to be used for matching
-	 * @param fn  The transformative {@link reactor.fn.Function} to call to receive an {@link Event}
+	 * @param fn  The transformative {@link java.util.function.Function} to call to receive an {@link Event}
 	 * @return A {@link Registration} object that allows the caller to interact with the given mapping
 	 */
 	public <T extends Event<?>, V> Registration<?, BiConsumer<Object, ? extends Event<?>>> receive(Selector sel,
@@ -346,11 +345,11 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	}
 
 	/**
-	 * Notify this component that the given {@link reactor.fn.Supplier} can provide an event that's ready to be
+	 * Notify this component that the given {@link java.util.function.Supplier} can provide an event that's ready to be
 	 * processed.
 	 *
 	 * @param key      The key to be matched by {@link Selector Selectors}
-	 * @param supplier The {@link reactor.fn.Supplier} that will provide the actual {@link Event}
+	 * @param supplier The {@link java.util.function.Supplier} that will provide the actual {@link Event}
 	 * @return {@literal this}
 	 */
 	public EventBus notify(Object key, Supplier<? extends Event<?>> supplier) {
@@ -437,9 +436,9 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	}
 
 	/**
-	 * Register the given {@link reactor.fn.Consumer} on an anonymous {@link reactor.bus.selector.Selector} and
+	 * Register the given {@link java.util.function.Consumer} on an anonymous {@link reactor.bus.selector.Selector} and
 	 * set the given event's {@code replyTo} property to the corresponding anonymous key, then register the consumer to
-	 * receive replies from the {@link reactor.fn.Function} assigned to handle the given key.
+	 * receive replies from the {@link java.util.function.Function} assigned to handle the given key.
 	 *
 	 * @param key   The key to be matched by {@link Selector Selectors}
 	 * @param event The event to notify.
@@ -454,10 +453,10 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	}
 
 	/**
-	 * Register the given {@link reactor.fn.Consumer} on an anonymous {@link reactor.bus.selector.Selector} and
+	 * Register the given {@link java.util.function.Consumer} on an anonymous {@link reactor.bus.selector.Selector} and
 	 * set the event's {@code replyTo} property to the corresponding anonymous key, then register the consumer to
 	 * receive
-	 * replies from the {@link reactor.fn.Function} assigned to handle the given key.
+	 * replies from the {@link java.util.function.Function} assigned to handle the given key.
 	 *
 	 * @param key      The key to be matched by {@link Selector Selectors}
 	 * @param supplier The supplier to supply the event.
@@ -480,10 +479,10 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	}
 
 	/**
-	 * Schedule an arbitrary {@link reactor.fn.Consumer} to be executed on the current Reactor  {@link
+	 * Schedule an arbitrary {@link java.util.function.Consumer} to be executed on the current Reactor  {@link
 	 * Processor}, passing the given {@param data}.
 	 *
-	 * @param consumer The {@link reactor.fn.Consumer} to invoke.
+	 * @param consumer The {@link java.util.function.Consumer} to invoke.
 	 * @param data     The data to pass to the consumer.
 	 * @param <T>      The type of the data.
 	 */

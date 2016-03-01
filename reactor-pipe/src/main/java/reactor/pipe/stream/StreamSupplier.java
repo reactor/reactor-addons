@@ -1,8 +1,8 @@
 package reactor.pipe.stream;
 
+import java.util.function.BiConsumer;
 
 import reactor.bus.Bus;
-import reactor.fn.BiConsumer;
 import reactor.pipe.key.Key;
 
 @FunctionalInterface

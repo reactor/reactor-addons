@@ -1,14 +1,12 @@
 package reactor.pipe;
 
-import org.junit.Test;
-import reactor.fn.Predicate;
-import reactor.pipe.concurrent.AVar;
-import reactor.pipe.concurrent.Atom;
-import reactor.pipe.key.Key;
-
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+
+import org.junit.Test;
+import reactor.pipe.concurrent.AVar;
+import reactor.pipe.key.Key;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;

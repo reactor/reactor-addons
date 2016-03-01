@@ -98,8 +98,8 @@ jar {
 ]
 
 compileJava {
-  sourceCompatibility = 1.7
-  targetCompatibility = 1.7
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
 }
 
 compileTestJava {
@@ -107,11 +107,9 @@ compileTestJava {
   targetCompatibility = 1.8
 }
 
-if (JavaVersion.current().isJava8Compatible()) {
   compileTestJava.options.compilerArgs += "-parameters"
   tasks.withType(Javadoc) {
 	options.addStringOption('Xdoclint:none', '-quiet')
-  }
 }
 
 sourceSets.test.resources.srcDirs = ["src/test/resources", "src/test/java"]
@@ -133,8 +131,8 @@ project.tasks.withType(Test).all {
 
 repositories {
   mavenLocal()
-  maven { url 'http://repo.spring.io/libs-milestone' }
   maven { url 'http://repo.spring.io/libs-snapshot' }
+  maven { url 'http://repo.spring.io/libs-milestone' }
   maven { url "https://oss.sonatype.org/content/repositories/releases/" }
   jcenter()
   mavenCentral()

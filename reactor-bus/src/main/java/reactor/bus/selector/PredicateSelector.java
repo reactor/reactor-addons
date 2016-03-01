@@ -16,7 +16,7 @@
 
 package reactor.bus.selector;
 
-import reactor.fn.Predicate;
+import java.util.function.Predicate;
 
 /**
  * Implementation of {@link Selector} that delegates the work of matching an object to the given {@link Predicate}.

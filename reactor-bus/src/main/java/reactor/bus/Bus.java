@@ -16,11 +16,12 @@
 
 package reactor.bus;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import reactor.bus.registry.Registration;
 import reactor.bus.selector.Selector;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
-import reactor.fn.Supplier;
 
 /**
  * Basic unit of event handling in Reactor.
@@ -40,7 +41,7 @@ public interface Bus<K, T> {
     boolean respondsToKey(K key);
 
     /**
-     * Register a {@link reactor.fn.BiConsumer} to be triggered when a notification matches the given {@link
+     * Register a {@link java.util.function.BiConsumer} to be triggered when a notification matches the given {@link
      * Selector}.
      *
      * @param selector The {@literal Selector} to be used for matching
@@ -51,7 +52,7 @@ public interface Bus<K, T> {
         final BiConsumer<K, V> consumer);
 
     /**
-     * Register a {@link reactor.fn.Consumer} to be triggered when a notification matches the given {@link
+     * Register a {@link java.util.function.Consumer} to be triggered when a notification matches the given {@link
      * Selector}.
      *
      * @param selector The {@literal Selector} to be used for matching
@@ -62,7 +63,7 @@ public interface Bus<K, T> {
         final Consumer<V> consumer);
 
     /**
-     * Register a {@link reactor.fn.BiConsumer} to be triggered when a notification matches the given {@link
+     * Register a {@link java.util.function.BiConsumer} to be triggered when a notification matches the given {@link
      * Selector}.
      *
      * @param key      The {@literal Selector} to be used for matching
@@ -73,7 +74,7 @@ public interface Bus<K, T> {
         final BiConsumer<K, V> consumer);
 
     /**
-     * Register a {@link reactor.fn.Consumer} to be triggered when a notification matches the given {@link
+     * Register a {@link java.util.function.Consumer} to be triggered when a notification matches the given {@link
      * Selector}.
      *
      * @param key      The {@literal Selector} to be used for matching

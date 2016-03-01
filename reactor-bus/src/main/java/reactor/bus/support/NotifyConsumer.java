@@ -16,11 +16,12 @@
 
 package reactor.bus.support;
 
+import java.util.function.Consumer;
+
 import reactor.bus.Bus;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.core.util.Assert;
-import reactor.fn.Consumer;
 
 /**
  * A {@code Consumer} that notifies an observable of each value that it has accepted.

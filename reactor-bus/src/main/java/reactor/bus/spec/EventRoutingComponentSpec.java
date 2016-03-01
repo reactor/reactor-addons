@@ -15,8 +15,10 @@
  */
 package reactor.bus.spec;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 import org.reactivestreams.Processor;
-import org.reactivestreams.Publisher;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.bus.filter.Filter;
@@ -33,9 +35,6 @@ import reactor.bus.routing.TraceableDelegatingRouter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxProcessor;
 import reactor.core.util.Assert;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
-import reactor.fn.Function;
 
 /**
  * A generic processor-aware class for specifying components that need to be configured with a
@@ -65,7 +64,7 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 	 * @return {@code this}
 	 */
 	public final SPEC eventFilter(Filter filter) {
-		Assert.isNull(router, "Cannot set both a filter and a router. Use one or the other.");
+		Assert.state(router == null, "Cannot set both a filter and a router. Use one or the other.");
 		this.eventFilter = filter;
 		return (SPEC) this;
 	}
@@ -76,7 +75,7 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 	 * @return {@code this}
 	 */
 	public final SPEC eventRouter(Router router) {
-		Assert.isNull(eventFilter, "Cannot set both a filter and a router. Use one or the other.");
+		Assert.state(eventFilter == null, "Cannot set both a filter and a router. Use one or the other.");
 		this.router = router;
 		return (SPEC) this;
 	}
@@ -204,12 +203,7 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 
 	private EventBus createReactor(Processor<Event<?>, Event<?>> processor, int concurrency) {
 		if (traceEventPath) {
-			processor = FluxProcessor.blackbox(processor, new Function<Processor<Event<?>, Event<?>>, Publisher<Event<?>>>() {
-						@Override
-						public Publisher<Event<?>> apply(Processor<Event<?>, Event<?>> p) {
-							return Flux.from(p).log("reactor.bus.log");
-						}
-					});
+			processor = FluxProcessor.create(processor, Flux.from(processor).log("reactor.bus.log"));
 		}
 		return new EventBus((consumerRegistry != null ? consumerRegistry : createRegistry()),
 		  processor,

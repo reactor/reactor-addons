@@ -62,8 +62,8 @@ ext {
 			"http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
 			"http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
 			"http://www.reactive-streams.org/reactive-streams-1.0.0-javadoc/",
-			"http://next.projectreactor.io/core/docs/api/",
-			"http://next.projectreactor.io/stream/docs/api/",
+			"http://projectreactor.io/core/docs/api/",
+			"http://projectreactor.io/stream/docs/api/",
 	] as String[]
 }
 
@@ -105,8 +105,8 @@ configure(subprojects) { project ->
 	]
 
 	compileJava {
-		sourceCompatibility = 1.7
-		targetCompatibility = 1.7
+		sourceCompatibility = 1.8
+		targetCompatibility = 1.8
 	}
 
 	compileTestJava {
@@ -200,37 +200,8 @@ project('reactor-bus') {
 			'*'
 	]
 
-	configurations {
-		jsr166e
-		jarjar
-	}
-
-	task jsr166eRepackJar(type: Jar) { repackJar ->
-		repackJar.baseName = "reactor-jsr166e-repack"
-		repackJar.version = '1.0'
-
-		doLast() {
-			project.ant {
-				taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask",
-						classpath: configurations.jarjar.asPath
-				jarjar(destfile: repackJar.archivePath) {
-					configurations.jsr166e.each { originalJar ->
-						zipfileset(src: originalJar)
-					}
-					rule(pattern: "jsr166e.**", result: "reactor.jarjar.jsr166e.@1")
-				}
-			}
-		}
-	}
-
 	dependencies {
-		jarjar("com.googlecode.jarjar:jarjar:1.3")
-
 		compile "io.projectreactor:reactor-stream:$version"
-		optional "io.projectreactor:reactor-io:$version"
-
-		jsr166e "io.gatling:jsr166e:1.0@jar"
-		compile(files(jsr166eRepackJar))
 
 		// Rich Collections
 		compile "com.goldmansachs:gs-collections:$gsCollectionsVersion"
@@ -242,11 +213,6 @@ project('reactor-bus') {
 	jar {
 		manifest {
 			instruction 'Import-Package', bundleImportPackages.join(',')
-		}
-
-		dependsOn jsr166eRepackJar
-		from(zipTree(jsr166eRepackJar.archivePath)) {
-			include "reactor/jarjar/jsr166e/**"
 		}
 	}
 }

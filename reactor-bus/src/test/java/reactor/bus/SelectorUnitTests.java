@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
@@ -29,11 +31,9 @@ import reactor.bus.registry.Registries;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
+import reactor.core.tuple.Tuple;
+import reactor.core.tuple.Tuple2;
 import reactor.core.util.Logger;
-import reactor.fn.Consumer;
-import reactor.fn.Function;
-import reactor.fn.tuple.Tuple;
-import reactor.fn.tuple.Tuple2;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static reactor.bus.selector.JsonPathSelector.J;

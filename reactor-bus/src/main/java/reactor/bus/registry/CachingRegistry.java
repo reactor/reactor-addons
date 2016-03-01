@@ -16,6 +16,13 @@
 
 package reactor.bus.registry;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import com.gs.collections.api.block.procedure.Procedure;
 import com.gs.collections.api.list.MutableList;
 import com.gs.collections.impl.list.mutable.FastList;
@@ -23,12 +30,6 @@ import com.gs.collections.impl.list.mutable.MultiReaderFastList;
 import com.gs.collections.impl.map.mutable.UnifiedMap;
 import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
-import reactor.fn.Consumer;
-import reactor.jarjar.jsr166e.ConcurrentHashMapV8;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of {@link Registry} that uses a partitioned cache that partitions on thread
@@ -45,15 +46,15 @@ public class CachingRegistry<K, V> implements Registry<K, V> {
 	private final boolean                                                                           cacheNotFound;
 	private final Consumer<K>                                                                       onNotFound;
 	private final MultiReaderFastList<Registration<K, ? extends V>>                                 registrations;
-	private final ConcurrentHashMapV8<Long, UnifiedMap<Object, List<Registration<K, ? extends V>>>> threadLocalCache;
+	private final ConcurrentHashMap<Long, UnifiedMap<Object, List<Registration<K, ? extends V>>>> threadLocalCache;
 
 	CachingRegistry(boolean useCache, boolean cacheNotFound, Consumer<K> onNotFound) {
 		this.useCache = useCache;
 		this.cacheNotFound = cacheNotFound;
 		this.onNotFound = onNotFound;
 		this.registrations = MultiReaderFastList.newList();
-		this.threadLocalCache = new ConcurrentHashMapV8<Long, UnifiedMap<Object, List<Registration<K, ? extends
-		  V>>>>();
+		this.threadLocalCache = new ConcurrentHashMap<Long, UnifiedMap<Object, List<Registration<K, ? extends
+				  V>>>>();
 	}
 
 	@Override
@@ -187,7 +188,7 @@ public class CachingRegistry<K, V> implements Registry<K, V> {
 	}
 
 	private final class NewThreadLocalRegsFn
-	  implements ConcurrentHashMapV8.Fun<Long, UnifiedMap<Object, List<Registration<K, ? extends V>>>> {
+			implements Function<Long, UnifiedMap<Object, List<Registration<K, ? extends V>>>> {
 		@Override
 		public UnifiedMap<Object, List<Registration<K, ? extends V>>> apply(Long aLong) {
 			return UnifiedMap.newMap();

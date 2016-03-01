@@ -1,6 +1,8 @@
 package reactor.pipe;
 
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -11,8 +13,6 @@ import reactor.bus.registry.Registry;
 import reactor.bus.routing.Router;
 import reactor.core.subscriber.Subscribers;
 import reactor.core.subscriber.SubscriptionWithContext;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
 import reactor.pipe.registry.DelayedRegistration;
 import reactor.pipe.stream.FirehoseSubscription;
 
@@ -34,7 +34,12 @@ public class RawBus<K, V> extends AbstractBus<K, V> {
               processorErrorHandler,
               uncaughtErrorHandler);
         this.processor = processor;
-        this.inDispatcherContext = new ThreadLocal<>();
+        this.inDispatcherContext = new ThreadLocal<Boolean>(){
+          @Override
+          protected Boolean initialValue() {
+            return Boolean.FALSE;
+          }
+        };
         this.firehoseSubscription = new FirehoseSubscription();
 
         if (processor != null) {
@@ -53,19 +58,7 @@ public class RawBus<K, V> extends AbstractBus<K, V> {
 
     @Override
     protected void accept(final K key, final V value) {
-        // Backpressure
-        while ((inDispatcherContext.get() == null || !inDispatcherContext.get()) &&
-               !this.firehoseSubscription.maybeClaimSlot()) {
-            try {
-                //LockSupport.parkNanos(10000);
-                Thread.sleep(10); // TODO: Migrate to parknanos
-            } catch (InterruptedException e) {
-                errorHandlerOrThrow(e);
-            }
-        }
-
-        Boolean inContext = inDispatcherContext.get();
-        if (inContext != null && inContext) {
+        if (inDispatcherContext.get()) {
             // Since we're already in the context, we should route syncronously
             try {
                 route(key, value);
@@ -73,16 +66,26 @@ public class RawBus<K, V> extends AbstractBus<K, V> {
                 errorHandlerOrThrow(outer);
             }
         } else {
+            // Backpressure
+            while (!firehoseSubscription.maybeClaimSlot()) {
+              try {
+                //LockSupport.parkNanos(10000);
+                Thread.sleep(10); // TODO: Migrate to parknanos
+              } catch (InterruptedException e) {
+                errorHandlerOrThrow(e);
+              }
+            }
+
             processor.onNext(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        inDispatcherContext.set(true);
+                        inDispatcherContext.set(Boolean.TRUE);
                         route(key, value);
                     } catch (Throwable outer) {
                         errorHandlerOrThrow(new RuntimeException("Exception in key: " + key.toString(), outer));
                     } finally {
-                        inDispatcherContext.set(false);
+                        inDispatcherContext.set(Boolean.FALSE);
                     }
                 }
             });

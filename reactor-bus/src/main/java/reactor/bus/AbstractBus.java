@@ -19,6 +19,9 @@ package reactor.bus;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -30,7 +33,6 @@ import reactor.bus.registry.Registry;
 import reactor.bus.routing.ConsumerFilteringRouter;
 import reactor.bus.routing.Router;
 import reactor.bus.selector.Selector;
-import reactor.bus.stream.BusStream;
 import reactor.core.flow.MultiProducer;
 import reactor.core.flow.Producer;
 import reactor.core.state.Introspectable;
@@ -38,10 +40,7 @@ import reactor.core.util.Assert;
 import reactor.core.util.Exceptions;
 import reactor.core.util.Logger;
 import reactor.core.util.UUIDUtils;
-import reactor.fn.BiConsumer;
-import reactor.fn.Consumer;
-import reactor.fn.Supplier;
-import reactor.rx.Stream;
+import reactor.rx.Fluxion;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -231,8 +230,8 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
    * @return a new {@link Publisher}
    * @since 2.0
    */
-  public Stream<? extends V> on(Selector broadcastSelector) {
-    return new BusStream<>(this, broadcastSelector);
+  public Fluxion<? extends V> on(Selector broadcastSelector) {
+    return new BusFluxion<>(this, broadcastSelector);
   }
 
   @Override

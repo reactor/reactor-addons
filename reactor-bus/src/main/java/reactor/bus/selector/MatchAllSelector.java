@@ -17,8 +17,7 @@
 package reactor.bus.selector;
 
 import java.util.Map;
-
-import reactor.fn.Function;
+import java.util.function.Function;
 
 /**
  * Implementation of {@link Selector} that matches

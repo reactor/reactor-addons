@@ -1,10 +1,9 @@
 package reactor.pipe.concurrent;
 
-import reactor.fn.Supplier;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 public class LazyVar<T> {
 

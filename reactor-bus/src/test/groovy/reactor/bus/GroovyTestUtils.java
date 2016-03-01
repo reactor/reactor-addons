@@ -16,14 +16,15 @@
 
 package reactor.bus;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+
 import groovy.lang.Closure;
 import groovy.lang.GString;
 import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
-import reactor.fn.Consumer;
-import reactor.fn.Function;
-import reactor.fn.Predicate;
-import reactor.fn.Supplier;
 
 /**
  * @author Jon Brisbin

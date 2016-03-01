@@ -16,8 +16,9 @@
 
 package reactor.bus.support;
 
+import java.util.function.Consumer;
+
 import reactor.bus.Event;
-import reactor.fn.Consumer;
 
 /**
  * Simple {@link reactor.bus.Event} implementation that attaches a callback to an {@link reactor.bus.Event} and

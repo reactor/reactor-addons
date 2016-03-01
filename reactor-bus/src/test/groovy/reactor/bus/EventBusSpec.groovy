@@ -21,14 +21,14 @@ import reactor.bus.filter.RoundRobinFilter
 import reactor.bus.routing.ConsumerFilteringRouter
 import reactor.bus.selector.Selectors
 import reactor.core.publisher.WorkQueueProcessor
-import reactor.fn.Consumer
+import reactor.rx.Fluxion
 import reactor.rx.Promise
-import reactor.rx.Stream
 import spock.lang.Specification
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Consumer
 
 import static reactor.bus.GroovyTestUtils.*
 import static reactor.bus.selector.Selectors.*
@@ -394,7 +394,7 @@ class EventBusSpec extends Specification {
 
 	when: "multithreaded bus can be serialized"
 	r = EventBus.create(WorkQueueProcessor.create("bus", 8), 4)
-	def tail = Stream.from(r.on(selector)).map { it.data }.doOnNext { sleep(100) }.elapsed().log().take(10).buffer()
+	def tail = Fluxion.from(r.on(selector)).map { it.data }.doOnNext { sleep(100) }.elapsed().log().take(10).buffer()
 			.promise()
 
 	10.times {

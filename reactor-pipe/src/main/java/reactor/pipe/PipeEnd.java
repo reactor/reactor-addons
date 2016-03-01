@@ -1,18 +1,18 @@
 package reactor.pipe;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import org.pcollections.PVector;
 import reactor.bus.AbstractBus;
 import reactor.bus.Bus;
 import reactor.bus.selector.PredicateSelector;
 import reactor.bus.selector.Selector;
-import reactor.fn.BiConsumer;
-import reactor.fn.Function;
-import reactor.fn.Predicate;
 import reactor.pipe.key.Key;
 import reactor.pipe.stream.StreamSupplier;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * FinalizedMatchedPipe represents a stream builder that can take values
