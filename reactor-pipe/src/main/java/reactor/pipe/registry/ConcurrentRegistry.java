@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import org.pcollections.HashTreePMap;
@@ -13,6 +14,8 @@ import org.pcollections.TreePVector;
 import reactor.bus.registry.Registration;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
+import reactor.core.tuple.Tuple;
+import reactor.core.tuple.Tuple2;
 import reactor.pipe.concurrent.Atom;
 
 public class ConcurrentRegistry<K, V> implements Registry<K, V> {
@@ -78,7 +81,15 @@ public class ConcurrentRegistry<K, V> implements Registry<K, V> {
 
     @Override
     public boolean unregister(K key) {
-        return false;
+        return exactKeyMatches.updateAndReturnOther(
+          new Function<PMap<K, PVector<Registration<K, V>>>, Tuple2<PMap<K, PVector<Registration<K, V>>>, Boolean>>() {
+              @Override
+              public Tuple2<PMap<K, PVector<Registration<K, V>>>, Boolean> apply(
+                PMap<K, PVector<Registration<K, V>>> m) {
+                  PMap<K, PVector<Registration<K, V>>> newMap = m.minus(key);
+                  return Tuple.of(newMap, !m.containsKey(key));
+              }
+          });
     }
 
 
