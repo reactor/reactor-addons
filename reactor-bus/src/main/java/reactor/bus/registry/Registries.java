@@ -43,7 +43,7 @@ public abstract class Registries {
 
 	public static <K, V> Registry<K, V> create(boolean useCache, boolean cacheNotFound, Consumer<K> onNotFound) {
 		if (GS_COLLECTIONS_AVAILABLE) {
-			return new reactor.bus.registry.CachingRegistry<K, V>(useCache, cacheNotFound, onNotFound);
+			return new reactor.bus.registry.CachingRegistry<K, V>(onNotFound);
 		} else {
 			return new reactor.bus.registry.SimpleCachingRegistry<K, V>(useCache, cacheNotFound, onNotFound);
 		}
