@@ -242,6 +242,36 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
     }
 
 
+    @Test
+    public void tailRecRedispatchTest() throws InterruptedException {
+        WorkQueueProcessor<Runnable> processor = WorkQueueProcessor.<Runnable>create(
+            Executors.newFixedThreadPool(1),
+            2);
+        RawBus<Key, Object> bus = new RawBus<Key, Object>(new ConcurrentRegistry<>(),
+                                                          processor,
+                                                          1,
+                                                          new NoOpRouter<>(),
+                                                          null,
+                                                          null);
+
+        final int iterations = 200;
+        CountDownLatch latch = new CountDownLatch(iterations);
+        Key k = Key.wrap("source", "first");
+        integerPipe.map((i) -> i - 1)
+            .consume((i) ->{
+                LockSupport.parkNanos(10000);
+                if (i > 0) {
+                    bus.notify(k, i);
+                }
+                latch.countDown();
+            })
+            .subscribe(k, bus);
+
+        bus.notify(k, iterations);
+
+        latch.await(10, TimeUnit.SECONDS);
+        assertThat(latch.getCount(), is(0L));
+    }
 
     @Test
     public void testSmoke() throws InterruptedException { // Tests backpressure and in-thread dispatches
