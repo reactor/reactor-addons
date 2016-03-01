@@ -74,7 +74,7 @@ public class ConsumerFilteringRouter implements Router<Object, Event<?>> {
 					reg.cancel();
 				} catch (Throwable t) {
 					if (null != errorConsumer) {
-						errorConsumer.accept(Exceptions.addValueAsLastCause(t, event));
+						errorConsumer.accept(t);
 					} else {
 						logger.error("Event routing failed for {}: {}", reg.getObject(), t.getMessage(), t);
 						if (RuntimeException.class.isInstance(t)) {
@@ -95,7 +95,7 @@ public class ConsumerFilteringRouter implements Router<Object, Event<?>> {
 				completionConsumer.accept(event);
 			} catch (Throwable t) {
 				if (null != errorConsumer) {
-					errorConsumer.accept(Exceptions.addValueAsLastCause(t, event));
+					errorConsumer.accept(t);
 				} else {
 					logger.error("Completion Consumer {} failed: {}", completionConsumer, t.getMessage(), t);
 				}
