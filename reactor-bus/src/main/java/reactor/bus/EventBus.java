@@ -16,17 +16,6 @@
 
 package reactor.bus;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -41,16 +30,18 @@ import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
 import reactor.bus.spec.EventBusSpec;
 import reactor.core.flow.Loopback;
-import reactor.core.flow.Producer;
-import reactor.core.state.Introspectable;
-import reactor.core.subscriber.Subscribers;
-import reactor.core.subscriber.SubscriptionWithContext;
 import reactor.core.util.Assert;
 import reactor.core.util.BackpressureUtils;
-import reactor.core.util.EmptySubscription;
 import reactor.core.util.Logger;
 import reactor.core.util.ReactiveStateUtils;
 import reactor.rx.Fluxion;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -65,10 +56,7 @@ import reactor.rx.Fluxion;
  * @author Andy Wilkinson
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<Event<?>>,
-                                                                       Loopback {
-
-	private final Processor<Event<?>, Event<?>> processor;
+public class EventBus extends RawBus<Object, Event<?>> implements Loopback {
 
 	/**
 	 * Create a new {@link reactor.bus.spec.EventBusSpec} to configure a Reactor.
@@ -94,7 +82,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param processor The {@link Processor} to use.
 	 * @return A new {@link EventBus}
 	 */
-	public static EventBus create(Processor<Event<?>, Event<?>> processor) {
+	public static EventBus create(Processor<Runnable, Runnable> processor) {
 		return create(processor, 1);
 	}
 
@@ -109,7 +97,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 *                    resulting
 	 * @return A new {@link EventBus}
 	 */
-	public static EventBus create(Processor<Event<?>, Event<?>> processor, int concurrency) {
+	public static EventBus create(Processor<Runnable, Runnable> processor, int concurrency) {
 		return new EventBus(processor, concurrency);
 	}
 
@@ -128,7 +116,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 *                    will be meaningful as they distribute their messages, default RS behavior is to broadcast
 	 *                    resulting
 	 */
-	public EventBus(@Nullable Processor<Event<?>, Event<?>> processor, int concurrency) {
+	public EventBus(@Nullable Processor<Runnable, Runnable> processor, int concurrency) {
 		this(processor, concurrency, null);
 	}
 
@@ -151,23 +139,23 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 *                    Selector#matches(Object) match} the notification key and does not perform any type conversion
 	 *                    will be used.
 	 */
-	public EventBus(@Nullable Processor<Event<?>, Event<?>> processor,
-	                int concurrency,
-	                @Nullable Router router) {
+	public EventBus(@Nullable Processor<Runnable, Runnable> processor,
+					int concurrency,
+					@Nullable Router router) {
 		this(processor, concurrency, router, null, null);
 	}
 
-	public EventBus(@Nullable Processor<Event<?>, Event<?>> processor,
-	                int concurrency,
-	                @Nullable Router router,
-	                @Nullable Consumer<Throwable> processorErrorHandler,
-	                @Nullable final Consumer<Throwable> uncaughtErrorHandler) {
+	public EventBus(@Nullable Processor<Runnable, Runnable> processor,
+					int concurrency,
+					@Nullable Router router,
+					@Nullable Consumer<Throwable> processorErrorHandler,
+					@Nullable final Consumer<Throwable> uncaughtErrorHandler) {
 		this(Registries.<Object, BiConsumer<Object, ? extends Event<?>>>create(),
-		  processor,
-		  concurrency,
-		  router,
-		  processorErrorHandler,
-		  uncaughtErrorHandler);
+			 processor,
+			 concurrency,
+			 router,
+			 processorErrorHandler,
+			 uncaughtErrorHandler);
 	}
 
 	/**
@@ -194,87 +182,21 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 */
 	@SuppressWarnings("unchecked")
 	public EventBus(@Nonnull final Registry<Object, BiConsumer<Object, ? extends Event<?>>> consumerRegistry,
-	                @Nullable Processor<Event<?>, Event<?>> processor,
-	                int concurrency,
-	                @Nullable final Router router,
-									@Nullable Consumer<Throwable> processorErrorHandler,
-	                @Nullable final Consumer<Throwable> uncaughtErrorHandler) {
+					@Nullable Processor<Runnable, Runnable> processor,
+					int concurrency,
+					@Nullable final Router router,
+					@Nullable Consumer<Throwable> processorErrorHandler,
+					@Nullable final Consumer<Throwable> uncaughtErrorHandler) {
 		super(consumerRegistry,
-					concurrency,
-					router,
-					processorErrorHandler != null ? processorErrorHandler : new UncaughtExceptionConsumer(consumerRegistry),
-					uncaughtErrorHandler);
+			  processor,
+			  concurrency,
+			  router,
+			  processorErrorHandler != null ? processorErrorHandler : new UncaughtExceptionConsumer(consumerRegistry),
+			  uncaughtErrorHandler);
 
 		Assert.notNull(consumerRegistry, "Consumer Registry cannot be null.");
-		this.processor = processor;
-
-		if(processor != null) {
-			for (int i = 0; i < concurrency; i++) {
-				processor.subscribe(Subscribers.unbounded(new DispatchEventSubscriber(), getProcessorErrorHandler()));
-			}
-			processor.onSubscribe(EmptySubscription.INSTANCE);
-		}
-
 		this.on(new ClassSelector(Throwable.class), new BusErrorConsumer(uncaughtErrorHandler));
 	}
-
-	/**
-	 * Get the {@link Processor} currently in use.
-	 *
-	 * @return The {@link Processor}.
-	 */
-	public Processor<Event<?>, Event<?>> getProcessor() {
-		return processor;
-	}
-
-	@Override
-	public Object connectedInput() {
-		return processor;
-	}
-
-	@Override
-	public Object connectedOutput() {
-		return processor;
-	}
-
-	@Override
-	public <T extends Event<?>> Registration<Object, BiConsumer<Object, ? extends Event<?>>> on(final Selector selector,
-																								final Consumer<T> consumer) {
-		Assert.notNull(consumer, "Consumer cannot be null.");
-
-		final Class<?> tClass = extractGeneric(consumer);
-
-		Consumer<T> proxyConsumer = new EventBusConsumer<>(selector, tClass, consumer);
-
-		return super.on(selector, proxyConsumer);
-	}
-
-	private Class<?> extractGeneric(Consumer<? extends Event<?>> consumer) {
-		if (consumer.getClass().getGenericInterfaces().length == 0) return null;
-
-		Type t = consumer.getClass().getGenericInterfaces()[0];
-		if (ParameterizedType.class.isAssignableFrom(t.getClass())) {
-			ParameterizedType pt = (ParameterizedType) t;
-
-			if (pt.getActualTypeArguments().length == 0) return null;
-
-			t = pt.getActualTypeArguments()[0];
-			if (ParameterizedType.class.isAssignableFrom(t.getClass())) {
-				pt = (ParameterizedType) t;
-
-				if (pt.getActualTypeArguments().length == 0) return null;
-
-				Type t1 = pt.getActualTypeArguments()[0];
-				if (t1 instanceof ParameterizedType) {
-					return (Class<?>) ((ParameterizedType) t1).getRawType();
-				} else if (t1 instanceof Class) {
-					return (Class<?>) t1;
-				}
-			}
-		}
-		return null;
-	}
-
 
 	/**
 	 * Attach a Stream to the {@link Bus} with the specified {@link Selector}.
@@ -285,20 +207,6 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 */
 	public Fluxion<? extends Event<?>> on(Selector broadcastSelector) {
 		return new BusFluxion<>(this, broadcastSelector);
-	}
-
-	protected void accept(Object key, Event<?> ev) {
-		ev.setKey(key);
-
-		if (processor == null) {
-			try {
-				accept(ev);
-			} catch (Throwable throwable) {
-				errorHandlerOrThrow(throwable);
-			}
-		} else {
-			processor.onNext(ev);
-		}
 	}
 
 	/**
@@ -327,7 +235,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @since 2.0
 	 */
 	public final <T> EventBus notify(@Nonnull final Publisher<? extends T> source, @Nonnull final Function<? super T,
-			Object> keyMapper) {
+		Object> keyMapper) {
 		source.subscribe(new EventSubscriber<T>(keyMapper));
 		return this;
 	}
@@ -339,8 +247,8 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param fn  The transformative {@link java.util.function.Function} to call to receive an {@link Event}
 	 * @return A {@link Registration} object that allows the caller to interact with the given mapping
 	 */
-	public <T extends Event<?>, V> Registration<?, BiConsumer<Object, ? extends Event<?>>> receive(Selector sel,
-			Function<T, V> fn) {
+	public <T extends ReplyToEvent<?>, V> Registration<?, BiConsumer<Object, ? extends Event<?>>> receive(Selector sel,
+																										  Function<T, V> fn) {
 		return on(sel, new ReplyToConsumer<>(fn));
 	}
 
@@ -366,7 +274,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @return {@literal this}
 	 */
 	public EventBus notify(Object key) {
-		notify(key, new Event<>(Void.class));
+		notify(key, Event.VOID);
 		return this;
 	}
 
@@ -380,8 +288,8 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param ev  The {@literal Event}
 	 * @return {@literal this}
 	 */
-	public EventBus send(Object key, Event<?> ev) {
-		notify(key, new ReplyToEvent(ev, this));
+	public EventBus send(Object key, Object replyTo, Event<?> ev) {
+		notify(key, new ReplyToEvent(ev, replyTo, this));
 		return this;
 	}
 
@@ -396,8 +304,8 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param supplier The {@link Supplier} that will provide the actual {@link Event} instance
 	 * @return {@literal this}
 	 */
-	public EventBus send(Object key, Supplier<? extends Event<?>> supplier) {
-		notify(key, new ReplyToEvent(supplier.get(), this));
+	public EventBus send(Object key, Object replyTo, Supplier<? extends Event<?>> supplier) {
+		notify(key, new ReplyToEvent(supplier.get(), replyTo, this));
 		return this;
 	}
 
@@ -411,8 +319,8 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param replyTo The {@link Bus} on which to invoke the notify method
 	 * @return {@literal this}
 	 */
-	public EventBus send(Object key, Event<?> ev, Bus replyTo) {
-		notify(key, new ReplyToEvent(ev, replyTo));
+	public EventBus send(Object key, Object replyTo, Event<?> ev, Bus replyBus) {
+		notify(key, new ReplyToEvent(ev, replyTo, replyBus));
 		return this;
 	}
 
@@ -430,8 +338,8 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param replyTo  The {@link Bus} on which to invoke the notify method
 	 * @return {@literal this}
 	 */
-	public EventBus send(Object key, Supplier<? extends Event<?>> supplier, Bus replyTo) {
-		notify(key, new ReplyToEvent(supplier.get(), replyTo));
+	public EventBus send(Object key, Object replyTo, Supplier<? extends Event<?>> supplier, Bus replyBys) {
+		notify(key, new ReplyToEvent(supplier.get(), replyTo, replyBys));
 		return this;
 	}
 
@@ -445,10 +353,10 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param reply The consumer to register as a reply handler.
 	 * @return {@literal this}
 	 */
-	public <T extends Event<?>> EventBus sendAndReceive(Object key, Event<?> event, Consumer<T> reply) {
+	public <T extends Event<?>> EventBus sendAndReceive(Object key, Object replyTo, Event<?> event, Consumer<T> reply) {
 		Selector sel = Selectors.anonymous();
 		on(sel, reply).cancelAfterUse();
-		notify(key, event.setReplyTo(sel.getObject()));
+		notify(key, new ReplyToEvent<>(event, replyTo, this));
 		return this;
 	}
 
@@ -463,19 +371,9 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param reply    The consumer to register as a reply handler.
 	 * @return {@literal this}
 	 */
-	public <T extends Event<?>> EventBus sendAndReceive(Object key, Supplier<? extends Event<?>> supplier, Consumer<T>
-	  reply) {
-		return sendAndReceive(key, supplier.get(), reply);
-	}
-
-	/**
-	 * Create an optimized path for publishing notifications to the given key.
-	 *
-	 * @param key The key to be matched by {@link Selector Selectors}
-	 * @return a {@link Consumer} to invoke with the {@link Event Events} to publish
-	 */
-	public <T> Consumer<Event<T>> prepare(final Object key) {
-		return new PreparedConsumer<>(key);
+	public <T extends Event<?>> EventBus sendAndReceive(Object key, Object replyTo,
+														Supplier<? extends Event<?>> supplier, Consumer<T> reply) {
+		return sendAndReceive(key, replyTo, supplier.get(), reply);
 	}
 
 	/**
@@ -487,7 +385,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * @param <T>      The type of the data.
 	 */
 	public <T> void schedule(final Consumer<T> consumer, final T data) {
-		if (processor == null) {
+		if (getProcessor() == null) {
 			try {
 				consumer.accept(data);
 			} catch (Throwable t) {
@@ -496,94 +394,51 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 			return;
 		}
 
-		processor.onNext(new ConsumerEvent<>(consumer, data));
-	}
-
-	@Override
-	public void accept(Event<?> event) {
-		if (event.getClass() == ConsumerEvent.class) {
-			((ConsumerEvent) event).run();
-		} else {
-			route(event.getKey(), event);
-		}
+		getProcessor().onNext(new Runnable() {
+			@Override
+			public void run() {
+				consumer.accept(data);
+			}
+		});
 	}
 
 	public static class ReplyToEvent<T> extends Event<T> {
 		private static final long serialVersionUID = 1937884784799135647L;
-		private final Bus replyToObservable;
+		private final Bus    replyToObservable;
+		private final Object replyTo;
 
-		private ReplyToEvent(Headers headers, T data, Object replyTo,
-		                     Bus replyToObservable,
-		                     Consumer<Throwable> errorConsumer) {
-			super(headers, data, errorConsumer);
-			setReplyTo(replyTo);
-			this.replyToObservable = replyToObservable;
+		private ReplyToEvent(Event<T> event,
+							 Object replyTo,
+							 Bus replyToObservable) {
+			this(event.getData(),
+				 event.getHeaders(),
+				 event.getErrorConsumer(),
+				 replyTo,
+				 replyToObservable);
 		}
 
-		private ReplyToEvent(Event<T> delegate, Bus replyToObservable) {
-			this(delegate.getHeaders(), delegate.getData(), delegate.getReplyTo(), replyToObservable,
-			  delegate.getErrorConsumer());
+		private ReplyToEvent(T data,
+							 Headers headers,
+							 Consumer<Throwable> errorConsumer,
+							 Object replyTo,
+							 Bus replyToObservable) {
+			super(data, headers, errorConsumer);
+			this.replyTo = replyTo;
+			this.replyToObservable = replyToObservable;
 		}
 
 		@Override
 		public <X> Event<X> copy(X data) {
-			return new ReplyToEvent<X>(getHeaders(), data, getReplyTo(), replyToObservable, getErrorConsumer());
+			return new ReplyToEvent<X>(data, getHeaders(), getErrorConsumer(), getReplyTo(),
+									   replyToObservable);
+		}
+
+		public Object getReplyTo() {
+			return replyTo;
 		}
 
 		public Bus getReplyToObservable() {
 			return replyToObservable;
-		}
-	}
-
-	private static class ConsumerEvent<T> extends Event<Consumer<T>> {
-		private final T data;
-
-		public ConsumerEvent(Consumer<T> consumer, T data) {
-			super(consumer);
-			this.data = data;
-		}
-
-		void run() {
-			getData().accept(data);
-		}
-	}
-
-	private static class EventBusConsumer<T extends Event<?>> implements Consumer<T>, Introspectable, Producer {
-
-		private final Selector selector;
-		private final Class<?>    tClass;
-		private final Consumer<T> consumer;
-
-		public EventBusConsumer(Selector selector, Class<?> tClass, Consumer<T> consumer) {
-			this.selector = selector;
-			this.tClass = tClass;
-			this.consumer = consumer;
-		}
-
-		@Override
-		public void accept(T e) {
-			if (null != selector.getHeaderResolver()) {
-				Function<Object, Map<String,Object>> resolver = selector.getHeaderResolver();
-				e.getHeaders().setAll(resolver.apply(e.getKey()));
-			}
-			if (tClass == null || e.getData() == null || tClass.isAssignableFrom(e.getData().getClass())) {
-				consumer.accept(e);
-			}
-		}
-
-		@Override
-		public Object downstream() {
-			return consumer;
-		}
-
-		@Override
-		public int getMode() {
-			return TRACE_ONLY;
-		}
-
-		@Override
-		public String getName() {
-			return EventBusConsumer.class.getSimpleName();
 		}
 	}
 
@@ -599,7 +454,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		public void accept(Throwable t) {
 			Class<? extends Throwable> type = t.getClass();
 			DEFAULT_EVENT_ROUTER.route(type,
-									   Event.wrap(t),
+									   new Event<>(t, null, null),
 									   consumerRegistry.select(type),
 									   null,
 									   null);
@@ -626,7 +481,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		}
 	}
 
-	public class ReplyToConsumer<E extends Event<?>, V> implements Consumer<E> {
+	public class ReplyToConsumer<E extends ReplyToEvent<?>, V> implements Consumer<E> {
 		private final Function<E, V> fn;
 
 		private ReplyToConsumer(Function<E, V> fn) {
@@ -637,11 +492,9 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		public void accept(E ev) {
 			Bus replyToObservable = EventBus.this;
 
-			if (ReplyToEvent.class.isAssignableFrom(ev.getClass())) {
-				Bus o = ((ReplyToEvent<?>) ev).getReplyToObservable();
-				if (null != o) {
-					replyToObservable = o;
-				}
+			Bus o = ev.getReplyToObservable();
+			if (null != o) {
+				replyToObservable = o;
 			}
 
 			try {
@@ -649,7 +502,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 
 				Event<?> replyEv;
 				if (null == reply) {
-					replyEv = new Event<Void>(Void.class);
+					replyEv = Event.VOID;
 				} else {
 					replyEv = (Event.class.isAssignableFrom(reply.getClass()) ? (Event<?>) reply : Event.wrap(reply));
 				}
@@ -666,42 +519,10 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	}
 
 	/**
-	 *
 	 * @return
 	 */
-	public ReactiveStateUtils.Graph debug(){
+	public ReactiveStateUtils.Graph debug() {
 		return ReactiveStateUtils.scan(this);
-	}
-
-	private final class PreparedConsumer<T> implements Consumer<Event<T>> {
-
-		final         List<Registration<Object, ? extends BiConsumer<Object, ? extends Event<?>>>> regs;
-		final         int                                                                          size;
-		private final Object                                                                       key;
-
-		public PreparedConsumer(Object key) {
-			this.key = key;
-			regs = getConsumerRegistry().select(key);
-			size = regs.size();
-		}
-
-		@Override
-		public void accept(Event<T> ev) {
-			for (int i = 0; i < size; i++) {
-				Registration<Object, ? extends Consumer<Event<T>>> reg =
-				  (Registration<Object, ? extends Consumer<Event<T>>>) regs.get(i);
-				ev.setKey(key);
-				if (processor == null) {
-					try {
-						accept(ev);
-					} catch (Throwable t) {
-						errorHandlerOrThrow(t);
-					}
-				} else {
-					schedule(reg.getObject(), ev);
-				}
-			}
-		}
 	}
 
 	private final class EventSubscriber<T> implements Subscriber<T> {
@@ -715,7 +536,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 
 		@Override
 		public void onSubscribe(Subscription s) {
-			if(BackpressureUtils.validate(this.s, s)) {
+			if (BackpressureUtils.validate(this.s, s)) {
 				this.s = s;
 				s.request(Long.MAX_VALUE);
 			}
@@ -737,11 +558,4 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		}
 	}
 
-	private final class DispatchEventSubscriber implements BiConsumer<Event<?>, SubscriptionWithContext<Void>> {
-
-		@Override
-		public void accept(Event<?> event, SubscriptionWithContext<Void> voidSubscriptionWithContext) {
-			EventBus.this.accept(event);
-		}
-	}
 }
