@@ -39,7 +39,7 @@ import reactor.core.util.UUIDUtils;
  * @author Stephane Maldini
  * @author Andy Wilkinson
  */
-public class Event<T> implements Serializable, Runnable {
+public class Event<T> implements Serializable {
 
 	private static final long serialVersionUID = -2476263092040373361L;
 	private final transient Consumer<Throwable> errorConsumer;
@@ -246,8 +246,10 @@ public class Event<T> implements Serializable, Runnable {
 		}
 	}
 
-	@Override
-	public void run() {
+	/**
+	 * Reuse this event
+	 */
+	public void recycle() {
 		this.id = null;
 		if (null != this.headers) {
 			this.headers.headers.clear();
