@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import reactor.core.state.Recyclable;
 import reactor.core.tuple.Tuple;
 import reactor.core.tuple.Tuple2;
 import reactor.core.util.Assert;
@@ -40,7 +39,7 @@ import reactor.core.util.UUIDUtils;
  * @author Stephane Maldini
  * @author Andy Wilkinson
  */
-public class Event<T> implements Serializable, Recyclable {
+public class Event<T> implements Serializable, Runnable {
 
 	private static final long serialVersionUID = -2476263092040373361L;
 	private final transient Consumer<Throwable> errorConsumer;
@@ -248,7 +247,7 @@ public class Event<T> implements Serializable, Recyclable {
 	}
 
 	@Override
-	public void recycle() {
+	public void run() {
 		this.id = null;
 		if (null != this.headers) {
 			this.headers.headers.clear();
