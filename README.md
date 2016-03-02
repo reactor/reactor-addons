@@ -41,9 +41,6 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
       // Reactor Core
       compile "io.projectreactor:reactor-core:$reactorVersion"
 
-      // Reactor Stream
-      // compile "io.projectreactor:reactor-stream:$reactorVersion"
-
       // Reactor Spring
       // compile "io.projectreactor:reactor-spring:$reactorVersion"
 
