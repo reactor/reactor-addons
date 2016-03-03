@@ -1,6 +1,5 @@
 rootProject.name = 'reactor'
 
 include 'reactor-bus',
-		'reactor-pipe',
 		'reactor-logback',
 		'docs'
