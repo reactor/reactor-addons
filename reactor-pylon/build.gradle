@@ -144,7 +144,6 @@ dependencies {
   compile "io.netty:netty-all:$nettyVersion"
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
-  testCompile "io.projectreactor:reactor-stream:$reactorVersion"
   testCompile "io.projectreactor:reactor-bus:$reactorVersion"
   testCompile "io.projectreactor:reactor-aeron:$reactorVersion"
 
