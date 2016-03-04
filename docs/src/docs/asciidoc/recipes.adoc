@@ -215,7 +215,7 @@ Assert.assertEquals(promise.get().get(3), "Alternative Message");
 Assert.assertEquals(promise.get().get(4), "test7");
 Assert.assertEquals(promise.get().get(5), "test8");
 ----
-<1> Create the main *hot* `Broadcaster` stream to send data later on.
+<1> Create the main *hot* `EmitterProcessor` stream to send data later on.
 <2> Create a simple fallback stream when sh*t hits the fan.
 <3> Create a `SwitchAction` which is a `Processor` accepting new `Publisher` to consume data from.
 <4> Prepare shared counters for successes and failures.
