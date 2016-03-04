@@ -161,17 +161,17 @@ In this scenario, we want to keep alive a `Stream` even if errors might fly in. 
 .Quick (and dirty) Circuit Breaker test
 [source,java]
 ----
-final Broadcaster<String> closeCircuit = Broadcaster.create(); // <1>
+final EmitterProcessor<String> closeCircuit = EmitterProcessor.create(); // <1>
 final Flux<String> openCircuit = Flux.just("Alternative Message"); // <2>
 
-final Action<Publisher<? extends String>, String> circuitSwitcher = Flux.switchOnNext(); // <3>
+final FluxProcessor<Publisher<? extends String>, String> circuitSwitcher = Flux.switchOnNext(); // <3>
 
 final AtomicInteger successes = new AtomicInteger(); // <4>
 final AtomicInteger failures = new AtomicInteger();
 
 final int maxErrors = 3;
 
-Promise<List<String>> promise = // <5>
+Mono<List<String>> promise = // <5>
 		circuitSwitcher // <6>
 			.doOnNext(d -> successes.incrementAndGet()) // <7>
 			.when(Throwable.class, error -> failures.incrementAndGet())
@@ -190,7 +190,8 @@ Promise<List<String>> promise = // <5>
 				}
 			})
 			.retry() // <11>
-			.toList(); // <5>
+			.toList()
+			.subscribe(); // <5>
 
 circuitSwitcher.onNext(closeCircuit); // <12>
 
