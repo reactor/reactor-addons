@@ -43,7 +43,7 @@ public class PylonTests {
 				      s.submit(s);
 			      }
 			      else {
-				      Exceptions.failWithCancel();
+				      throw Exceptions.failWithCancel();
 			      }
 		      }, 200);
 
