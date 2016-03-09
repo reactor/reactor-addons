@@ -26,7 +26,7 @@ const NexusService = {
     },
 
     checkConnection(nextState, replaceState){
-        if(NexusService.socket == null) {
+        if(this.socket === null) {
             replaceState({nextPathname: nextState.location.pathname}, '/pylon/connect')
         }
     },
