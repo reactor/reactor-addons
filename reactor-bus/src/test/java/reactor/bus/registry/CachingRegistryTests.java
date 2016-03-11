@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 public final class CachingRegistryTests {
 
 	private final AtomicInteger            cacheMisses     = new AtomicInteger();
-	private final Registry<Object, Object> cachingRegistry = new CacheMissCountingCachingRegistry<Object>(cacheMisses);
+	private final Registry<Object, Object> cachingRegistry = new CachingRegistry<>(null);
 
 	@Test
 	public void registrationsWithTheSameSelectorAreOrderedByInsertionOrder() {
@@ -174,20 +174,6 @@ public final class CachingRegistryTests {
 		/*for(Registration<?> registration : registrations){
 			System.out.println (registration.getObject());
 		}*/
-	}
-
-	private static final class CacheMissCountingCachingRegistry<T> extends CachingRegistry<Object, T> {
-		private final AtomicInteger cacheMisses;
-
-		public CacheMissCountingCachingRegistry(AtomicInteger cacheMisses) {
-			super(true, true, null);
-			this.cacheMisses = cacheMisses;
-		}
-
-		@Override
-		protected void cacheMiss(Object key) {
-			this.cacheMisses.incrementAndGet();
-		}
 	}
 
 	public static class Subscription {

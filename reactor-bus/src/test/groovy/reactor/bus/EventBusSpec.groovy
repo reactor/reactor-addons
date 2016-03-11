@@ -178,14 +178,14 @@ class EventBusSpec extends Specification {
 	r.receive(sel, f)
 
 	and: "an Event is triggered"
-	r.send("hello", Event.wrap("Hello World!", replyTo.object))
+	r.send("hello", replyTo.object, Event.wrap("Hello World!"))
 
 	then: "the result should have been updated"
 	result == "Hello World!"
 
 	when: "an event is triggered through Supplier#get()"
 	result = ""
-	r.send("hello", supplier { Event.wrap("Hello World!", replyTo.object) })
+	r.send("hello", replyTo.object, supplier { Event.wrap("Hello World!") })
 
 	then: "the result should have been updated"
 	result == "Hello World!"
@@ -200,14 +200,14 @@ class EventBusSpec extends Specification {
 
 	and: "an event is triggered using the provided eventBus"
 	result = ""
-	r.send("hello", Event.wrap("Hello World!", replyTo.object), r2)
+	r.send("hello", replyTo.object, Event.wrap("Hello World!", ), r2)
 
 	then: "the result should have been updated"
 	result == "Hello World!"
 
 	when: "an event is triggered using the provided eventBus through Supplier#get()"
 	result = ""
-	r.send("hello", supplier { Event.wrap("Hello World!", replyTo.object) }, r2)
+	r.send("hello", replyTo.object, supplier { Event.wrap("Hello World!") }, r2)
 
 	then: "the result should have been updated"
 	result == "Hello World!"
@@ -221,15 +221,14 @@ class EventBusSpec extends Specification {
 	r.on($('testReply3'), consumer { result = it.data })
 
 	and: "send on 'test3'"
-	r.send 'test3', Event.wrap('anything', 'testReply3')
+	r.send 'test3', 'testReply3', Event.wrap('anything')
 
 	then: "result should be null"
 	!result
 
 
 	when: "a registered function rises error"
-	r.receive($('test4'), function { s -> throw new Exception()
-	})
+	r.receive($('test4'), function { s -> throw new Exception() })
 
 	and: "a replyTo consumer listens"
 	result = 'something'
@@ -240,7 +239,7 @@ class EventBusSpec extends Specification {
 	r.on(T(Exception), consumer { e = it } as Consumer<Exception>)
 
 	and: "send on 'test4'"
-	r.send 'test4', Event.wrap('anything', 'testReply4')
+	r.send 'test4', 'testReply4', Event.wrap('anything')
 	println r.debug()
 
 	then: "result should not be null and error called"

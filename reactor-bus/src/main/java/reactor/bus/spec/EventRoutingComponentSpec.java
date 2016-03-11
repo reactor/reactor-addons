@@ -46,7 +46,7 @@ import reactor.core.util.Assert;
  */
 @SuppressWarnings("unchecked")
 public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingComponentSpec<SPEC, TARGET>, TARGET> extends
-  ProcessorComponentSpec<SPEC, TARGET, Event<?>> {
+  ProcessorComponentSpec<SPEC, TARGET, Runnable> {
 
 
 	private EventRoutingStrategy                                     eventRoutingStrategy;
@@ -197,11 +197,11 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 	protected abstract TARGET configure(EventBus reactor);
 
 	@Override
-	protected final TARGET configure(Processor<Event<?>,Event<?>> processor, int concurrency) {
+	protected final TARGET configure(Processor<Runnable, Runnable> processor, int concurrency) {
 		return configure(createReactor(processor, concurrency));
 	}
 
-	private EventBus createReactor(Processor<Event<?>, Event<?>> processor, int concurrency) {
+	private EventBus createReactor(Processor<Runnable, Runnable> processor, int concurrency) {
 		if (traceEventPath) {
 			processor = FluxProcessor.create(processor, Flux.from(processor).log("reactor.bus.log"));
 		}

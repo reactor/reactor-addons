@@ -16,20 +16,13 @@
 
 package reactor.bus;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.function.Consumer;
-
 import reactor.core.tuple.Tuple;
 import reactor.core.tuple.Tuple2;
-import reactor.core.util.Assert;
 import reactor.core.util.UUIDUtils;
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * Wrapper for an object that needs to be processed by {@link java.util.function.Consumer}s.
@@ -41,94 +34,33 @@ import reactor.core.util.UUIDUtils;
  */
 public class Event<T> implements Serializable {
 
+	public static Event<Void> VOID = new Event<Void>(null);
+
 	private static final long serialVersionUID = -2476263092040373361L;
-	private final transient Consumer<Throwable> errorConsumer;
-	private volatile        UUID                id;
-	private volatile        Headers             headers;
-	private volatile        Object              replyTo;
-	private volatile        Object              key;
-	private volatile        T                   data;
+	private final Consumer<Throwable> errorConsumer;
+	private final Headers             headers;
+	private final T                   data;
 
 	/**
-	 * Creates a new Event based on the type T of {@data data}
-	 *
-	 * @param klass
-	 */
-	public Event(Class<T> klass) {
-		this.headers = null;
-		this.data = null;
-		this.errorConsumer = null;
-	}
-
-	/**
-	 * Creates a new Event with the given {@code headers} and {@code data}.
-	 *
-	 * @param headers The headers
-	 * @param data    The data
-	 */
-	public Event(Headers headers, T data) {
-		this.headers = headers;
-		this.data = data;
-		this.errorConsumer = null;
-	}
-
-	/**
-	 * Creates a new Event with the given {@code headers}, {@code data} and {@link java.util.function.Consumer <java.lang
-	 * .Throwable>}.
-	 *
-	 * @param headers       The headers
-	 * @param data          The data
-	 * @param errorConsumer error consumer callback
-	 */
-	public Event(Headers headers, T data, Consumer<Throwable> errorConsumer) {
-		this.headers = headers;
-		this.data = data;
-		this.errorConsumer = errorConsumer;
-	}
-
-	/**
-	 * Creates a new Event with the given {@code data}. The event will have empty headers.
+	 * Creates a new Event with the given {@code key} and {@code data}.
 	 *
 	 * @param data The data
 	 */
 	public Event(T data) {
+		this(data, null, null);
+	}
+
+	/**
+	 * Creates a new Event with the given {@code key}, {@code data}, {@code headers} and {@core errorConsumer}.
+	 *
+	 * @param data          The data
+	 * @param headers       The headers
+	 * @param errorConsumer error consumer callback
+	 */
+	public Event(T data, Headers headers, Consumer<Throwable> errorConsumer) {
 		this.data = data;
-		this.errorConsumer = null;
-	}
-
-	/**
-	 * Wrap the given object with an {@link Event}.
-	 *
-	 * @param obj The object to wrap.
-	 * @return The new {@link Event}.
-	 */
-	public static <T> Event<T> wrap(T obj) {
-		return new Event<T>(obj);
-	}
-
-	/**
-	 * Wrap the given object with an {@link Event} and set the {@link Event#getReplyTo() replyTo} to the given {@code
-	 * replyToKey}.
-	 *
-	 * @param obj        The object to wrap.
-	 * @param replyToKey The key to use as a {@literal replyTo}.
-	 * @param <T>        The type of the given object.
-	 * @return The new {@link Event}.
-	 */
-	public static <T> Event<T> wrap(T obj, Object replyToKey) {
-		return new Event<T>(obj).setReplyTo(replyToKey);
-	}
-
-	/**
-	 * Get the globally-unique id of this event.
-	 *
-	 * @return Unique {@link UUID} of this event.
-	 */
-	public synchronized UUID getId() {
-		if (null == id) {
-			id = UUIDUtils.create();
-		}
-		return id;
+		this.headers = headers;
+		this.errorConsumer = errorConsumer;
 	}
 
 	/**
@@ -136,52 +68,8 @@ public class Event<T> implements Serializable {
 	 *
 	 * @return The Event's Headers
 	 */
-	public synchronized Headers getHeaders() {
-		if (null == headers) {
-			headers = new Headers();
-		}
+	public Headers getHeaders() {
 		return headers;
-	}
-
-	/**
-	 * Get the key to send replies to.
-	 *
-	 * @return The reply-to key
-	 */
-	public Object getReplyTo() {
-		return replyTo;
-	}
-
-	/**
-	 * Set the {@code key} that interested parties should send replies to.
-	 *
-	 * @param replyTo The key to use to notify sender of replies.
-	 * @return {@literal this}
-	 */
-	public Event<T> setReplyTo(Object replyTo) {
-		Assert.notNull(replyTo, "ReplyTo cannot be null.");
-		this.replyTo = replyTo;
-		return this;
-	}
-
-	/**
-	 * Get the key this event was notified on.
-	 *
-	 * @return The key used to notify consumers of this event.
-	 */
-	public Object getKey() {
-		return key;
-	}
-
-	/**
-	 * Set the key this event is being notified with.
-	 *
-	 * @param key The key used to notify consumers of this event.
-	 * @return {@literal this}
-	 */
-	public Event<T> setKey(Object key) {
-		this.key = key;
-		return this;
 	}
 
 	/**
@@ -191,17 +79,6 @@ public class Event<T> implements Serializable {
 	 */
 	public T getData() {
 		return data;
-	}
-
-	/**
-	 * Set the internal data to wrap.
-	 *
-	 * @param data Data to wrap.
-	 * @return {@literal this}
-	 */
-	public Event<T> setData(T data) {
-		this.data = data;
-		return this;
 	}
 
 	/**
@@ -228,11 +105,7 @@ public class Event<T> implements Serializable {
 	 * @return {@literal event copy}
 	 */
 	public <E> Event<E> copy(E data) {
-		if (null != replyTo) {
-			return new Event<E>(headers, data, errorConsumer).setReplyTo(replyTo);
-		} else {
-			return new Event<E>(headers, data, errorConsumer);
-		}
+		return new Event<E>(data, headers, errorConsumer);
 	}
 
 	/**
@@ -246,35 +119,16 @@ public class Event<T> implements Serializable {
 		}
 	}
 
-	/**
-	 * Reuse this event
-	 */
-	public void recycle() {
-		this.id = null;
-		if (null != this.headers) {
-			this.headers.headers.clear();
-		}
-		this.replyTo = null;
-		this.key = null;
-		this.data = null;
-	}
-
-	public void override(Event<T> ev) {
-		this.id = ev.id;
-		this.headers = ev.headers;
-		this.replyTo = ev.replyTo;
-		this.data = ev.data;
+	public static <T> Event<T> wrap(T data) {
+		return new Event<T>(data);
 	}
 
 	@Override
 	public String toString() {
 		return "Event{" +
-		  "id=" + id +
-		  ", headers=" + headers +
-		  ", replyTo=" + replyTo +
-		  ", key=" + key +
-		  ", data=" + data +
-		  '}';
+			   ", headers=" + headers +
+			   ", data=" + data +
+			   '}';
 	}
 
 	/**

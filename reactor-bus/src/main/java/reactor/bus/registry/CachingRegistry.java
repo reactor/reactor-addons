@@ -16,13 +16,6 @@
 
 package reactor.bus.registry;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 import com.gs.collections.api.block.procedure.Procedure;
 import com.gs.collections.api.list.MutableList;
 import com.gs.collections.impl.list.mutable.FastList;
@@ -31,30 +24,31 @@ import com.gs.collections.impl.map.mutable.UnifiedMap;
 import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 /**
  * Implementation of {@link Registry} that uses a partitioned cache that partitions on thread
  * id.
  *
  * @author Jon Brisbin
  * @author Stephane Maldini
+ * @author Oleksandr Petrov
  */
 public class CachingRegistry<K, V> implements Registry<K, V> {
 
-	private final NewThreadLocalRegsFn newThreadLocalRegsFn = new NewThreadLocalRegsFn();
+	private final Consumer<K>                                              onNotFound;
+	private final MultiReaderFastList<Registration<K, ? extends V>>        registrations;
+	private final ConcurrentHashMap<K, List<Registration<K, ? extends V>>> exactKeyMatches;
 
-	private final boolean                                                                           useCache;
-	private final boolean                                                                           cacheNotFound;
-	private final Consumer<K>                                                                       onNotFound;
-	private final MultiReaderFastList<Registration<K, ? extends V>>                                 registrations;
-	private final ConcurrentHashMap<Long, UnifiedMap<Object, List<Registration<K, ? extends V>>>> threadLocalCache;
-
-	CachingRegistry(boolean useCache, boolean cacheNotFound, Consumer<K> onNotFound) {
-		this.useCache = useCache;
-		this.cacheNotFound = cacheNotFound;
+	CachingRegistry(Consumer<K> onNotFound) {
 		this.onNotFound = onNotFound;
 		this.registrations = MultiReaderFastList.newList();
-		this.threadLocalCache = new ConcurrentHashMap<Long, UnifiedMap<Object, List<Registration<K, ? extends
-				  V>>>>();
+		this.exactKeyMatches = new ConcurrentHashMap<K, List<Registration<K, ? extends V>>>();
 	}
 
 	@Override
@@ -69,9 +63,6 @@ public class CachingRegistry<K, V> implements Registry<K, V> {
 				regs.add(reg);
 			}
 		});
-		if (useCache) {
-			threadLocalCache.clear();
-		}
 
 		return reg;
 	}
@@ -97,9 +88,7 @@ public class CachingRegistry<K, V> implements Registry<K, V> {
 						modified.compareAndSet(false, true);
 					}
 				}
-				if (useCache && modified.get()) {
-					threadLocalCache.clear();
-				}
+				exactKeyMatches.remove(key);
 			}
 		});
 		return modified.get();
@@ -112,42 +101,35 @@ public class CachingRegistry<K, V> implements Registry<K, V> {
 
 	@Override
 	public List<Registration<K, ? extends V>> select(K key) {
-		// use a thread-local cache
-		UnifiedMap<Object, List<Registration<K, ? extends V>>> allRegs = threadLocalRegs();
+		List<Registration<K, ? extends V>> selectedRegs = exactKeyMatches.get(key);
 
-		// maybe pull Registrations from cache for this key
-		List<Registration<K, ? extends V>> selectedRegs = null;
-		if (useCache && (null != (selectedRegs = allRegs.get(key)))) {
+		if (selectedRegs == null || selectedRegs.isEmpty()) {
+			List<Registration<K, ? extends V>> delayedRegistrations =
+				registrations.select(reg -> reg.getSelector().matches(key));
+
+			selectedRegs = exactKeyMatches.compute(key,
+												   (k_, regs) -> {
+													   if (regs == null) {
+														   return delayedRegistrations;
+													   } else {
+														   regs.addAll(delayedRegistrations);
+														   return regs;
+													   }
+												   });
+
+			if (selectedRegs.isEmpty()) {
+				onNotFound.accept(key);
+			}
+			return selectedRegs;
+		} else {
 			return selectedRegs;
 		}
-
-		// cache not used or cache miss
-		cacheMiss(key);
-		selectedRegs = FastList.newList();
-
-		// find Registrations based on Selector
-		for (Registration<K, ? extends V> reg : this) {
-			if (reg.getSelector().matches(key)) {
-				selectedRegs.add(reg);
-			}
-		}
-		if (useCache && (!selectedRegs.isEmpty() || cacheNotFound)) {
-			allRegs.put(key, selectedRegs);
-		}
-
-		// nothing found, maybe invoke handler
-		if (selectedRegs.isEmpty() && (null != onNotFound)) {
-			onNotFound.accept(key);
-		}
-
-		// return
-		return selectedRegs;
 	}
 
 	@Override
 	public void clear() {
 		registrations.clear();
-		threadLocalCache.clear();
+		exactKeyMatches.clear();
 	}
 
 	@Override
@@ -160,18 +142,6 @@ public class CachingRegistry<K, V> implements Registry<K, V> {
 		return FastList.newList(registrations).iterator();
 	}
 
-	protected void cacheMiss(Object key) {
-	}
-
-	private UnifiedMap<Object, List<Registration<K, ? extends V>>> threadLocalRegs() {
-		Long threadId = Thread.currentThread().getId();
-		UnifiedMap<Object, List<Registration<K, ? extends V>>> regs;
-		if (null == (regs = threadLocalCache.get(threadId))) {
-			regs = threadLocalCache.computeIfAbsent(threadId, newThreadLocalRegsFn);
-		}
-		return regs;
-	}
-
 	private final class RemoveRegistration implements Runnable {
 		Registration<K, ? extends V> reg;
 
@@ -181,14 +151,14 @@ public class CachingRegistry<K, V> implements Registry<K, V> {
 				@Override
 				public void value(MutableList<Registration<K, ? extends V>> regs) {
 					regs.remove(reg);
-					threadLocalCache.clear();
+					// TODO: cleanup direct lookups
 				}
 			});
 		}
 	}
 
 	private final class NewThreadLocalRegsFn
-			implements Function<Long, UnifiedMap<Object, List<Registration<K, ? extends V>>>> {
+		implements Function<Long, UnifiedMap<Object, List<Registration<K, ? extends V>>>> {
 		@Override
 		public UnifiedMap<Object, List<Registration<K, ? extends V>>> apply(Long aLong) {
 			return UnifiedMap.newMap();
