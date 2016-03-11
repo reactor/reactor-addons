@@ -40,7 +40,7 @@ import reactor.core.util.Assert;
 import reactor.core.util.Exceptions;
 import reactor.core.util.Logger;
 import reactor.core.util.UUIDUtils;
-import reactor.rx.Fluxion;
+import reactor.core.publisher.Flux;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -230,8 +230,8 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
    * @return a new {@link Publisher}
    * @since 2.0
    */
-  public Fluxion<? extends V> on(Selector broadcastSelector) {
-    return new BusFluxion<>(this, broadcastSelector);
+  public Flux<? extends V> on(Selector broadcastSelector) {
+    return new BusFlux<>(this, broadcastSelector);
   }
 
   @Override

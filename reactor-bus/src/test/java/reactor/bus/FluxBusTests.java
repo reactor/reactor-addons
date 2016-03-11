@@ -20,12 +20,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.junit.Test;
-import reactor.bus.fluxion.FluxionCoordinator;
+import reactor.bus.fluxion.FluxCoordinator;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxTap;
 import reactor.core.publisher.TopicProcessor;
-import reactor.rx.Fluxion;
-import reactor.rx.FluxionTap;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,7 +34,7 @@ import static reactor.bus.selector.Selectors.$;
 /**
  * @author Stephane Maldini
  */
-public class FluxionBusTests {
+public class FluxBusTests {
 
 	@Test
 	public void barrierStreamWaitsForAllDelegatesToBeInvoked() throws Exception {
@@ -42,7 +42,7 @@ public class FluxionBusTests {
 		CountDownLatch latch2 = new CountDownLatch(1);
 		CountDownLatch latch3 = new CountDownLatch(1);
 
-		FluxionCoordinator streamCoordinator = new FluxionCoordinator();
+		FluxCoordinator streamCoordinator = new FluxCoordinator();
 
 		EventBus bus = EventBus.create(TopicProcessor.create());
 		bus.on($("hello"), streamCoordinator.wrap((Event<String> ev) -> {
@@ -54,7 +54,7 @@ public class FluxionBusTests {
 			latch1.countDown();
 		}));
 
-		Fluxion.just("Hello World!")
+		Flux.just("Hello World!")
 		       .map(streamCoordinator.wrap((Function<String, String>) String::toUpperCase))
 		       .consume(s -> {
 			       latch2.countDown();
@@ -86,15 +86,15 @@ public class FluxionBusTests {
 
 		final CountDownLatch latch = new CountDownLatch(5);
 
-		FluxionTap<? extends Event<?>> tap = r
+		FluxTap<? extends Event<?>> tap = r
 				.on(key)
 				.doOnNext(d -> latch.countDown())
 				.tap();
 
 		tap.subscribe();
 
-		r.notify(Fluxion.just("1", "2", "3", "4", "5")
-		                .map(Integer::parseInt), key.getObject());
+		r.notify(Flux.just("1", "2", "3", "4", "5")
+		             .map(Integer::parseInt), key.getObject());
 
 		//await(s, is(5));
 		assertThat("latch was counted down", latch.getCount(), is(0l));

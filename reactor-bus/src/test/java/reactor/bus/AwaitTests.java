@@ -20,10 +20,11 @@ import java.util.function.Consumer;
 
 import org.junit.Test;
 import reactor.bus.selector.Selectors;
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoProcessor;
 import reactor.core.publisher.TopicProcessor;
 import reactor.core.publisher.WorkQueueProcessor;
-import reactor.rx.Broadcaster;
-import reactor.rx.Promise;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -40,7 +41,7 @@ public class AwaitTests extends AbstractReactorTest {
 		  64)).get();
 
 		for (int i = 0; i < 10000; i++) {
-			final Promise<String> deferred = Promise.<String>ready(timer);
+			final MonoProcessor<String> deferred = MonoProcessor.create();
 
 			innerReactor.schedule(new Consumer() {
 
@@ -51,7 +52,8 @@ public class AwaitTests extends AbstractReactorTest {
 
 			}, null);
 
-			String latchRes = deferred.await(10_0000);
+
+			String latchRes = deferred.get(5000);
 			assertThat("latch is not counted down : " + deferred.debug(), "foo".equals(latchRes));
 		}
 	}
@@ -62,9 +64,11 @@ public class AwaitTests extends AbstractReactorTest {
 
 		EventBus r = EventBus.create(TopicProcessor.create("rb", 8));
 
-		Broadcaster<Event<Throwable>> stream = Broadcaster.<Event<Throwable>>create();
-		Promise<Long> promise = stream.log().take(16).count().subscribeWith(Promise.prepare());
-		r.on(Selectors.T(Throwable.class), stream.toNextConsumer());
+		EmitterProcessor<Event<Throwable>> stream = EmitterProcessor.create();
+		stream.connect();
+
+		Mono<Long> promise = stream.log().take(16).count().subscribe();
+		r.on(Selectors.T(Throwable.class), stream);
 		r.on(Selectors.$("test"), (Event<?> ev) -> {
 			try {
 				Thread.sleep(100);
@@ -77,9 +81,8 @@ public class AwaitTests extends AbstractReactorTest {
 		for (int i = 0; i < 16; i++) {
 			r.notify("test", Event.wrap("test"));
 		}
-		promise.await(5000);
 
-		assert promise.peek() == 16;
+		assert promise.get(5000) == 16;
 		try{
 			r.getProcessor().onComplete();
 		}catch(Throwable c){

@@ -25,9 +25,9 @@ import reactor.bus.registry.Registration;
 import reactor.bus.selector.Selector;
 import reactor.core.flow.Producer;
 import reactor.core.flow.Receiver;
+import reactor.core.publisher.Flux;
 import reactor.core.state.Introspectable;
-import reactor.rx.Fluxion;
-import reactor.rx.subscriber.SerializedSubscriber;
+import reactor.core.subscriber.Subscribers;
 
 /**
  * Emit signals whenever an Event arrives from the {@link reactor.bus.selector.Selector} topic from the {@link
@@ -43,14 +43,14 @@ import reactor.rx.subscriber.SerializedSubscriber;
  *
  * @author Stephane Maldini
  */
-final class BusFluxion<T> extends Fluxion<T> {
+final class BusFlux<T> extends Flux<T> {
 
 	private final Selector  selector;
 	private final Bus<?, T> observable;
 	private final boolean   ordering;
 
 
-	public BusFluxion(final @Nonnull Bus<?, T> observable,
+	BusFlux(final @Nonnull Bus<?, T> observable,
 	                    final @Nonnull Selector selector) {
 
 		this.selector = selector;
@@ -67,7 +67,7 @@ final class BusFluxion<T> extends Fluxion<T> {
 	public void subscribe(Subscriber<? super T> s) {
 		final Subscriber<? super T> subscriber;
 		if (!ordering) {
-			subscriber = SerializedSubscriber.create(s);
+			subscriber = Subscribers.serialize(s);
 		} else {
 			subscriber = s;
 		}

@@ -200,10 +200,10 @@ project('reactor-bus') {
 	]
 
 	dependencies {
-		compile "io.projectreactor:reactor-stream:$version"
+		compile "io.projectreactor:reactor-core:$version"
 
 		// Rich Collections
-		compile "com.goldmansachs:gs-collections:$gsCollectionsVersion"
+	  	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"
 
 		optional "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
 		optional "com.jayway.jsonpath:json-path:$jsonPathVersion"

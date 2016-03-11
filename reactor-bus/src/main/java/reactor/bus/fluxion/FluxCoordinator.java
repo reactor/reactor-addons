@@ -25,25 +25,25 @@ import java.util.function.Function;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import reactor.core.publisher.Flux;
 import reactor.core.util.Exceptions;
-import reactor.rx.Fluxion;
 
 /**
- * A {@code StreamCoordinator} provides a type of {@code Stream} into which you can bind {@link java.util.function.Consumer
+ * A {@code FluxCoordinator} provides a type of {@code Flux} into which you can bind {@link java.util.function.Consumer
  * Consumers} and {@link java.util.function.Function Functions} from arbitrary components. This allows you to create a {@code
- * Stream} that will be triggered when all bound callbacks have been invoked. The {@code List&lt;Object&gt;} passed
+ * Flux} that will be triggered when all bound callbacks have been invoked. The {@code List&lt;Object&gt;} passed
  * downstream will be the accumulation of all the values either passed into a {@code Consumer} or the return value from
  * a bound {@code Function}. This provides a way for the user to cleanly create a dependency chain of arbitrary
  * callbacks and aggregate the results into a single value.
  * <pre><code>
- * StreamCoordinator coordinator = new StreamCoordinator();
+ * FluxCoordinator coordinator = new FluxCoordinator();
  * <p>
  * EventBus bus = EventBus.create(Environment.get());
- * bus.on($("hello"), StreamCoordinator.wrap((Event<String> ev) -> {
+ * bus.on($("hello"), FluxCoordinator.wrap((Event<String> ev) -> {
  *   System.out.println("got in bus: " + ev.getData());
  * }));
  * <p>
- * Streams.just("Hello World!")
+ * Fluxs.just("Hello World!")
  *        .map(coordinator.wrap((Function<String, String>) String::toUpperCase))
  *        .consume(s -> {
  *          System.out.println("got in stream: " + s);
@@ -55,16 +55,16 @@ import reactor.rx.Fluxion;
  * <p>
  * bus.notify("hello", Event.wrap("Hello World!"));
  * </code></pre>
- * <p> NOTE: To get blocking semantics for the calling thread, you only need to call {@link reactor.rx.Fluxion#next()} to
+ * <p> NOTE: To get blocking semantics for the calling thread, you only need to call {@link Flux#next} to
  * return a {@code Mono}. </p>
  */
-public class FluxionCoordinator extends Fluxion<List<Object>> implements Subscription {
+public class FluxCoordinator extends Flux<List<Object>> implements Subscription {
 
 	@SuppressWarnings("unused")
-	private volatile       int                                           terminated = 0;
+	private volatile       int                                        terminated = 0;
 	@SuppressWarnings("rawtypes")
-	protected static final AtomicIntegerFieldUpdater<FluxionCoordinator> TERMINATED =
-			AtomicIntegerFieldUpdater.newUpdater(FluxionCoordinator.class, "terminated");
+	protected static final AtomicIntegerFieldUpdater<FluxCoordinator> TERMINATED =
+			AtomicIntegerFieldUpdater.newUpdater(FluxCoordinator.class, "terminated");
 
 	private final AtomicInteger wrappedCnt = new AtomicInteger(0);
 	private final AtomicInteger resultCnt  = new AtomicInteger(0);
@@ -74,7 +74,7 @@ public class FluxionCoordinator extends Fluxion<List<Object>> implements Subscri
 
 	public <I, O> Function<I, O> wrap(final Function<I, O> fn) {
 		if (null != downstream && TERMINATED.get(this) == 1) {
-			throw new IllegalStateException("This StreamCoordinator is already complete");
+			throw new IllegalStateException("This FluxCoordinator is already complete");
 		}
 
 		final int valIdx = wrappedCnt.getAndIncrement();
@@ -91,7 +91,7 @@ public class FluxionCoordinator extends Fluxion<List<Object>> implements Subscri
 
 	public <I> Consumer<I> wrap(final Consumer<I> consumer) {
 		if (null != downstream && TERMINATED.get(this) == 1) {
-			throw new IllegalStateException("This StreamCoordinator is already complete");
+			throw new IllegalStateException("This FluxCoordinator is already complete");
 		}
 
 		final int valIdx = wrappedCnt.getAndIncrement();
@@ -130,7 +130,7 @@ public class FluxionCoordinator extends Fluxion<List<Object>> implements Subscri
 	@Override
 	public void subscribe(Subscriber<? super List<Object>> s) {
 		if (null != downstream) {
-			throw new IllegalStateException("This StreamCoordinator already has a Subscriber");
+			throw new IllegalStateException("This FluxCoordinator already has a Subscriber");
 		}
 
 		downstream = s;

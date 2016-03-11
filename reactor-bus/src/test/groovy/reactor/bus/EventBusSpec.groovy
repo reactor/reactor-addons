@@ -20,9 +20,11 @@ import groovy.transform.CompileStatic
 import reactor.bus.filter.RoundRobinFilter
 import reactor.bus.routing.ConsumerFilteringRouter
 import reactor.bus.selector.Selectors
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import reactor.core.publisher.MonoProcessor
 import reactor.core.publisher.WorkQueueProcessor
-import reactor.rx.Fluxion
-import reactor.rx.Promise
+import reactor.core.util.ReactiveStateUtils
 import spock.lang.Specification
 
 import java.util.concurrent.CountDownLatch
@@ -241,7 +243,7 @@ class EventBusSpec extends Specification {
 
 	and: "send on 'test4'"
 	r.send 'test4', Event.wrap('anything', 'testReply4')
-	println r.debug()
+	println ReactiveStateUtils.scan(r)
 
 	then: "result should not be null and error called"
 	result
@@ -382,69 +384,69 @@ class EventBusSpec extends Specification {
 	def r = EventBus.config().get()
 	def selector = anonymous()
 	int event = 0
-	def s = r.on(selector).onBackpressureBuffer().map { it.data }.consume { event = it }
-	println s.debug()
+	def s = r.on(selector).onBackpressureBuffer().log().map { it.data }.consume { event = it }
+	println ReactiveStateUtils.scan(s)
 
 	when: 'accept a value'
 	r.notify(selector.object, Event.wrap(1))
-	println s.debug()
+	println ReactiveStateUtils.scan(s)
 
 	then: 'dispatching works'
 	event == 1
 
 	when: "multithreaded bus can be serialized"
 	r = EventBus.create(WorkQueueProcessor.create("bus", 8), 4)
-	def tail = Fluxion.from(r.on(selector)).map { it.data }.doOnNext { sleep(100) }.elapsed().log().take(10).buffer()
-			.promise()
+	def tail = r.on(selector).map { it.data }.doOnNext { sleep(100) }.elapsed().log().take(10).buffer()
+			.publishNext().subscribe()
 
 	10.times {
 	  r.notify(selector.object, Event.wrap(it))
 	}
 
-	println r.debug()
+	println ReactiveStateUtils.scan(r)
 
 	then:
-	tail.await().size() == 10
-	tail.peek().sum { it.t1 } >= 1000 //correctly serialized
+	tail.get().size() == 10
+	tail.get().sum { it.t1 } >= 1000 //correctly serialized
 
 	cleanup:
 	r.processor.onComplete()
   }
 
-  def "An Observable can be used to consume a promise's value when it's fulfilled"() {
+  def "An Observable can be used to consume a publishNext's value when it's fulfilled"() {
 	given:
-	"a promise with a consuming Observable"
-	def promise = Promise.<Object> ready()
-	def promise2 = Promise.<Object> ready()
+	"a publishNext with a consuming Observable"
+	def publishNext = MonoProcessor.create()
+	def publishNext2 = MonoProcessor.create()
 	def bus = EventBus.create()
 
-	bus.on(Selectors.$('key'), promise2)
-	bus.notify(promise, 'key')
+	bus.on(Selectors.$('key'), { e -> publishNext2.onNext(e) } as Consumer)
+	bus.notify(publishNext, 'key')
 
 	when:
-	"the promise is fulfilled"
-	promise.onNext 'test'
+	"the publishNext is fulfilled"
+	publishNext.onNext 'test'
 
 	then:
 	"the observable is notified"
-	promise2.await()?.data == 'test'
+	publishNext2.get()?.data == 'test'
   }
 
-  def "An Observable can be used to consume the value of an already-fulfilled promise"() {
+  def "An Observable can be used to consume the value of an already-fulfilled publishNext"() {
 	given:
-	"a fulfilled promise"
-	def promise = Promise.success('test')
-	def promise2 = Promise.<Object> ready()
+	"a fulfilled publishNext"
+	def publishNext = Mono.just('test')
+	def publishNext2 = MonoProcessor.create()
 	def bus = EventBus.create()
 
 	when:
 	"an Observable is added as a consumer"
-	bus.on(Selectors.$('key'), promise2)
-	bus.notify(promise, 'key')
+	bus.on(Selectors.$('key'), { e -> publishNext2.onNext(e) } as Consumer)
+	bus.notify(publishNext, 'key')
 
 	then:
 	"the observable is notified"
-	promise2.await()?.data == 'test'
+	publishNext2.get()?.data == 'test'
   }
 }
 

@@ -42,6 +42,7 @@ import reactor.bus.selector.Selectors;
 import reactor.bus.spec.EventBusSpec;
 import reactor.core.flow.Loopback;
 import reactor.core.flow.Producer;
+import reactor.core.publisher.Flux;
 import reactor.core.state.Introspectable;
 import reactor.core.subscriber.Subscribers;
 import reactor.core.subscriber.SubscriptionWithContext;
@@ -50,7 +51,6 @@ import reactor.core.util.BackpressureUtils;
 import reactor.core.util.EmptySubscription;
 import reactor.core.util.Logger;
 import reactor.core.util.ReactiveStateUtils;
-import reactor.rx.Fluxion;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -162,7 +162,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	                @Nullable Router router,
 	                @Nullable Consumer<Throwable> processorErrorHandler,
 	                @Nullable final Consumer<Throwable> uncaughtErrorHandler) {
-		this(Registries.<Object, BiConsumer<Object, ? extends Event<?>>>create(),
+		this(Registries.create(),
 		  processor,
 		  concurrency,
 		  router,
@@ -280,11 +280,11 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 * Attach a Stream to the {@link Bus} with the specified {@link Selector}.
 	 *
 	 * @param broadcastSelector the {@link Selector}/{@literal Object} tuple to listen to
-	 * @return a new {@link Fluxion}
+	 * @return a new {@link Flux}
 	 * @since 2.0
 	 */
-	public Fluxion<? extends Event<?>> on(Selector broadcastSelector) {
-		return new BusFluxion<>(this, broadcastSelector);
+	public Flux<? extends Event<?>> on(Selector broadcastSelector) {
+		return new BusFlux<>(this, broadcastSelector);
 	}
 
 	protected void accept(Object key, Event<?> ev) {
