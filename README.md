@@ -45,7 +45,7 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
       // compile "io.projectreactor:reactor-spring:$reactorVersion"
 
        // Reactor Net
-       // compile "io.projectreactor:reactor-net:$reactorVersion"
+       // compile "io.projectreactor:reactor-netty:$reactorVersion"
 
        // Reactor Codecs (Jackson, Kryo...)
        // compile "io.projectreactor:reactor-codec:$reactorVersion"

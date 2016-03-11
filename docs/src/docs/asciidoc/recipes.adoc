@@ -250,7 +250,7 @@ A simple sample application that demonstrates Reactor functionality in JUnit tes
 [discrete]
 ==== Non Blocking Konami Code
 
-If you made it that far, here a simple non blocking stream to scale up your Konami codes over WebSocket. Tell me about a reward… Don't forget to add *Netty* to your classpath along *reactor-net*.
+If you made it that far, here a simple non blocking stream to scale up your Konami codes over WebSocket. Tell me about a reward… Don't forget to add *Netty* to your classpath along *reactor-netty*.
 
 [source,java]
 ----

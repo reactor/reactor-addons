@@ -140,7 +140,7 @@ repositories {
 
 // dependencies that are common across all java projects
 dependencies {
-  compile "io.projectreactor:reactor-net:$reactorVersion"
+  compile "io.projectreactor:reactor-netty:$reactorVersion"
   compile "io.netty:netty-all:$nettyVersion"
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
