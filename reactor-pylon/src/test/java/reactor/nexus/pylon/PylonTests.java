@@ -21,7 +21,6 @@ import org.junit.Test;
 import reactor.core.subscriber.SignalEmitter;
 import reactor.core.timer.Timer;
 import reactor.core.util.Exceptions;
-import reactor.io.netty.ReactiveNet;
 import reactor.io.netty.nexus.Nexus;
 
 /**
@@ -31,7 +30,7 @@ public class PylonTests {
 
 
 	public static void main(String... args) throws Exception {
-		Nexus nexus = ReactiveNet.nexus();
+		Nexus nexus = Nexus.create();
 		nexus.startAndAwait();
 
 		Pylon.create().startAndAwait();

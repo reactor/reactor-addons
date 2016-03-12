@@ -39,7 +39,6 @@ import reactor.core.util.Logger;
 import reactor.io.buffer.Buffer;
 import reactor.io.ipc.ChannelFlux;
 import reactor.io.ipc.ChannelFluxHandler;
-import reactor.io.netty.ReactiveNet;
 import reactor.io.netty.ReactivePeer;
 import reactor.io.netty.http.HttpChannel;
 import reactor.io.netty.http.HttpServer;
@@ -68,7 +67,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 	public static void main(String... args) throws Exception {
 		String port = System.getenv("PORT");
 		String address = args.length > 0 ? args[0] : "0.0.0.0";
-		Pylon pylon = create(ReactiveNet.httpServer(address, port != null ? Integer.parseInt(port) : 12013),
+		Pylon pylon = create(HttpServer.create(address, port != null ? Integer.parseInt(port) : 12013),
 				extractAssets() );
 
 		final CountDownLatch stopped = new CountDownLatch(1);
@@ -85,7 +84,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 	 * @return
 	 */
 	public static Pylon create() throws Exception {
-		return create(ReactiveNet.httpServer(12013));
+		return create(HttpServer.create(12013));
 	}
 
 	/**
