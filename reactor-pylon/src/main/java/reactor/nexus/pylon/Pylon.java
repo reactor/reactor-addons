@@ -34,7 +34,7 @@ import java.util.jar.JarFile;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
-import reactor.core.timer.Timer;
+import reactor.core.scheduler.Timer;
 import reactor.core.util.Logger;
 import reactor.io.buffer.Buffer;
 import reactor.io.ipc.ChannelFlux;

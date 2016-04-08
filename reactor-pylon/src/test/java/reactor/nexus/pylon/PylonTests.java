@@ -19,7 +19,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
 import reactor.core.subscriber.SignalEmitter;
-import reactor.core.timer.Timer;
+import reactor.core.scheduler.Timer;
 import reactor.core.util.Exceptions;
 import reactor.io.netty.nexus.Nexus;
 

@@ -9,7 +9,7 @@ import org.junit.Before;
 import org.pcollections.TreePVector;
 import reactor.bus.AbstractBus;
 import reactor.core.publisher.WorkQueueProcessor;
-import reactor.core.timer.Timer;
+import reactor.core.scheduler.Timer;
 import reactor.pipe.key.Key;
 import reactor.pipe.registry.ConcurrentRegistry;
 import reactor.pipe.router.NoOpRouter;
@@ -27,7 +27,7 @@ public class AbstractRawBusTests {
 
     @Before
     public void setup() {
-        this.processor = WorkQueueProcessor.<Runnable>create(Executors.newFixedThreadPool(1),
+        this.processor = WorkQueueProcessor.create(Executors.newFixedThreadPool(1),
                                                                   1024);
         this.firehose = new RawBus<Key, Object>(new ConcurrentRegistry<>(),
                                                 processor,
@@ -35,7 +35,7 @@ public class AbstractRawBusTests {
                                                 new NoOpRouter<>(),
                                                 null,
                                                 null);
-        this.integerPipe = new Pipe<Integer, Integer>(TreePVector.<StreamSupplier>empty(), new DefaultStateProvider<Key>(), new Supplier<Timer>() {
+        this.integerPipe = new Pipe<Integer, Integer>(TreePVector.empty(), new DefaultStateProvider<Key>(), new Supplier<Timer>() {
             @Override
             public Timer get() {
                 // for tests we use a higher resolution timer

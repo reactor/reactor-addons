@@ -31,7 +31,7 @@ import org.pcollections.PVector;
 import org.pcollections.TreePVector;
 import reactor.bus.Bus;
 import reactor.core.state.Pausable;
-import reactor.core.timer.Timer;
+import reactor.core.scheduler.Timer;
 import reactor.pipe.concurrent.Atom;
 import reactor.pipe.concurrent.LazyVar;
 import reactor.pipe.key.Key;
@@ -50,11 +50,11 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
     private final LazyVar<Timer>          timer;
 
     protected Pipe() {
-        this(TreePVector.<StreamSupplier>empty(), new DefaultStateProvider<Key>());
+        this(TreePVector.empty(), new DefaultStateProvider<Key>());
     }
 
     protected Pipe(StateProvider<Key> stateProvider) {
-        this(TreePVector.<StreamSupplier>empty(), stateProvider);
+        this(TreePVector.empty(), stateProvider);
     }
 
     protected Pipe(TreePVector<StreamSupplier> suppliers,
@@ -268,9 +268,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
             public BiConsumer<Key, CURRENT> get(Key src,
                                                 Key dst,
                                                 Bus<Key, Object> firehose) {
-                Atom<PVector<CURRENT>> buffer = stateProvider.makeAtom(src,
-                                                                       (PVector<CURRENT>)
-                                                                           TreePVector.<CURRENT>empty());
+                Atom<PVector<CURRENT>> buffer = stateProvider.makeAtom(src, TreePVector.<CURRENT>empty());
 
                 return new SlidingWindowOperation<>(firehose,
                                                     buffer,
@@ -286,9 +284,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
             public BiConsumer<Key, CURRENT> get(final Key src,
                                                 final Key dst,
                                                 final Bus<Key, Object> firehose) {
-                Atom<PVector<CURRENT>> buffer = stateProvider.makeAtom(dst,
-                                                                       (PVector<CURRENT>)
-                                                                           TreePVector.<CURRENT>empty());
+                Atom<PVector<CURRENT>> buffer = stateProvider.makeAtom(dst, TreePVector.<CURRENT>empty());
 
                 return new PartitionOperation<>(firehose,
                                                 buffer,
