@@ -68,7 +68,7 @@ public class AwaitTests extends AbstractReactorTest {
 		stream.connect();
 
 		Mono<Long> promise = stream.log().take(16).count().subscribe();
-		r.on(Selectors.T(Throwable.class), stream);
+		r.on(Selectors.T(Throwable.class), stream::onNext);
 		r.on(Selectors.$("test"), (Event<?> ev) -> {
 			try {
 				Thread.sleep(100);
