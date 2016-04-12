@@ -58,8 +58,4 @@ public final class DelayedRegistration<K, V> implements Registration<K, V> {
 
     }
 
-    @Override
-    public void request(long n) {
-
-    }
 }

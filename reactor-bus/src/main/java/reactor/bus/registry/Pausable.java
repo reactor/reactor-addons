@@ -19,7 +19,7 @@ package reactor.bus.registry;
 /**
  *
  */
-public interface Pausable extends Runnable {
+public interface Pausable extends reactor.core.flow.Cancellation {
 
 	/**
 	 * Pause this {@literal Pausable}. The implementing component should stop reacting, pausing resources if necessary.
@@ -31,13 +31,4 @@ public interface Pausable extends Runnable {
 	 * re-activating resources if necessary.
 	 */
 	void resume();
-
-	/**
-	 * Cancel this {@literal Pausable}.
-	 */
-	void cancel();
-
-	default void run(){
-		cancel();
-	}
 }

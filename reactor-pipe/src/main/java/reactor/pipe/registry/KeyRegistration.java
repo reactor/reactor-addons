@@ -57,8 +57,4 @@ public final class KeyRegistration<K, V> implements Registration<K, V> {
 
     }
 
-    @Override
-    public void request(long n) {
-
-    }
 }

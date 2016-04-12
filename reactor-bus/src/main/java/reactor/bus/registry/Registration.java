@@ -66,8 +66,9 @@ public interface Registration<K, V> extends Pausable {
 	 *
 	 * @return {@literal this}
 	 */
-	@Override
-	void cancel();
+	default void cancel() {
+		dispose();
+	}
 
 	/**
 	 * Has this been cancelled?

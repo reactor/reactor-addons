@@ -83,7 +83,7 @@ final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
 				onCancel.run();
 			}
 			if (lifecycle) {
-				((Pausable) object).cancel();
+				((Pausable) object).dispose();
 			}
 			this.cancelled = true;
 		}
