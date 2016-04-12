@@ -165,7 +165,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
                                         final boolean fireFirst) {
         return next((StreamSupplier<Key, CURRENT>) (src, dst, firehose) -> {
             final Atom<CURRENT> throttledValue = stateProvider.makeAtom(src, null);
-            final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
+            final AtomicReference<Runnable> pausable = new AtomicReference<>(null);
             final AtomicBoolean fire = new AtomicBoolean(fireFirst);
 
             final Consumer<Long> notifyConsumer = v -> {
@@ -201,7 +201,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
                                         final boolean fireFirst) {
         return next((StreamSupplier<Key, CURRENT>) (src, dst, firehose) -> {
             final Atom<CURRENT> debouncedValue = stateProvider.makeAtom(src, null);
-            final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
+            final AtomicReference<Runnable> pausable = new AtomicReference<>(null);
             final AtomicBoolean fire = new AtomicBoolean(fireFirst);
 
             final Consumer<Long> notifyConsumer = v -> firehose.notify(dst, debouncedValue.deref());
@@ -214,11 +214,13 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
 
                 debouncedValue.reset(value);
 
-                Pausable oldScheduled = pausable.getAndSet(timer.get().submit(notifyConsumer, TimeUnit.MILLISECONDS.convert(period,
+                Runnable oldScheduled = pausable.getAndSet(timer.get().submit(notifyConsumer, TimeUnit.MILLISECONDS
+                        .convert
+                        (period,
                         timeUnit)));
 
                 if (oldScheduled != null) {
-                    oldScheduled.cancel();
+                    oldScheduled.run();
                 }
 
             };
