@@ -183,7 +183,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
                 throttledValue.reset(value);
 
                 if (pausable.get() == null) {
-                    pausable.set(timer.get().schedulePeriodically(notifyConsumer, period, period, timeUnit));
+                    pausable.set(timer.get().schedule(notifyConsumer, period, timeUnit));
                 }
             };
         });
@@ -214,8 +214,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
 
                 debouncedValue.reset(value);
 
-                Cancellation oldScheduled = pausable.getAndSet(timer.get().schedulePeriodically(notifyConsumer,
-                        period, period, timeUnit));
+                Cancellation oldScheduled = pausable.getAndSet(timer.get().schedule(notifyConsumer, period, timeUnit));
 
                 if (oldScheduled != null) {
                     oldScheduled.dispose();
