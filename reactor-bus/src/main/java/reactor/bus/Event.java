@@ -22,13 +22,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 import reactor.core.tuple.Tuple;
 import reactor.core.tuple.Tuple2;
-import reactor.core.util.Assert;
 import reactor.core.util.UUIDUtils;
 
 /**
@@ -159,8 +159,7 @@ public class Event<T> implements Serializable {
 	 * @return {@literal this}
 	 */
 	public Event<T> setReplyTo(Object replyTo) {
-		Assert.notNull(replyTo, "ReplyTo cannot be null.");
-		this.replyTo = replyTo;
+		this.replyTo = Objects.requireNonNull(replyTo, "ReplyTo cannot be null.");
 		return this;
 	}
 

@@ -18,8 +18,8 @@ package reactor.bus.filter;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-import reactor.core.util.Assert;
 import reactor.core.util.Logger;
 
 /**
@@ -31,8 +31,7 @@ public class TraceableDelegatingFilter implements Filter {
 	private final Logger log;
 
 	public TraceableDelegatingFilter(Filter delegate) {
-		Assert.notNull(delegate, "Delegate Filter cannot be null.");
-		this.delegate = delegate;
+		this.delegate = Objects.requireNonNull(delegate, "Delegate Filter cannot be null.");
 		this.log = Logger.getLogger(delegate.getClass());
 	}
 

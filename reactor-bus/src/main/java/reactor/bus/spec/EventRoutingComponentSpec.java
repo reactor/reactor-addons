@@ -34,7 +34,6 @@ import reactor.bus.routing.Router;
 import reactor.bus.routing.TraceableDelegatingRouter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxProcessor;
-import reactor.core.util.Assert;
 
 /**
  * A generic processor-aware class for specifying components that need to be configured with a
@@ -64,7 +63,9 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 	 * @return {@code this}
 	 */
 	public final SPEC eventFilter(Filter filter) {
-		Assert.state(router == null, "Cannot set both a filter and a router. Use one or the other.");
+		if(router != null){
+			throw new IllegalStateException("Cannot set both a filter and a router. Use one or the other.");
+		}
 		this.eventFilter = filter;
 		return (SPEC) this;
 	}
@@ -75,7 +76,9 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 	 * @return {@code this}
 	 */
 	public final SPEC eventRouter(Router router) {
-		Assert.state(eventFilter == null, "Cannot set both a filter and a router. Use one or the other.");
+		if(eventFilter != null){
+			throw new IllegalStateException("Cannot set both a filter and a router. Use one or the other.");
+		}
 		this.router = router;
 		return (SPEC) this;
 	}

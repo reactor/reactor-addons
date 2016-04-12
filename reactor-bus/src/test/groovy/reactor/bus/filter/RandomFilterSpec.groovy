@@ -42,7 +42,7 @@ class RandomFilterSpec extends Specification {
 			filter.filter null, null
 
 		then: "an IllegalArgumentException was thrown"
-			thrown(IllegalArgumentException)
+			thrown(NullPointerException)
 	}
 
 	def "When an empty list of items are filtered, an empty list is returned"() {

@@ -4,10 +4,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.junit.Assert;
 import org.junit.Test;
 import reactor.bus.selector.Selectors;
 import reactor.core.publisher.WorkQueueProcessor;
-import reactor.core.util.Assert;
 
 public class EventBusTests {
 
@@ -40,7 +40,7 @@ public class EventBusTests {
 
 		reactor.notify("orchestrator", Event.wrap(1000));
 
-		Assert.isTrue(latch.await(10, TimeUnit.SECONDS));
+		Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
 
 		reactor.getProcessor().onComplete();
 	}

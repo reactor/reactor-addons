@@ -18,6 +18,7 @@ package reactor.bus;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -36,7 +37,6 @@ import reactor.bus.selector.Selector;
 import reactor.core.flow.MultiProducer;
 import reactor.core.flow.Producer;
 import reactor.core.state.Introspectable;
-import reactor.core.util.Assert;
 import reactor.core.util.Exceptions;
 import reactor.core.util.Logger;
 import reactor.core.util.UUIDUtils;
@@ -96,8 +96,8 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
                      @Nullable Router router,
                      @Nullable Consumer<Throwable> processorErrorHandler,
                      @Nullable final Consumer<Throwable> uncaughtErrorHandler) {
-    Assert.notNull(consumerRegistry, "Consumer Registry cannot be null.");
-    this.consumerRegistry = consumerRegistry;
+    
+    this.consumerRegistry = Objects.requireNonNull(consumerRegistry, "Consumer Registry cannot be null.");
     this.concurrency = concurrency;
     this.router = (null == router ? DEFAULT_EVENT_ROUTER : router);
     if (null == processorErrorHandler) {
@@ -187,8 +187,8 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
   @Override
   public <T extends V> Registration<K, BiConsumer<K, ? extends V>> on(final Selector selector,
                                                                       final BiConsumer<K, T> consumer) {
-    Assert.notNull(selector, "Selector cannot be null.");
-    Assert.notNull(consumer, "Consumer cannot be null.");
+    Objects.requireNonNull(selector, "Selector cannot be null.");
+    Objects.requireNonNull(consumer, "Consumer cannot be null.");
 
     return consumerRegistry.register(selector, consumer);
   }
@@ -202,8 +202,8 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
   @Override
   public <V1 extends V> Registration<K, BiConsumer<K, ? extends V>> onKey(final K key,
                                                                           final BiConsumer<K, V1> consumer) {
-    Assert.notNull(key, "Key cannot be null.");
-    Assert.notNull(consumer, "Consumer cannot be null.");
+    Objects.requireNonNull(key, "Key cannot be null.");
+    Objects.requireNonNull(consumer, "Consumer cannot be null.");
 
     return consumerRegistry.register(key, consumer);
   }
@@ -236,8 +236,8 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
 
   @Override
   public AbstractBus notify(final K key, final V value) {
-    Assert.notNull(key, "Key cannot be null.");
-    Assert.notNull(value, "Event cannot be null.");
+    Objects.requireNonNull(key, "Key cannot be null.");
+    Objects.requireNonNull(value, "Event cannot be null.");
 
     accept(key, value);
 

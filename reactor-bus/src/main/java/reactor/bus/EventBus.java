@@ -20,6 +20,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -46,7 +47,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.state.Introspectable;
 import reactor.core.subscriber.Subscribers;
 import reactor.core.subscriber.SubscriptionWithContext;
-import reactor.core.util.Assert;
 import reactor.core.util.BackpressureUtils;
 import reactor.core.util.EmptySubscription;
 import reactor.core.util.Logger;
@@ -205,7 +205,6 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 					processorErrorHandler != null ? processorErrorHandler : new UncaughtExceptionConsumer(consumerRegistry),
 					uncaughtErrorHandler);
 
-		Assert.notNull(consumerRegistry, "Consumer Registry cannot be null.");
 		this.processor = processor;
 
 		if(processor != null) {
@@ -240,7 +239,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	@Override
 	public <T extends Event<?>> Registration<Object, BiConsumer<Object, ? extends Event<?>>> on(final Selector selector,
 																								final Consumer<T> consumer) {
-		Assert.notNull(consumer, "Consumer cannot be null.");
+		Objects.requireNonNull(consumer, "Consumer cannot be null.");
 
 		final Class<?> tClass = extractGeneric(consumer);
 
@@ -599,7 +598,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		public void accept(Throwable t) {
 			Class<? extends Throwable> type = t.getClass();
 			DEFAULT_EVENT_ROUTER.route(type,
-									   Event.wrap(t),
+									   Event.<Throwable>wrap(t),
 									   consumerRegistry.select(type),
 									   null,
 									   null);

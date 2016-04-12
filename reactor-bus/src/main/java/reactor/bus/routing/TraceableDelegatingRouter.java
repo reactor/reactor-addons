@@ -17,11 +17,11 @@
 package reactor.bus.routing;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import reactor.bus.registry.Registration;
-import reactor.core.util.Assert;
 import reactor.core.util.Logger;
 
 /**
@@ -33,8 +33,7 @@ public class TraceableDelegatingRouter<K, V> implements Router<K, V> {
 	private final Logger    log;
 
 	public TraceableDelegatingRouter(Router<K, V> delegate) {
-		Assert.notNull(delegate, "Delegate EventRouter cannot be null.");
-		this.delegate = delegate;
+		this.delegate = Objects.requireNonNull(delegate, "Delegate EventRouter cannot be null.");
 		this.log = Logger.getLogger(delegate.getClass());
 	}
 

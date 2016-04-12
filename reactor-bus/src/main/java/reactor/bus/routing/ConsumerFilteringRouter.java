@@ -17,13 +17,13 @@
 package reactor.bus.routing;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import reactor.bus.Event;
 import reactor.bus.filter.Filter;
 import reactor.bus.registry.Registration;
-import reactor.core.util.Assert;
 import reactor.core.util.Exceptions;
 import reactor.core.util.Logger;
 
@@ -43,12 +43,10 @@ public class ConsumerFilteringRouter implements Router<Object, Event<?>> {
 	 * Creates a new {@code ConsumerFilteringEventRouter} that will use the {@code filter} to filter consumers.
 	 *
 	 * @param filter The filter to use. Must not be {@code null}.
-	 * @throws IllegalArgumentException if {@code filter} or {@code consumerInvoker} is null.
+	 * @throws NullPointerException if {@code filter} or {@code consumerInvoker} is null.
 	 */
 	public ConsumerFilteringRouter(Filter filter) {
-		Assert.notNull(filter, "filter must not be null");
-
-		this.filter = filter;
+		this.filter = Objects.requireNonNull(filter, "filter must not be null");
 	}
 
 	@Override

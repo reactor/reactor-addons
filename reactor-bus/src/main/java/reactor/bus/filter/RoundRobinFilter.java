@@ -20,11 +20,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import reactor.core.util.Assert;
 
 /**
  * A {@link Filter} implementation that returns a single item. The item is selected
@@ -45,7 +44,7 @@ public final class RoundRobinFilter extends AbstractFilter {
 
 	@Override
 	public <T> List<T> doFilter(List<T> items, Object key) {
-		Assert.notNull(key, "'key' must not be null");
+		Objects.requireNonNull(key, "'key' must not be null");
 		if (items.isEmpty()) {
 			return items;
 		} else {

@@ -42,6 +42,6 @@ class PassThroughFilterSpec extends Specification {
 			filter.filter null, null
 
 		then: "an IllegalArgumentException is thrown"
-			thrown(IllegalArgumentException)
+			thrown(NullPointerException)
 	}
 }
