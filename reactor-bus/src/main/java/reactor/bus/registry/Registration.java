@@ -66,8 +66,11 @@ public interface Registration<K, V> extends Pausable {
 	 *
 	 * @return {@literal this}
 	 */
-	default void cancel() {
-		dispose();
+	void cancel();
+
+	@Override
+	default void dispose() {
+		cancel();
 	}
 
 	/**
