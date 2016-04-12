@@ -109,11 +109,6 @@ final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
 	}
 
 	@Override
-	public void request(long n){
-		//ignore
-	}
-
-	@Override
 	public boolean isPaused() {
 		return paused;
 	}
