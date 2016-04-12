@@ -17,7 +17,7 @@
 package reactor.bus.registry;
 
 import reactor.bus.selector.Selector;
-import reactor.core.state.Pausable;
+import reactor.bus.registry.Pausable;
 
 /**
  * A {@code Registration} represents an object that has been {@link Registry#register(Selector,

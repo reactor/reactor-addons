@@ -30,7 +30,7 @@ import java.util.function.UnaryOperator;
 import org.pcollections.PVector;
 import org.pcollections.TreePVector;
 import reactor.bus.Bus;
-import reactor.core.state.Pausable;
+import reactor.bus.registry.Pausable;
 import reactor.core.scheduler.Timer;
 import reactor.pipe.concurrent.Atom;
 import reactor.pipe.concurrent.LazyVar;
@@ -168,29 +168,22 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
             final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
             final AtomicBoolean fire = new AtomicBoolean(fireFirst);
 
-            final Consumer<Long> notifyConsumer = new Consumer<Long>() {
-                @Override
-                public void accept(Long v) {
-                    firehose.notify(dst, throttledValue.deref());
-                    pausable.set(null);
-                }
+            final Consumer<Long> notifyConsumer = v -> {
+                firehose.notify(dst, throttledValue.deref());
+                pausable.set(null);
             };
 
-            return new BiConsumer<Key, CURRENT>() {
-                @Override
-                public void accept(final Key key,
-                                   final CURRENT value) {
-                    if (fire.getAndSet(false)) {
-                        firehose.notify(dst, value);
-                        return;
-                    }
+            return (BiConsumer<Key, CURRENT>) (key, value) -> {
+                if (fire.getAndSet(false)) {
+                    firehose.notify(dst, value);
+                    return;
+                }
 
-                    throttledValue.reset(value);
+                throttledValue.reset(value);
 
-                    if (pausable.get() == null) {
-                        pausable.set(timer.get().submit(notifyConsumer, TimeUnit.MILLISECONDS.convert(period,
-                                timeUnit)));
-                    }
+                if (pausable.get() == null) {
+                    pausable.set(timer.get().submit(notifyConsumer, TimeUnit.MILLISECONDS.convert(period,
+                            timeUnit)));
                 }
             };
         });
@@ -206,41 +199,29 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
     public Pipe<INIT, CURRENT> debounce(final long period,
                                         final TimeUnit timeUnit,
                                         final boolean fireFirst) {
-        return next(new StreamSupplier<Key, CURRENT>() {
-            @Override
-            public BiConsumer<Key, CURRENT> get(Key src, final Key dst, final Bus<Key, Object> firehose) {
-                final Atom<CURRENT> debouncedValue = stateProvider.makeAtom(src, null);
-                final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
-                final AtomicBoolean fire = new AtomicBoolean(fireFirst);
+        return next((StreamSupplier<Key, CURRENT>) (src, dst, firehose) -> {
+            final Atom<CURRENT> debouncedValue = stateProvider.makeAtom(src, null);
+            final AtomicReference<Pausable> pausable = new AtomicReference<>(null);
+            final AtomicBoolean fire = new AtomicBoolean(fireFirst);
 
-                final Consumer<Long> notifyConsumer = new Consumer<Long>() {
-                    @Override
-                    public void accept(Long v) {
-                        firehose.notify(dst, debouncedValue.deref());
-                    }
-                };
+            final Consumer<Long> notifyConsumer = v -> firehose.notify(dst, debouncedValue.deref());
 
-                return new BiConsumer<Key, CURRENT>() {
-                    @Override
-                    public void accept(final Key key,
-                                       final CURRENT value) {
-                        if (fire.getAndSet(false)) {
-                            firehose.notify(dst, value);
-                            return;
-                        }
+            return (key, value) -> {
+                if (fire.getAndSet(false)) {
+                    firehose.notify(dst, value);
+                    return;
+                }
 
-                        debouncedValue.reset(value);
+                debouncedValue.reset(value);
 
-                        Pausable oldScheduled = pausable.getAndSet(timer.get().submit(notifyConsumer, TimeUnit.MILLISECONDS.convert(period,
-                                timeUnit)));
+                Pausable oldScheduled = pausable.getAndSet(timer.get().submit(notifyConsumer, TimeUnit.MILLISECONDS.convert(period,
+                        timeUnit)));
 
-                        if (oldScheduled != null) {
-                            oldScheduled.cancel();
-                        }
+                if (oldScheduled != null) {
+                    oldScheduled.cancel();
+                }
 
-                    }
-                };
-            }
+            };
         });
     }
 
@@ -268,7 +249,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
             public BiConsumer<Key, CURRENT> get(Key src,
                                                 Key dst,
                                                 Bus<Key, Object> firehose) {
-                Atom<PVector<CURRENT>> buffer = stateProvider.makeAtom(src, TreePVector.<CURRENT>empty());
+                Atom<PVector<CURRENT>> buffer = stateProvider.makeAtom(src, TreePVector.empty());
 
                 return new SlidingWindowOperation<>(firehose,
                                                     buffer,
@@ -284,7 +265,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
             public BiConsumer<Key, CURRENT> get(final Key src,
                                                 final Key dst,
                                                 final Bus<Key, Object> firehose) {
-                Atom<PVector<CURRENT>> buffer = stateProvider.makeAtom(dst, TreePVector.<CURRENT>empty());
+                Atom<PVector<CURRENT>> buffer = stateProvider.makeAtom(dst, TreePVector.empty());
 
                 return new PartitionOperation<>(firehose,
                                                 buffer,

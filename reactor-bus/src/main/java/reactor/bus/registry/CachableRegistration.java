@@ -21,7 +21,7 @@ import reactor.bus.selector.Selector;
 import reactor.core.flow.Producer;
 import reactor.core.state.Cancellable;
 import reactor.core.state.Introspectable;
-import reactor.core.state.Pausable;
+import reactor.bus.registry.Pausable;
 
 /**
  * @author Jon Brisbin
