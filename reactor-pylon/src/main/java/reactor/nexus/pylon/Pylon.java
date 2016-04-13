@@ -61,7 +61,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 	private static final String HTML_DEPENDENCY_CONSOLE    = "/index.html";
 	private static final String CACHE_MANIFEST             = "/index.appcache";
 
-	private final HttpServer<Buffer, Buffer> server;
+	private final HttpServer server;
 	private final String                     staticPath;
 
 	public static void main(String... args) throws Exception {
@@ -92,7 +92,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 	 * @param server
 	 * @return
 	 */
-	public static Pylon create(HttpServer<Buffer, Buffer> server) throws Exception {
+	public static Pylon create(HttpServer server) throws Exception {
 		return create(server, findOrExtractAssets());
 	}
 
@@ -103,7 +103,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 	 * @return
 	 * @throws Exception
 	 */
-	public static Pylon create(HttpServer<Buffer, Buffer> server, String staticPath) throws Exception {
+	public static Pylon create(HttpServer server, String staticPath) throws Exception {
 
 		Pylon pylon = new Pylon(server.getDefaultTimer(), server, staticPath);
 
@@ -157,7 +157,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 		return staticPath + target;
 	}
 
-	private Pylon(Timer defaultTimer, HttpServer<Buffer, Buffer> server, String staticPath) {
+	private Pylon(Timer defaultTimer, HttpServer server, String staticPath) {
 		super(defaultTimer);
 		this.staticPath = staticPath;
 		this.server = server;
@@ -190,7 +190,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 		return server.shutdown();
 	}
 
-	public HttpServer<Buffer, Buffer> getServer() {
+	public HttpServer getServer() {
 		return server;
 	}
 
