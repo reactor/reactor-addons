@@ -37,14 +37,14 @@ public class PylonTests {
 
 		final SignalEmitter<Object> s = nexus.streamCannon();
 		Timer.create()
-		     .schedule(aLong -> {
+		     .schedule(() -> {
 			      if (!s.isCancelled()) {
 				      s.submit(s);
 			      }
 			      else {
 				      throw Exceptions.failWithCancel();
 			      }
-		      }, 200);
+		      }, 200, java.util.concurrent.TimeUnit.MILLISECONDS);
 
 		CountDownLatch latch = new CountDownLatch(1);
 
