@@ -37,19 +37,19 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Timer;
 import reactor.core.util.Logger;
 import reactor.io.buffer.Buffer;
-import reactor.io.ipc.ChannelFlux;
-import reactor.io.ipc.ChannelFluxHandler;
+import reactor.io.ipc.Channel;
+import reactor.io.ipc.ChannelHandler;
 import reactor.io.netty.common.Peer;
 import reactor.io.netty.http.HttpChannel;
 import reactor.io.netty.http.HttpServer;
 import reactor.io.netty.http.model.ResponseHeaders;
-import reactor.io.netty.http.routing.ChannelMappings;
+import reactor.io.netty.http.routing.HttpMappings;
 
 /**
  * @author Stephane Maldini
  * @since 2.5
  */
-public final class Pylon extends Peer<Buffer, Buffer, ChannelFlux<Buffer, Buffer>> {
+public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 
 	private static final Logger log = Logger.getLogger(Pylon.class);
 
@@ -113,7 +113,7 @@ public final class Pylon extends Peer<Buffer, Buffer, ChannelFlux<Buffer, Buffer
 
 		server.file(CONSOLE_FAVICON, pylon.pathToStatic(CONSOLE_FAVICON))
 		      .get(CACHE_MANIFEST, new CacheManifestHandler(cacheManifest))
-		      .file(ChannelMappings.prefix(CONSOLE_URL), pylon.pathToStatic(HTML_DEPENDENCY_CONSOLE), null)
+		      .file(HttpMappings.prefix(CONSOLE_URL), pylon.pathToStatic(HTML_DEPENDENCY_CONSOLE), null)
 		      .directory(CONSOLE_ASSETS_PREFIX,
 				      pylon.pathToStatic(CONSOLE_STATIC_ASSETS_PATH), new AssetsInterceptor());
 
@@ -164,7 +164,7 @@ public final class Pylon extends Peer<Buffer, Buffer, ChannelFlux<Buffer, Buffer
 	}
 
 	/**
-	 * @see this#start(ChannelFluxHandler)
+	 * @see this#start(ChannelHandler)
 	 */
 	public final void startAndAwait() throws InterruptedException {
 		start().get();
@@ -174,14 +174,14 @@ public final class Pylon extends Peer<Buffer, Buffer, ChannelFlux<Buffer, Buffer
 	}
 
 	/**
-	 * @see this#start(ChannelFluxHandler)
+	 * @see this#start(ChannelHandler)
 	 */
 	public final Mono<Void> start() throws InterruptedException {
 		return start(null);
 	}
 
 	@Override
-	protected Mono<Void> doStart(ChannelFluxHandler<Buffer, Buffer, ChannelFlux<Buffer, Buffer>> handler) {
+	protected Mono<Void> doStart(ChannelHandler<Buffer, Buffer, Channel<Buffer, Buffer>> handler) {
 		return server.start();
 	}
 
@@ -246,7 +246,7 @@ public final class Pylon extends Peer<Buffer, Buffer, ChannelFlux<Buffer, Buffer
 	}
 
 	private static class CacheManifestHandler
-			implements ChannelFluxHandler<Buffer, Buffer, HttpChannel> {
+			implements ChannelHandler<Buffer, Buffer, HttpChannel> {
 
 		private final Publisher<Buffer> cacheManifest;
 
