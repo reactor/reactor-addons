@@ -39,7 +39,7 @@ import reactor.core.util.Logger;
 import reactor.io.buffer.Buffer;
 import reactor.io.ipc.ChannelFlux;
 import reactor.io.ipc.ChannelFluxHandler;
-import reactor.io.netty.ReactivePeer;
+import reactor.io.netty.common.Peer;
 import reactor.io.netty.http.HttpChannel;
 import reactor.io.netty.http.HttpServer;
 import reactor.io.netty.http.model.ResponseHeaders;
@@ -49,7 +49,7 @@ import reactor.io.netty.http.routing.ChannelMappings;
  * @author Stephane Maldini
  * @since 2.5
  */
-public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer, Buffer>> {
+public final class Pylon extends Peer<Buffer, Buffer, ChannelFlux<Buffer, Buffer>> {
 
 	private static final Logger log = Logger.getLogger(Pylon.class);
 
@@ -246,7 +246,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 	}
 
 	private static class CacheManifestHandler
-			implements ChannelFluxHandler<Buffer, Buffer, HttpChannel<Buffer, Buffer>> {
+			implements ChannelFluxHandler<Buffer, Buffer, HttpChannel> {
 
 		private final Publisher<Buffer> cacheManifest;
 
@@ -255,7 +255,7 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 		}
 
 		@Override
-		public Publisher<Void> apply(HttpChannel<Buffer, Buffer> channel) {
+		public Publisher<Void> apply(HttpChannel channel) {
 
 			return channel.responseHeader("content-type", "text/cache-manifest")
 			              .writeBufferWith(cacheManifest);
@@ -263,10 +263,10 @@ public final class Pylon extends ReactivePeer<Buffer, Buffer, ChannelFlux<Buffer
 	}
 
 	private static class AssetsInterceptor
-			implements Function<HttpChannel<Buffer, Buffer>, HttpChannel<Buffer, Buffer>> {
+			implements Function<HttpChannel, HttpChannel> {
 
 		@Override
-		public HttpChannel<Buffer, Buffer> apply(HttpChannel<Buffer, Buffer> channel) {
+		public HttpChannel apply(HttpChannel channel) {
 
 			if(channel.uri().endsWith(".css")){
 				channel.responseHeader(ResponseHeaders.CONTENT_TYPE, "text/css; charset=utf-8");

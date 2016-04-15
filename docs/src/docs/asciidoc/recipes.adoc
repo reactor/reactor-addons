@@ -283,7 +283,7 @@ NetFlux.<String, String>httpServer(spec ->
 		.map(isKonami -> isKonami ? "Konami!" : "Nah")
 		.nest()
 		.flatMap(konamis ->
-			channel.writeWith(konamis)
+			channel.send(konamis)
 		);
 	})
 	.start()
