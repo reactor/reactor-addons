@@ -32,18 +32,18 @@ import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Timer;
+import reactor.core.scheduler.TimedScheduler;
 import reactor.core.util.Logger;
 import reactor.io.buffer.Buffer;
 import reactor.io.ipc.Channel;
 import reactor.io.ipc.ChannelHandler;
 import reactor.io.netty.common.Peer;
 import reactor.io.netty.http.HttpChannel;
+import reactor.io.netty.http.HttpMappings;
 import reactor.io.netty.http.HttpServer;
-import reactor.io.netty.http.model.ResponseHeaders;
-import reactor.io.netty.http.routing.HttpMappings;
 
 /**
  * @author Stephane Maldini
@@ -57,7 +57,6 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 	private static final String CONSOLE_STATIC_ASSETS_PATH = "/assets";
 	private static final String CONSOLE_URL                = "/pylon";
 	private static final String CONSOLE_ASSETS_PREFIX      = "/assets";
-	private static final String CONSOLE_FAVICON            = "/favicon.ico";
 	private static final String HTML_DEPENDENCY_CONSOLE    = "/index.html";
 	private static final String CACHE_MANIFEST             = "/index.appcache";
 
@@ -111,8 +110,7 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 
 		final Publisher<Buffer> cacheManifest = Buffer.readFile(pylon.pathToStatic(CACHE_MANIFEST));
 
-		server.file(CONSOLE_FAVICON, pylon.pathToStatic(CONSOLE_FAVICON))
-		      .get(CACHE_MANIFEST, new CacheManifestHandler(cacheManifest))
+		server.get(CACHE_MANIFEST, new CacheManifestHandler(cacheManifest))
 		      .file(HttpMappings.prefix(CONSOLE_URL), pylon.pathToStatic(HTML_DEPENDENCY_CONSOLE), null)
 		      .directory(CONSOLE_ASSETS_PREFIX,
 				      pylon.pathToStatic(CONSOLE_STATIC_ASSETS_PATH), new AssetsInterceptor());
@@ -157,7 +155,7 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 		return staticPath + target;
 	}
 
-	private Pylon(Timer defaultTimer, HttpServer server, String staticPath) {
+	private Pylon(TimedScheduler defaultTimer, HttpServer server, String staticPath) {
 		super(defaultTimer);
 		this.staticPath = staticPath;
 		this.server = server;
@@ -258,7 +256,7 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 		public Publisher<Void> apply(HttpChannel channel) {
 
 			return channel.responseHeader("content-type", "text/cache-manifest")
-			              .writeBufferWith(cacheManifest);
+			              .send(cacheManifest);
 		}
 	}
 
@@ -269,10 +267,10 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 		public HttpChannel apply(HttpChannel channel) {
 
 			if(channel.uri().endsWith(".css")){
-				channel.responseHeader(ResponseHeaders.CONTENT_TYPE, "text/css; charset=utf-8");
+				channel.responseHeader(HttpHeaderNames.CONTENT_TYPE, "text/css; charset=utf-8");
 			}
 			else if(channel.uri().endsWith(".js")){
-				channel.responseHeader(ResponseHeaders.CONTENT_TYPE, "text/javascript; charset=utf-8");
+				channel.responseHeader(HttpHeaderNames.CONTENT_TYPE, "text/javascript; charset=utf-8");
 			}
 
 			return channel;
