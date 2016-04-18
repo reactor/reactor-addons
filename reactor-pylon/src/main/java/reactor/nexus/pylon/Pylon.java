@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
@@ -49,7 +50,7 @@ import reactor.io.netty.http.HttpServer;
  * @author Stephane Maldini
  * @since 2.5
  */
-public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
+public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf>> {
 
 	private static final Logger log = Logger.getLogger(Pylon.class);
 
@@ -108,9 +109,7 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 
 		log.info("Warping Pylon...");
 
-		final Publisher<Buffer> cacheManifest = Buffer.readFile(pylon.pathToStatic(CACHE_MANIFEST));
-
-		server.get(CACHE_MANIFEST, new CacheManifestHandler(cacheManifest))
+		server.get(CACHE_MANIFEST, new CacheManifestHandler(new File(pylon.pathToStatic(CACHE_MANIFEST))))
 		      .file(HttpMappings.prefix(CONSOLE_URL), pylon.pathToStatic(HTML_DEPENDENCY_CONSOLE), null)
 		      .directory(CONSOLE_ASSETS_PREFIX,
 				      pylon.pathToStatic(CONSOLE_STATIC_ASSETS_PATH), new AssetsInterceptor());
@@ -179,7 +178,7 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 	}
 
 	@Override
-	protected Mono<Void> doStart(ChannelHandler<Buffer, Buffer, Channel<Buffer, Buffer>> handler) {
+	protected Mono<Void> doStart(ChannelHandler<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf>> handler) {
 		return server.start();
 	}
 
@@ -244,11 +243,11 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 	}
 
 	private static class CacheManifestHandler
-			implements ChannelHandler<Buffer, Buffer, HttpChannel> {
+			implements ChannelHandler<ByteBuf, ByteBuf, HttpChannel> {
 
-		private final Publisher<Buffer> cacheManifest;
+		private final File cacheManifest;
 
-		public CacheManifestHandler(Publisher<Buffer> cacheManifest) {
+		public CacheManifestHandler(File cacheManifest) {
 			this.cacheManifest = cacheManifest;
 		}
 
@@ -256,7 +255,7 @@ public final class Pylon extends Peer<Buffer, Buffer, Channel<Buffer, Buffer>> {
 		public Publisher<Void> apply(HttpChannel channel) {
 
 			return channel.responseHeader("content-type", "text/cache-manifest")
-			              .send(cacheManifest);
+			              .sendFile(cacheManifest);
 		}
 	}
 
