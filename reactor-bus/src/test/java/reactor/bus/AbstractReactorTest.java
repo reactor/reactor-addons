@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import reactor.core.publisher.SchedulerGroup;
+import reactor.core.publisher.Computations;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Timer;
 
@@ -40,8 +40,8 @@ public abstract class AbstractReactorTest {
 	@BeforeClass
 	public static void loadEnv() {
 		timer = Timer.global();
-		ioGroup = SchedulerGroup.io("work", 2048, 4, Throwable::printStackTrace, null, false);
-		asyncGroup = SchedulerGroup.async("async", 2048, 4, Throwable::printStackTrace, null, false);
+		ioGroup = Computations.concurrent("work", 2048, 4, Throwable::printStackTrace, null, false);
+		asyncGroup = Computations.parallel("async", 2048, 4, Throwable::printStackTrace, null, false);
 	}
 
 	@AfterClass
