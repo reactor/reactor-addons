@@ -15,6 +15,7 @@
  */
 package reactor.nexus.pylon
 
+import reactor.io.netty.nexus.Nexus
 import spock.lang.Ignore
 import spock.lang.Specification
 
@@ -23,7 +24,6 @@ import java.util.concurrent.CountDownLatch
 /**
  * @author Stephane Maldini
  */
-@Ignore
 class PylonSpec extends Specification {
 
 	def "http responds to requests from clients"() {
