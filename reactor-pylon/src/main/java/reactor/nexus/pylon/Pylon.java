@@ -41,7 +41,7 @@ import reactor.core.util.Logger;
 import reactor.io.buffer.Buffer;
 import reactor.io.ipc.Channel;
 import reactor.io.ipc.ChannelHandler;
-import reactor.io.netty.common.Peer;
+import reactor.io.netty.common.Process;
 import reactor.io.netty.http.HttpChannel;
 import reactor.io.netty.http.HttpMappings;
 import reactor.io.netty.http.HttpServer;
@@ -50,7 +50,7 @@ import reactor.io.netty.http.HttpServer;
  * @author Stephane Maldini
  * @since 2.5
  */
-public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf>> {
+public final class Pylon extends ReactiveProcess<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf>> {
 
 	private static final Logger log = Logger.getLogger(Pylon.class);
 
