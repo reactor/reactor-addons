@@ -254,9 +254,9 @@ If you made it that far, here a simple non blocking stream to scale up your Kona
 
 [source,java]
 ----
-final Processor<Integer, Integer> keyboardStream = TopicProcessor.create();
+final TopicProcessor<Integer> keyboardStream = TopicProcessor.create();
 
-NetFlux.<String, String>httpServer(spec ->
+HttpServer.<String, String>create(spec ->
 		spec
 			.codec(StandardCodecs.STRING_CODEC)
 			.listen(3000)
@@ -264,8 +264,8 @@ NetFlux.<String, String>httpServer(spec ->
 	.ws("/", channel -> {
 		System.out.println("Connected a websocket client: " + channel.remoteAddress());
 
-		return Streams
-			.wrap(keyboardStream)
+		return channel.upgradeToWebsocket()
+			.after(() -> keyboardStream)
 			.skipWhile(key -> KeyEvent.VK_UP != key)
 			.buffer(10, 1) // <1>
 			.map(keys -> keys.size() == 10 &&
@@ -279,15 +279,14 @@ NetFlux.<String, String>httpServer(spec ->
 				keys.get(7) == KeyEvent.VK_RIGHT &&
 				keys.get(8) == KeyEvent.VK_B &&
 				keys.get(9) == KeyEvent.VK_A
-		)
-		.map(isKonami -> isKonami ? "Konami!" : "Nah")
-		.nest()
-		.flatMap(konamis ->
-			channel.send(konamis)
-		);
-	})
-	.start()
-	.await();
+			)
+			.map(isKonami -> isKonami ? "Konami!" : "Nah")
+			.nest()
+			.flatMap(konamis ->
+				channel.send(konamis)
+			);
+		})
+		.subscribe();
 
 keyboardFlux.onNext(KeyEvent.VK_RIGHT);
 keyboardFlux.onNext(KeyEvent.VK_UP);
