@@ -56,11 +56,11 @@ public class FluxBusTests {
 
 		Flux.just("Hello World!")
 		       .map(streamCoordinator.wrap((Function<String, String>) String::toUpperCase))
-		       .consume(s -> {
+		       .subscribe(s -> {
 			       latch2.countDown();
 		       });
 
-		streamCoordinator.consume(vals -> {
+		streamCoordinator.subscribe(vals -> {
 			try {
 				Thread.sleep(500);
 			}

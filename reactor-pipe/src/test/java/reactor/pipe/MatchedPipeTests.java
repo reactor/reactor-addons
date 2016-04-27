@@ -31,7 +31,7 @@ public class MatchedPipeTests extends AbstractPipeTests {
 
         for (AVar<Integer> avar : new AVar[]{res1, res2}) {
             integerPipe
-                    .consume((i) -> {
+                    .subscribe((i) -> {
                         System.out.println(i);
                         avar.set(i);
                     })

@@ -38,7 +38,7 @@ public class AnonymousPipeTests extends AbstractPipeTests {
     //
     //    s.map((i) -> i + 1)
     //     .map(i -> i * 2)
-    //     .consume(i -> latch.countDown());
+    //     .subscribe(i -> latch.countDown());
     //
     //    pipe.notify(Key.wrap("source"), 1);
     //    latch.await(10, TimeUnit.SECONDS);
@@ -59,7 +59,7 @@ public class AnonymousPipeTests extends AbstractPipeTests {
     //     .map(i -> i * 2)
     //     .redirect((k, v) -> destination);
     //
-    //    pipe.consume(destination, (Integer i) -> res.set(i));
+    //    pipe.subscribe(destination, (Integer i) -> res.set(i));
     //
     //    pipe.notify(Key.wrap("source"), 1);
     //

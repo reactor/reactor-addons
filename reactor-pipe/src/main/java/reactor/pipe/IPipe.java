@@ -167,7 +167,7 @@ public interface IPipe<COVARIANT extends IPipe, INIT, CURRENT> {
      * @param <SRC> type of the key
      * @return {@code IPipeEnd}, the end of the current pipe
      */
-    <SRC extends Key> IPipeEnd<INIT, CURRENT> consume(BiConsumer<SRC, CURRENT> consumer);
+    <SRC extends Key> IPipeEnd<INIT, CURRENT> subscribe(BiConsumer<SRC, CURRENT> consumer);
 
     /**
      * Consumes the results of the current (@code IPipe}, possibly inducing some side-effects.
@@ -177,7 +177,7 @@ public interface IPipe<COVARIANT extends IPipe, INIT, CURRENT> {
      * @param <SRC> type of the key
      * @return {@code IPipeEnd}, the end of the current pipe
      */
-    <SRC extends Key> IPipeEnd<INIT, CURRENT> consume(Supplier<BiConsumer<SRC, CURRENT>> supplier);
+    <SRC extends Key> IPipeEnd<INIT, CURRENT> subscribe(Supplier<BiConsumer<SRC, CURRENT>> supplier);
 
     /**
      * Consumes the results of the current (@code IPipe} without a {@code Key}
@@ -185,7 +185,7 @@ public interface IPipe<COVARIANT extends IPipe, INIT, CURRENT> {
      * @param consumer that receives each value coming into this stream.
      * @return {@code IPipeEnd}, the end of the current pipe
      */
-    IPipeEnd<INIT, CURRENT> consume(Consumer<CURRENT> consumer);
+    IPipeEnd<INIT, CURRENT> subscribe(Consumer<CURRENT> consumer);
 
     interface IPipeEnd<INIT, CURRENT> {
         /**

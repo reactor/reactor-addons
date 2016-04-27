@@ -45,11 +45,11 @@ import reactor.core.util.Exceptions;
  * <p>
  * Fluxs.just("Hello World!")
  *        .map(coordinator.wrap((Function<String, String>) String::toUpperCase))
- *        .consume(s -> {
+ *        .subscribe(s -> {
  *          System.out.println("got in stream: " + s);
  *        });
  * <p>
- * coordinator.consume(vals -> {
+ * coordinator.subscribe(vals -> {
  *   System.out.println("got vals: " + vals);
  * });
  * <p>

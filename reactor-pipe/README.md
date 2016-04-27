@@ -46,7 +46,7 @@ import reactor.pipe.Pipe;
 Pipe.<Integer>build()
     .map(i -> i + 1)
     .map(i -> i * 2)
-    .consume((v) -> System.out.println(v))
+    .subscribe((v) -> System.out.println(v))
     .subscribe(Key.wrap("key1"), bus);
 
 // send a couple of payloads

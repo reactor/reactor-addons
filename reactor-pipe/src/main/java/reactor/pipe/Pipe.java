@@ -282,7 +282,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
      * STREAM ENDS
      */
 
-    public <SRC extends Key> IPipeEnd consume(final BiConsumer<SRC, CURRENT> consumer) {
+    public <SRC extends Key> IPipeEnd subscribe(final BiConsumer<SRC, CURRENT> consumer) {
         return end(new StreamSupplier<SRC, CURRENT>() {
             @Override
             public BiConsumer<SRC, CURRENT> get(SRC src,
@@ -293,7 +293,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
         });
     }
 
-    public IPipeEnd consume(final Consumer<CURRENT> consumer) {
+    public IPipeEnd subscribe(final Consumer<CURRENT> consumer) {
         return end(new StreamSupplier<Key, CURRENT>() {
             @Override
             public BiConsumer<Key, CURRENT> get(Key src,
@@ -309,7 +309,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
         });
     }
 
-    public <SRC extends Key> IPipeEnd consume(final Supplier<BiConsumer<SRC, CURRENT>> supplier) {
+    public <SRC extends Key> IPipeEnd subscribe(final Supplier<BiConsumer<SRC, CURRENT>> supplier) {
         return end(new StreamSupplier<SRC, CURRENT>() {
             @Override
             public BiConsumer<SRC, CURRENT> get(SRC src,

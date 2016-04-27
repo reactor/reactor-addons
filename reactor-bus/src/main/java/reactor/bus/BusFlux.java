@@ -37,7 +37,7 @@ import reactor.core.subscriber.Subscribers;
  * Create such stream with the provided factory, E.g.:
  * <pre>
  * {@code
- * eventBus.on($("topic")).consume(System.out::println)
+ * eventBus.on($("topic")).subscribe(System.out::println)
  * }
  * </pre>
  *

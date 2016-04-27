@@ -39,7 +39,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
                 })
                 .map(i -> i * 2)
                 .map(Object::toString)
-                .consume(res::set),
+                .subscribe(res::set),
             Arrays.asList(1));
 
         assertThat(res.get(1, TimeUnit.SECONDS), is("4"));
@@ -54,7 +54,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
             integerPipe
                 .map(i -> i + 1)
                 .map(i -> i * 2)
-                .consume(() -> (k, v) -> res.set(v)),
+                .subscribe(() -> (k, v) -> res.set(v)),
             Arrays.asList(1));
 
         assertThat(res.get(1, TimeUnit.SECONDS), is(4));
@@ -72,7 +72,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
                          return state.update(old -> old + i);
                      },
                      0)
-                .consume(res::set),
+                .subscribe(res::set),
             Arrays.asList(1, 2, 3));
 
         assertThat(res.get(LATCH_TIMEOUT, LATCH_TIME_UNIT), is(9));
@@ -85,7 +85,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
         subscribeAndDispatch(
             integerPipe.scan((acc, i) -> acc + i,
                                        0)
-                .consume(res::set),
+                .subscribe(res::set),
             Arrays.asList(1, 2, 3));
 
         assertThat(res.get(LATCH_TIMEOUT, LATCH_TIME_UNIT), is(6));
@@ -100,7 +100,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
                 .map(i -> i + 1)
                 .filter(i -> i % 2 != 0)
                 .map(i -> i * 2)
-                .consume(res::set),
+                .subscribe(res::set),
             Arrays.asList(1, 2));
 
         assertThat(res.get(1, TimeUnit.SECONDS), is(6));
@@ -115,7 +115,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
                 .partition((i) -> {
                     return i.size() == 5;
                 })
-                .consume(res::set),
+                .subscribe(res::set),
             Arrays.asList(1, 2, 3, 4, 5, 6, 7));
 
         assertThat(res.get(1, TimeUnit.SECONDS), is(TreePVector.from(Arrays.asList(1, 2, 3, 4, 5))));
@@ -129,7 +129,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
             integerPipe
                 .slide(i -> i.subList(i.size() > 5 ? i.size() - 5 : 0,
                                       i.size()))
-                .consume(res::set),
+                .subscribe(res::set),
             Arrays.asList(1, 2, 3, 4, 5, 6));
 
         assertThat(res.get(1, TimeUnit.SECONDS), is(TreePVector.from(Arrays.asList(2, 3, 4, 5, 6))));
@@ -144,7 +144,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
             integerPipe
                 .map((i) -> i + 1)
                 .map(i -> i * 2)
-                .consume((k, v) -> {
+                .subscribe((k, v) -> {
                     resKey.set(k);
                     resValue.set(v);
                 }),
@@ -164,7 +164,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
         AtomicLong end = new AtomicLong();
         subscribeAndDispatch(
             integerPipe.throttle(1, TimeUnit.SECONDS)
-                .consume((v) -> {
+                .subscribe((v) -> {
                     res.set(v);
                     end.set(System.nanoTime());
                 }),
@@ -190,7 +190,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
 
         subscribeAndDispatch(
             integerPipe.throttle(1, TimeUnit.SECONDS, true)
-                .consume((v) -> {
+                .subscribe((v) -> {
                     res.set(v);
                 }),
             Arrays.asList(500, 2));
@@ -208,7 +208,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
         AtomicLong end = new AtomicLong();
         subscribeAndDispatch(
             integerPipe.debounce(1, TimeUnit.SECONDS)
-                .consume((v) -> {
+                .subscribe((v) -> {
                     res.set(v);
                     end.set(System.nanoTime());
                 }),
@@ -234,7 +234,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
 
         subscribeAndDispatch(
             integerPipe.debounce(1, TimeUnit.SECONDS, true)
-                .consume((v) -> {
+                .subscribe((v) -> {
                     res.set(v);
                 }),
             Arrays.asList(500, 2));
@@ -245,7 +245,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
 
     @Test
     public void tailRecRedispatchTest() throws InterruptedException {
-        WorkQueueProcessor<Runnable> processor = WorkQueueProcessor.<Runnable>create(
+        WorkQueueProcessor<Runnable> processor = WorkQueueProcessor.create(
             Executors.newFixedThreadPool(1),
             2);
         RawBus<Key, Object> bus = new RawBus<Key, Object>(new ConcurrentRegistry<>(),
@@ -259,7 +259,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
         CountDownLatch latch = new CountDownLatch(iterations);
         Key k = Key.wrap("source", "first");
         integerPipe.map((i) -> i - 1)
-            .consume((i) ->{
+            .subscribe((i) ->{
                 LockSupport.parkNanos(10000);
                 if (i > 0) {
                     bus.notify(k, i);
@@ -276,7 +276,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
 
     @Test
     public void testSmoke() throws InterruptedException { // Tests backpressure and in-thread dispatches
-        WorkQueueProcessor<Runnable> processor = WorkQueueProcessor.<Runnable>create(
+        WorkQueueProcessor<Runnable> processor = WorkQueueProcessor.create(
                 Executors.newFixedThreadPool(4),
                 256);
         RawBus<Key, Object> bus = new RawBus<Key, Object>(new ConcurrentRegistry<>(),
@@ -300,7 +300,7 @@ public abstract class AbstractPipeTests extends AbstractRawBusTests {
                     }
                     return i * 2;
                 })
-                .consume((i_) -> {
+                .subscribe((i_) -> {
                     latch.countDown();
                 }).subscribe(Key.wrap("source", "first"), bus);
 

@@ -130,7 +130,7 @@ Stream
 	.from(fileStream)
 	.process(TopicProcessor.create())
 	.useCapacity(4L)
-	.consume(
+	.subscribe(
 		System.out::println,
 		Throwable::printStackTrace,
 		nothing -> System.out.println("## EOF ##")
@@ -186,7 +186,7 @@ Mono<List<String>> promise = // <5>
 
 					Streams
 						.timer(1)  // <10>
-						.consume(ignore -> circuitSwitcher.onNext(closeCircuit));
+						.subscribe(ignore -> circuitSwitcher.onNext(closeCircuit));
 				}
 			})
 			.retry() // <11>
@@ -265,7 +265,7 @@ HttpServer.<String, String>create(spec ->
 		System.out.println("Connected a websocket client: " + channel.remoteAddress());
 
 		return channel.upgradeToWebsocket()
-			.after(() -> keyboardStream)
+			.then(() -> keyboardStream)
 			.skipWhile(key -> KeyEvent.VK_UP != key)
 			.buffer(10, 1) // <1>
 			.map(keys -> keys.size() == 10 &&
