@@ -21,7 +21,7 @@ buildscript {
 	dependencies {
 		classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7',
 				'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE',
-				'com.github.jengelman.gradle.plugins:shadow:1.2.0',
+				'com.github.jengelman.gradle.plugins:shadow:1.2.3',
 				'org.asciidoctor:asciidoctorj-pdf:1.5.0-alpha.8'
 	}
 }
@@ -33,7 +33,7 @@ plugins {
 description = 'Reactive fast data framework for the JVM'
 
 ext {
-	gradleVersion = '2.8'
+	gradleVersion = '2.12'
 	gradleScriptDir = "${rootProject.projectDir}/gradle"
 
 	// Languages
@@ -50,7 +50,12 @@ ext {
   	jacksonDatabindVersion = '2.5.1'
 	jsonPathVersion = '2.0.0'
 	openHftChronicleVersion = '3.4.2'
-  	rxJavaVersion = '1.0.14'
+  	rxJavaVersion = '1.1.3'
+  	
+  	akkaActorVersion = '2.4.4'
+  	
+  	swtVersion = '4.5.2'
+  	swtVersionPlatform = '4.5.2'
 
 	// Testing
 	mockitoVersion = '1.10.19'
@@ -256,6 +261,57 @@ project('reactor-logback') {
 		dependencies {
 			include(dependency("net.openhft:chronicle:$openHftChronicleVersion"))
 			include(dependency("commons-cli:commons-cli:1.2"))
+			//include(project(":reactor-core"))
+		}
+	}
+}
+
+
+def getPlatform() {
+   String osname = System.properties['os.name']
+   String osarch = System.properties['os.arch']
+   if (osname.toLowerCase(Locale.ROOT).contains('win')) {
+       if (osarch.contains("64")) {
+           return "win32.win32.x86_64"
+       }
+       return "win32.win32.x86"
+   }
+   if (osname.toLowerCase(Locale.ROOT).contains("nux")) {
+       if (osarch.contains("64")) {
+           return "gtk.linux.x86_64"
+       }
+       return "gtk.linux.x86"
+   }
+   if (osname.toLowerCase(Locale.ROOT).contains("mac")) {
+       return "cocoa.macosx.x86_64"
+   }
+   throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch);
+}
+
+project('reactor-scheduler') {
+	description = 'Scheduler implementations on top of various async boundary providers'
+
+	apply plugin: 'application'
+	apply plugin: 'com.github.johnrengelman.shadow'
+
+	mainClassName = "reactor.scheduler.Schedulers"
+	ext.baseName = "${archivesBaseName}-${version}"
+
+	repositories {
+		maven { url "http://maven-eclipse.github.io/maven" }
+	}
+
+
+	dependencies {
+		compile "io.projectreactor:reactor-core:$version"
+
+		compile "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
+		//compile "org.eclipse.swt:org.eclipse.swt:$swtVersion"
+		compile "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
+	}
+
+	shadowJar {
+		dependencies {
 			//include(project(":reactor-core"))
 		}
 	}
