@@ -292,9 +292,7 @@ project('reactor-scheduler') {
 	description = 'Scheduler implementations on top of various async boundary providers'
 
 	apply plugin: 'application'
-	apply plugin: 'com.github.johnrengelman.shadow'
 
-	mainClassName = "reactor.scheduler.Schedulers"
 	ext.baseName = "${archivesBaseName}-${version}"
 
 	repositories {
@@ -305,16 +303,10 @@ project('reactor-scheduler') {
 	dependencies {
 		compile "io.projectreactor:reactor-core:$version"
 
-        compile "io.reactivex:rxjava:$rxJavaVersion"
+        optional "io.reactivex:rxjava:$rxJavaVersion"
 
-		compile "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
+	  	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
 
-		compile "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
-	}
-
-	shadowJar {
-		dependencies {
-			//include(project(":reactor-core"))
-		}
+	  	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
 	}
 }

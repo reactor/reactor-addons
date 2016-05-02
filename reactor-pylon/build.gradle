@@ -25,13 +25,13 @@ buildscript {
 }
 plugins {
   id 'java' // or 'groovy' Must be explicitly applied
-  id 'com.github.johnrengelman.shadow' version '1.2.2'
+  id 'com.github.johnrengelman.shadow' version '1.2.3'
 }
 
 description = 'Reactor Monitoring Client'
 
 ext {
-  gradleVersion = '2.8'
+  gradleVersion = '2.12'
   gradleScriptDir = "../gradle"
 
   // Languages
