@@ -291,8 +291,6 @@ def getPlatform() {
 project('reactor-scheduler') {
 	description = 'Scheduler implementations on top of various async boundary providers'
 
-	apply plugin: 'application'
-
 	ext.baseName = "${archivesBaseName}-${version}"
 
 	repositories {
