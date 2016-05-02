@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 
 import org.reactivestreams.Processor;
 import reactor.core.publisher.FluxProcessor;
+import reactor.core.publisher.UnicastProcessor;
 
 /**
  * A generic processor-aware class for specifying components that need to be configured
@@ -48,7 +49,7 @@ public abstract class ProcessorComponentSpec<SPEC extends ProcessorComponentSpec
 	 */
 	@SuppressWarnings("unchecked")
 	public final SPEC sync() {
-		this.processor = FluxProcessor.blocking();
+		this.processor = UnicastProcessor.create();
 		return (SPEC) this;
 	}
 
@@ -84,7 +85,7 @@ public abstract class ProcessorComponentSpec<SPEC extends ProcessorComponentSpec
 		if (this.processor != null) {
 			return this.processor;
 		} else {
-			return FluxProcessor.blocking();
+			return UnicastProcessor.create();
 		}
 	}
 
