@@ -206,7 +206,8 @@ public abstract class EventRoutingComponentSpec<SPEC extends EventRoutingCompone
 
 	private EventBus createReactor(Processor<Event<?>, Event<?>> processor, int concurrency) {
 		if (traceEventPath) {
-			processor = FluxProcessor.create(processor, Flux.from(processor).log("reactor.bus.log"));
+			processor = FluxProcessor.wrap(processor, Flux.from(processor).log("reactor" +
+					".bus.log"));
 		}
 		return new EventBus((consumerRegistry != null ? consumerRegistry : createRegistry()),
 		  processor,
