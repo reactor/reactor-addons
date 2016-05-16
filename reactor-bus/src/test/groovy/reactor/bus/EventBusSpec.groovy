@@ -20,11 +20,9 @@ import groovy.transform.CompileStatic
 import reactor.bus.filter.RoundRobinFilter
 import reactor.bus.routing.ConsumerFilteringRouter
 import reactor.bus.selector.Selectors
-import reactor.core.publisher.EmitterProcessor
-import reactor.core.publisher.EventLoopProcessor
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.MonoProcessor
+import reactor.core.publisher.UnicastProcessor
 import reactor.core.publisher.WorkQueueProcessor
 import reactor.core.util.ReactiveStateUtils
 import spock.lang.Specification
@@ -49,7 +47,7 @@ class EventBusSpec extends Specification {
 	def reactor = EventBus.config().sync().get()
 
 	then: "Dispatcher has been set to Synchronous"
-	!(reactor.processor instanceof EventLoopProcessor)
+	reactor.processor instanceof UnicastProcessor
 
 	when: "Building a RoundRobin EventBus"
 	reactor = EventBus.config().roundRobinEventRouting().get()
