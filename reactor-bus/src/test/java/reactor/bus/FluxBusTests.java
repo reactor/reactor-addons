@@ -86,12 +86,12 @@ public class FluxBusTests {
 
 		final CountDownLatch latch = new CountDownLatch(5);
 
-		FluxTap<? extends Event<?>> tap = r
+		Flux<? extends Event<?>> tap = r
 				.on(key)
-				.doOnNext(d -> latch.countDown())
-				.tap();
+				.doOnNext(d -> latch.countDown());
 
-		tap.subscribe();
+		Event[] data = new Event[1];
+		tap.subscribe(d -> data[0] = d);
 
 		r.notify(Flux.just("1", "2", "3", "4", "5")
 		             .map(Integer::parseInt), key.getObject());
@@ -99,8 +99,7 @@ public class FluxBusTests {
 		//await(s, is(5));
 		assertThat("latch was counted down", latch.getCount(), is(0l));
 		assertThat("value is 5",
-				tap.get()
-				   .getData(),
+				data[0] .getData(),
 				is(5));
 	}
 }
