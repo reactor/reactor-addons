@@ -24,7 +24,6 @@ import reactor.bus.fluxion.FluxCoordinator;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxTap;
 import reactor.core.publisher.TopicProcessor;
 
 import static org.hamcrest.CoreMatchers.is;
