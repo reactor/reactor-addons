@@ -46,7 +46,6 @@ import reactor.core.flow.Producer;
 import reactor.core.publisher.Flux;
 import reactor.core.state.Introspectable;
 import reactor.core.subscriber.Subscribers;
-import reactor.core.subscriber.SubscriptionWithContext;
 import reactor.core.util.BackpressureUtils;
 import reactor.core.util.EmptySubscription;
 import reactor.core.util.Logger;
@@ -736,10 +735,11 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		}
 	}
 
-	private final class DispatchEventSubscriber implements BiConsumer<Event<?>, SubscriptionWithContext<Void>> {
+	private final class DispatchEventSubscriber
+			implements BiConsumer<Event<?>, Subscription> {
 
 		@Override
-		public void accept(Event<?> event, SubscriptionWithContext<Void> voidSubscriptionWithContext) {
+		public void accept(Event<?> event, Subscription s) {
 			EventBus.this.accept(event);
 		}
 	}
