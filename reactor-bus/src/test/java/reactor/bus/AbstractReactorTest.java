@@ -49,7 +49,6 @@ public abstract class AbstractReactorTest {
 		timer = null;
 		ioGroup.shutdown();
 		asyncGroup.shutdown();
-		//Timer.unregisterGlobal();
 	}
 
 	static {

@@ -32,7 +32,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
-import reactor.core.util.ExecutorUtils;
 
 /**
  * @author Jon Brisbin
@@ -73,7 +72,7 @@ public class AsyncAppenderTests {
 			  });
 		}
 
-		threadPool = Executors.newCachedThreadPool(ExecutorUtils.newNamedFactory("benchmark-writers"));
+		threadPool = Executors.newCachedThreadPool();
 		syncLog = (Logger) LoggerFactory.getLogger("sync");
 		asyncLog = (Logger) LoggerFactory.getLogger("async");
 		chronicleLog = (Logger) LoggerFactory.getLogger("chronicle");
