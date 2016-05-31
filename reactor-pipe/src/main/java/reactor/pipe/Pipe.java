@@ -31,7 +31,8 @@ import org.pcollections.PVector;
 import org.pcollections.TreePVector;
 import reactor.bus.Bus;
 import reactor.core.flow.Cancellation;
-import reactor.core.scheduler.Timer;
+import reactor.core.scheduler.Schedulers;
+import reactor.core.scheduler.TimedScheduler;
 import reactor.pipe.concurrent.Atom;
 import reactor.pipe.concurrent.LazyVar;
 import reactor.pipe.key.Key;
@@ -47,7 +48,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
 
     private final StateProvider<Key>      stateProvider;
     private final PVector<StreamSupplier> suppliers;
-    private final LazyVar<Timer>          timer;
+    private final LazyVar<TimedScheduler>          timer;
 
     protected Pipe() {
         this(TreePVector.empty(), new DefaultStateProvider<Key>());
@@ -59,17 +60,17 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
 
     protected Pipe(TreePVector<StreamSupplier> suppliers,
                    StateProvider<Key> stateProvider) {
-        this(suppliers, stateProvider, new Supplier<Timer>() {
+        this(suppliers, stateProvider, new Supplier<TimedScheduler>() {
             @Override
-            public Timer get() {
-                return Timer.create("pipe-timer", 10, 512);
+            public TimedScheduler get() {
+                return Schedulers.newTimer("pipe-timer", 10, 512);
             }
         });
     }
 
     protected Pipe(TreePVector<StreamSupplier> suppliers,
                    StateProvider<Key> stateProvider,
-                   Supplier<Timer> timerSupplier) {
+                   Supplier<TimedScheduler> timerSupplier) {
       this.suppliers = suppliers;
       this.stateProvider = stateProvider;
       this.timer = new LazyVar<>(timerSupplier);

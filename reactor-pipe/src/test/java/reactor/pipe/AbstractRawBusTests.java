@@ -9,12 +9,12 @@ import org.junit.Before;
 import org.pcollections.TreePVector;
 import reactor.bus.AbstractBus;
 import reactor.core.publisher.WorkQueueProcessor;
-import reactor.core.scheduler.Timer;
+import reactor.core.scheduler.Schedulers;
+import reactor.core.scheduler.TimedScheduler;
 import reactor.pipe.key.Key;
 import reactor.pipe.registry.ConcurrentRegistry;
 import reactor.pipe.router.NoOpRouter;
 import reactor.pipe.state.DefaultStateProvider;
-import reactor.pipe.stream.StreamSupplier;
 
 public class AbstractRawBusTests {
 
@@ -35,11 +35,11 @@ public class AbstractRawBusTests {
                                                 new NoOpRouter<>(),
                                                 null,
                                                 null);
-        this.integerPipe = new Pipe<Integer, Integer>(TreePVector.empty(), new DefaultStateProvider<Key>(), new Supplier<Timer>() {
+        this.integerPipe = new Pipe<Integer, Integer>(TreePVector.empty(), new DefaultStateProvider<Key>(), new Supplier<TimedScheduler>() {
             @Override
-            public Timer get() {
+            public TimedScheduler get() {
                 // for tests we use a higher resolution timer
-                return Timer.create("pipe-timer", 1, 512);
+                return Schedulers.newTimer("pipe-timer", 1, 512);
             }
       });
     }
