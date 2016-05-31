@@ -30,7 +30,6 @@ import java.util.function.UnaryOperator;
 import org.pcollections.PVector;
 import org.pcollections.TreePVector;
 import reactor.bus.Bus;
-import reactor.bus.registry.Pausable;
 import reactor.core.flow.Cancellation;
 import reactor.core.scheduler.Timer;
 import reactor.pipe.concurrent.Atom;
