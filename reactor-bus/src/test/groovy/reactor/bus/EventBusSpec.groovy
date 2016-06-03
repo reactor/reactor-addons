@@ -384,7 +384,7 @@ class EventBusSpec extends Specification {
 	def r = EventBus.config().get()
 	def selector = anonymous()
 	int event = 0
-	def s = r.on(selector).onBackpressureBuffer().log().map { it.data }.consume { event = it }
+	def s = r.on(selector).onBackpressureBuffer().log().map { it.data }.subscribe { event = it }
 	println ReactiveStateUtils.scan(s)
 
 	when: 'accept a value'
@@ -406,8 +406,8 @@ class EventBusSpec extends Specification {
 	println ReactiveStateUtils.scan(r)
 
 	then:
-	tail.get().size() == 10
-	tail.get().sum { it.t1 } >= 1000 //correctly serialized
+	tail.block().size() == 10
+	tail.block().sum { it.t1 } >= 1000 //correctly serialized
 
 	cleanup:
 	r.processor.onComplete()
@@ -429,7 +429,7 @@ class EventBusSpec extends Specification {
 
 	then:
 	"the observable is notified"
-	publishNext2.get()?.data == 'test'
+	publishNext2.block()?.data == 'test'
   }
 
   def "An Observable can be used to consume the value of an already-fulfilled publishNext"() {
@@ -446,7 +446,7 @@ class EventBusSpec extends Specification {
 
 	then:
 	"the observable is notified"
-	publishNext2.get()?.data == 'test'
+	publishNext2.block()?.data == 'test'
   }
 }
 
