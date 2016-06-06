@@ -43,17 +43,10 @@ public class AwaitTests extends AbstractReactorTest {
 		for (int i = 0; i < 10000; i++) {
 			final MonoProcessor<String> deferred = MonoProcessor.create();
 
-			innerReactor.schedule(new Consumer() {
-
-				@Override
-				public void accept(Object t) {
-					deferred.onNext("foo");
-				}
-
-			}, null);
+			innerReactor.schedule((Consumer) t -> deferred.onNext("foo"), null);
 
 
-			String latchRes = deferred.get(5000);
+			String latchRes = deferred.block(5000);
 			assertThat("latch is not counted down : " + deferred.debug(), "foo".equals(latchRes));
 		}
 	}
@@ -82,7 +75,7 @@ public class AwaitTests extends AbstractReactorTest {
 			r.notify("test", Event.wrap("test"));
 		}
 
-		assert promise.get(5000) == 16;
+		assert promise.block(5000) == 16;
 		try{
 			r.getProcessor().onComplete();
 		}catch(Throwable c){
