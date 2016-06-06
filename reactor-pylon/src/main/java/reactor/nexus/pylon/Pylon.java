@@ -163,7 +163,7 @@ public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf
 	 * @see this#start(ChannelHandler)
 	 */
 	public final void startAndAwait() throws InterruptedException {
-		start().get();
+		start().block();
 		InetSocketAddress addr = server.getListenAddress();
 		log.info("Pylon Warped. Troops can receive signal under http://" + addr.getHostName() + ":" + addr.getPort() +
 				CONSOLE_URL);
