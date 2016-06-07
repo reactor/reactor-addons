@@ -39,7 +39,7 @@ import reactor.core.flow.Producer;
 import reactor.core.state.Introspectable;
 import reactor.core.util.Exceptions;
 import reactor.core.util.Logger;
-import reactor.core.util.UUIDUtils;
+import reactor.io.util.UUIDUtils;
 import reactor.core.publisher.Flux;
 
 /**

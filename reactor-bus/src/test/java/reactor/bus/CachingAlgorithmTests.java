@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Random;
 
 import org.junit.Test;
-import reactor.core.util.UUIDUtils;
 
 /**
  * @author Jon Brisbin
@@ -33,19 +32,6 @@ public class CachingAlgorithmTests {
 
 	static int items      = 10000;
 	static int iterations = 500;
-
-	@Test
-	public void testUUIDGeneration() {
-		long start = System.currentTimeMillis();
-		for (int i = 0; i < items * iterations; i++) {
-			UUIDUtils.create();
-		}
-		long end = System.currentTimeMillis();
-		long elapsed = end - start;
-		long throughput = Math.round((items * iterations) / ((elapsed * 1.0) / 1000));
-
-		System.out.println("UUID generation throughput: " + throughput + "/sec");
-	}
 
 	@Test
 	public void testHashMapStringKeyCache() {
