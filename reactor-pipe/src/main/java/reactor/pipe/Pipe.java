@@ -63,7 +63,7 @@ public class Pipe<INIT, CURRENT> implements IPipe<Pipe, INIT, CURRENT> {
         this(suppliers, stateProvider, new Supplier<TimedScheduler>() {
             @Override
             public TimedScheduler get() {
-                return Schedulers.newTimer("pipe-timer", 10, 512);
+                return Schedulers.newTimer("pipe-timer");
             }
         });
     }

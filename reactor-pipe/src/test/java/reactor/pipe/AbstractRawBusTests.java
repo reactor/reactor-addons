@@ -39,7 +39,7 @@ public class AbstractRawBusTests {
             @Override
             public TimedScheduler get() {
                 // for tests we use a higher resolution timer
-                return Schedulers.newTimer("pipe-timer", 1, 512);
+                return Schedulers.newTimer("pipe-timer");
             }
       });
     }
