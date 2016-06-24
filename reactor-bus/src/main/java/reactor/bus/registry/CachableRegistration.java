@@ -126,10 +126,8 @@ final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
 		return object;
 	}
 
-
-
 	@Override
-	public Selector key() {
+	public Object getId() {
 		return selector;
 	}
 
