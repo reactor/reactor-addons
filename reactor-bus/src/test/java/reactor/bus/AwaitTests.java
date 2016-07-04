@@ -47,7 +47,7 @@ public class AwaitTests extends AbstractReactorTest {
 
 
 			String latchRes = deferred.block(5000);
-			assertThat("latch is not counted down : " + deferred.debug(), "foo".equals(latchRes));
+			assertThat("latch is not counted down", "foo".equals(latchRes));
 		}
 	}
 
