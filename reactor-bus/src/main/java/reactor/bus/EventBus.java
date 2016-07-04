@@ -49,7 +49,7 @@ import reactor.core.subscriber.Subscribers;
 import reactor.core.util.BackpressureUtils;
 import reactor.core.util.EmptySubscription;
 import reactor.core.util.Logger;
-import reactor.core.util.ReactiveStateUtils;
+import reactor.io.util.FlowSerializerUtils;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -667,8 +667,8 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	 *
 	 * @return
 	 */
-	public ReactiveStateUtils.Graph debug(){
-		return ReactiveStateUtils.scan(this);
+	public FlowSerializerUtils.Graph debug(){
+		return FlowSerializerUtils.scan(this);
 	}
 
 	private final class PreparedConsumer<T> implements Consumer<Event<T>> {
