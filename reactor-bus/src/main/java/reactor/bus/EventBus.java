@@ -44,7 +44,6 @@ import reactor.bus.spec.EventBusSpec;
 import reactor.core.Loopback;
 import reactor.core.Producer;
 import reactor.core.publisher.Flux;
-import reactor.core.subscriber.Subscribers;
 import reactor.core.subscriber.SubscriptionHelper;
 import reactor.io.util.FlowSerializerUtils;
 import reactor.util.Logger;
@@ -206,7 +205,8 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 
 		if(processor != null) {
 			for (int i = 0; i < concurrency; i++) {
-				processor.subscribe(Subscribers.unbounded(new DispatchEventSubscriber(), getProcessorErrorHandler()));
+				Flux.from(processor)
+				    .subscribe(new DispatchEventSubscriber(), getProcessorErrorHandler());
 			}
 			processor.onSubscribe(SubscriptionHelper.empty());
 		}
@@ -726,10 +726,10 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 	}
 
 	private final class DispatchEventSubscriber
-			implements BiConsumer<Event<?>, Subscription> {
+			implements Consumer<Event<?>> {
 
 		@Override
-		public void accept(Event<?> event, Subscription s) {
+		public void accept(Event<?> event) {
 			EventBus.this.accept(event);
 		}
 	}

@@ -7,12 +7,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.reactivestreams.Processor;
-import org.reactivestreams.Subscription;
 import reactor.bus.AbstractBus;
 import reactor.bus.registry.Registration;
 import reactor.bus.registry.Registry;
 import reactor.bus.routing.Router;
-import reactor.core.subscriber.Subscribers;
+import reactor.core.publisher.Flux;
 import reactor.pipe.registry.DelayedRegistration;
 import reactor.pipe.stream.FirehoseSubscription;
 
@@ -43,15 +42,9 @@ public class RawBus<K, V> extends AbstractBus<K, V> {
         this.firehoseSubscription = new FirehoseSubscription();
 
         if (processor != null) {
+            Flux<Runnable> p = Flux.from(processor);
             for (int i = 0; i < concurrency; i++) {
-                processor.subscribe(Subscribers.unbounded(new BiConsumer<Runnable, Subscription>() {
-                                                              @Override
-                                                              public void accept(Runnable runnable,
-                                                                      Subscription s) {
-                                                                  runnable.run();
-                                                              }
-                                                          },
-                                                          uncaughtErrorHandler));
+                p.subscribe(Runnable::run, uncaughtErrorHandler);
             }
             processor.onSubscribe(firehoseSubscription);
         }
