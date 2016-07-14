@@ -14,7 +14,7 @@ import org.pcollections.TreePVector;
 import reactor.bus.registry.Registration;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
-import reactor.util.function.Tuple;
+import reactor.util.function.Tuples;
 import reactor.util.function.Tuple2;
 import reactor.pipe.concurrent.Atom;
 
@@ -86,7 +86,7 @@ public class ConcurrentRegistry<K, V> implements Registry<K, V> {
               public Tuple2<PMap<K, PVector<Registration<K, V>>>, Boolean> apply(
                 PMap<K, PVector<Registration<K, V>>> m) {
                   PMap<K, PVector<Registration<K, V>>> newMap = m.minus(key);
-                  return Tuple.of(newMap, !m.containsKey(key));
+                  return Tuples.of(newMap, !m.containsKey(key));
               }
           });
     }

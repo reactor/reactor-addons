@@ -31,7 +31,7 @@ import reactor.bus.registry.Registries;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
-import reactor.util.function.Tuple;
+import reactor.util.function.Tuples;
 import reactor.util.function.Tuple2;
 import reactor.util.Logger;
 
@@ -55,7 +55,7 @@ public class SelectorUnitTests {
 			@Override
 			public Tuple2<Selector, Object> apply(Integer i) {
 				String key = "test" + i;
-				return Tuple.of(Selectors.$(key), key);
+				return Tuples.of(Selectors.$(key), key);
 			}
 		});
 	}
@@ -66,7 +66,7 @@ public class SelectorUnitTests {
 			@Override
 			public Tuple2<Selector, Object> apply(Integer i) {
 				String key = "/test/" + i;
-				return Tuple.of(Selectors.U(key), key);
+				return Tuples.of(Selectors.U(key), key);
 			}
 		});
 	}
@@ -81,7 +81,7 @@ public class SelectorUnitTests {
 			public Tuple2<Selector, Object> apply(Integer i) {
 				Selector sel = J(String.format(jsonPathTmpl, i));
 				String json = String.format(jsonTmpl, i);
-				return Tuple.of(sel, json);
+				return Tuples.of(sel, json);
 			}
 		});
 
@@ -90,7 +90,7 @@ public class SelectorUnitTests {
 			public Tuple2<Selector, Object> apply(Integer i) {
 				Selector sel = J(String.format(jsonPathTmpl, i));
 				DataNode node = new DataNode(new DataNode.Run(i));
-				return Tuple.of(sel, node);
+				return Tuples.of(sel, node);
 			}
 		});
 
@@ -105,7 +105,7 @@ public class SelectorUnitTests {
 				} catch (IOException e) {
 					throw new IllegalStateException(e);
 				}
-				return Tuple.of(sel, key);
+				return Tuples.of(sel, key);
 			}
 		});
 
@@ -120,7 +120,7 @@ public class SelectorUnitTests {
 				} catch (IOException e) {
 					throw new IllegalStateException(e);
 				}
-				return Tuple.of(sel, key);
+				return Tuples.of(sel, key);
 			}
 		});
 	}

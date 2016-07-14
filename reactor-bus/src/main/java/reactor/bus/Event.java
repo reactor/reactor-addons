@@ -27,7 +27,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import reactor.util.function.Tuple;
+import reactor.util.function.Tuples;
 import reactor.util.function.Tuple2;
 import reactor.io.util.UUIDUtils;
 
@@ -452,7 +452,7 @@ public class Event<T> implements Serializable {
 			synchronized (this.monitor) {
 				List<Tuple2<String, Object>> headers = new ArrayList<Tuple2<String, Object>>(this.headers.size());
 				for (Map.Entry<String, Object> header : this.headers.entrySet()) {
-					headers.add(Tuple.of(header.getKey(), header.getValue()));
+					headers.add(Tuples.of(header.getKey(), header.getValue()));
 				}
 				return Collections.unmodifiableList(headers).iterator();
 			}
