@@ -23,9 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import reactor.core.flow.Cancellation;
+import reactor.core.Cancellation;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.core.util.Exceptions;
+import reactor.util.Exceptions;
 
 /** 
  * Scheduler that runs tasks on Swing's event dispatch thread. 

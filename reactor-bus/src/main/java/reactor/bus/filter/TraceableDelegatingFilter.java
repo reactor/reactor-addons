@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import reactor.core.util.Logger;
+import reactor.util.Logger;
 
 /**
  * @author Jon Brisbin

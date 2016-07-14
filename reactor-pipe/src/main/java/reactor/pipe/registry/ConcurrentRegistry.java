@@ -14,8 +14,8 @@ import org.pcollections.TreePVector;
 import reactor.bus.registry.Registration;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
-import reactor.core.util.function.Tuple;
-import reactor.core.util.function.Tuple2;
+import reactor.util.function.Tuple;
+import reactor.util.function.Tuple2;
 import reactor.pipe.concurrent.Atom;
 
 public class ConcurrentRegistry<K, V> implements Registry<K, V> {
@@ -26,7 +26,7 @@ public class ConcurrentRegistry<K, V> implements Registry<K, V> {
     private final List<Registration<K, V>>                   keyMissMatchers;
 
     public ConcurrentRegistry() {
-        this.exactKeyMatches = new Atom<>(HashTreePMap.<K, PVector<Registration<K, V>>>empty());
+        this.exactKeyMatches = new Atom<>(HashTreePMap.empty());
         this.keyMissMatchers = new ArrayList<>();
     }
 

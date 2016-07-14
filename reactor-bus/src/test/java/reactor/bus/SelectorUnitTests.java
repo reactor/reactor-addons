@@ -31,9 +31,9 @@ import reactor.bus.registry.Registries;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
-import reactor.core.util.function.Tuple;
-import reactor.core.util.function.Tuple2;
-import reactor.core.util.Logger;
+import reactor.util.function.Tuple;
+import reactor.util.function.Tuple2;
+import reactor.util.Logger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static reactor.bus.selector.JsonPathSelector.J;

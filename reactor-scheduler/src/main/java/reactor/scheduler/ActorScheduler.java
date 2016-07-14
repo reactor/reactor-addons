@@ -20,8 +20,8 @@ import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import akka.actor.*;
-import reactor.core.flow.Cancellation;
-import reactor.core.util.Exceptions;
+import reactor.core.Cancellation;
+import reactor.util.Exceptions;
 
 /**
  * A Scheduler implementation that given an ActorSystem, creates a single Actor and

@@ -27,8 +27,8 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import reactor.core.util.function.Tuple;
-import reactor.core.util.function.Tuple2;
+import reactor.util.function.Tuple;
+import reactor.util.function.Tuple2;
 import reactor.io.util.UUIDUtils;
 
 /**

@@ -18,7 +18,7 @@ package reactor.bus.registry;
 
 import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
-import reactor.core.flow.Producer;
+import reactor.core.Producer;
 import reactor.core.publisher.PublisherConfig;
 import reactor.core.subscriber.SubscriberState;
 

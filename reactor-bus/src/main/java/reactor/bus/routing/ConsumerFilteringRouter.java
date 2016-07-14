@@ -24,8 +24,8 @@ import java.util.function.Consumer;
 import reactor.bus.Event;
 import reactor.bus.filter.Filter;
 import reactor.bus.registry.Registration;
-import reactor.core.util.Exceptions;
-import reactor.core.util.Logger;
+import reactor.util.Exceptions;
+import reactor.util.Logger;
 
 /**
  * An {@link Router} that {@link Filter#filter filters} consumers before routing events to

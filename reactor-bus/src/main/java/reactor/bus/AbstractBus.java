@@ -34,12 +34,12 @@ import reactor.bus.registry.Registry;
 import reactor.bus.routing.ConsumerFilteringRouter;
 import reactor.bus.routing.Router;
 import reactor.bus.selector.Selector;
-import reactor.core.flow.MultiProducer;
-import reactor.core.flow.Producer;
+import reactor.core.MultiProducer;
+import reactor.core.Producer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.PublisherConfig;
-import reactor.core.util.Exceptions;
-import reactor.core.util.Logger;
+import reactor.util.Exceptions;
+import reactor.util.Logger;
 import reactor.io.util.UUIDUtils;
 
 /**

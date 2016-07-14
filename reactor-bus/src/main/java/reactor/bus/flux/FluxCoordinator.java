@@ -26,7 +26,7 @@ import java.util.function.Function;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
-import reactor.core.util.Exceptions;
+import reactor.util.Exceptions;
 
 /**
  * A {@code FluxCoordinator} provides a type of {@code Flux} into which you can bind {@link java.util.function.Consumer

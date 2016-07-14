@@ -41,13 +41,13 @@ import reactor.bus.selector.ClassSelector;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
 import reactor.bus.spec.EventBusSpec;
-import reactor.core.flow.Loopback;
-import reactor.core.flow.Producer;
+import reactor.core.Loopback;
+import reactor.core.Producer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.PublisherConfig;
 import reactor.core.subscriber.Subscribers;
 import reactor.core.subscriber.SubscriptionHelper;
-import reactor.core.util.Logger;
+import reactor.util.Logger;
 import reactor.io.util.FlowSerializerUtils;
 
 /**

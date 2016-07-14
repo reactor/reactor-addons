@@ -22,7 +22,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import reactor.bus.registry.Registration;
-import reactor.core.util.Logger;
+import reactor.util.Logger;
 
 /**
  * @author Jon Brisbin

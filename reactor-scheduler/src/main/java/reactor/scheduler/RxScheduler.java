@@ -19,9 +19,9 @@ package reactor.scheduler;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import reactor.core.flow.Cancellation;
+import reactor.core.Cancellation;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.core.util.Exceptions;
+import reactor.util.Exceptions;
 
 /**
  * Wraps an RxJava scheduler and exposes it as a Reactor-Core Scheduler.

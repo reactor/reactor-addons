@@ -7,7 +7,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import reactor.core.util.function.Tuple2;
+import reactor.util.function.Tuple2;
 
 /**
  * Generic Atom
