@@ -46,7 +46,8 @@ ext {
 	// Libraries
 	gsCollectionsVersion = '5.1.0'
     pcollectionsVersion = "2.1.2"
-  	nettyVersion = '4.0.33.Final'
+  	nettyVersion = '4.1.2.Final'
+  	reactorIoVersion = '0.5.0.BUILD-SNAPSHOT'
   	jacksonDatabindVersion = '2.5.1'
 	jsonPathVersion = '2.0.0'
 	openHftChronicleVersion = '3.4.2'
@@ -206,7 +207,7 @@ project('reactor-bus') {
 
 	dependencies {
 		compile "io.projectreactor:reactor-core:$version"
-		compile "io.projectreactor:reactor-ipc:$version"
+		compile "io.projectreactor:reactor-ipc:$reactorIoVersion"
 
 		// Rich Collections
 	  	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"

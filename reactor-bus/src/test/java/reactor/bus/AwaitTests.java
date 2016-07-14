@@ -46,7 +46,7 @@ public class AwaitTests extends AbstractReactorTest {
 			innerReactor.schedule((Consumer) t -> deferred.onNext("foo"), null);
 
 
-			String latchRes = deferred.block(5000);
+			String latchRes = deferred.blockMillis(5000);
 			assertThat("latch is not counted down", "foo".equals(latchRes));
 		}
 	}
@@ -75,7 +75,7 @@ public class AwaitTests extends AbstractReactorTest {
 			r.notify("test", Event.wrap("test"));
 		}
 
-		assert promise.block(5000) == 16;
+		assert promise.blockMillis(5000) == 16;
 		try{
 			r.getProcessor().onComplete();
 		}catch(Throwable c){

@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.junit.Test;
-import reactor.bus.fluxion.FluxCoordinator;
+import reactor.bus.flux.FluxCoordinator;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
 import reactor.core.publisher.Flux;

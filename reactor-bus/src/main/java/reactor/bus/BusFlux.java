@@ -26,7 +26,7 @@ import reactor.bus.selector.Selector;
 import reactor.core.flow.Producer;
 import reactor.core.flow.Receiver;
 import reactor.core.publisher.Flux;
-import reactor.core.state.Introspectable;
+import reactor.core.publisher.PublisherConfig;
 import reactor.core.subscriber.Subscribers;
 
 /**
@@ -85,7 +85,7 @@ final class BusFlux<T> extends Flux<T> {
 		  '}';
 	}
 
-	private class BusToSubscriber implements Consumer<T>, Introspectable, Producer {
+	private class BusToSubscriber implements Consumer<T>, Producer {
 
 		private final Subscriber<? super T> subscriber;
 
@@ -102,19 +102,9 @@ final class BusFlux<T> extends Flux<T> {
 		public void accept(T event) {
 			subscriber.onNext(event);
 		}
-
-		@Override
-		public int getMode() {
-			return TRACE_ONLY;
-		}
-
-		@Override
-		public String getName() {
-			return BusToSubscriber.class.getSimpleName();
-		}
 	}
 
-	private class BusToSubscription implements Subscription, Introspectable, Receiver {
+	private class BusToSubscription implements Subscription, PublisherConfig, Receiver {
 
 		final         Registration<?, ? extends BiConsumer<?, ? extends T>> registration;
 
@@ -138,13 +128,8 @@ final class BusFlux<T> extends Flux<T> {
 		}
 
 		@Override
-		public int getMode() {
-			return TRACE_ONLY;
-		}
-
-		@Override
-		public String getName() {
-			return BusToSubscription.class.getSimpleName();
+		public String getId() {
+			return null;
 		}
 	}
 }

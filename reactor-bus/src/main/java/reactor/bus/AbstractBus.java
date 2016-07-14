@@ -36,11 +36,11 @@ import reactor.bus.routing.Router;
 import reactor.bus.selector.Selector;
 import reactor.core.flow.MultiProducer;
 import reactor.core.flow.Producer;
-import reactor.core.state.Introspectable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.PublisherConfig;
 import reactor.core.util.Exceptions;
 import reactor.core.util.Logger;
 import reactor.io.util.UUIDUtils;
-import reactor.core.publisher.Flux;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -274,7 +274,8 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
     router.route(key, value, consumerRegistry.select(key), null, processorErrorHandler);
   }
 
-  private static class BusConsumer<K, T> implements BiConsumer<K, T>, Introspectable, Producer {
+  private static class BusConsumer<K, T>
+          implements BiConsumer<K, T>, PublisherConfig, Producer {
 
     private final Consumer<T> consumer;
 
@@ -293,13 +294,8 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
     }
 
     @Override
-    public int getMode() {
-      return TRACE_ONLY;
-    }
-
-    @Override
-    public String getName() {
-      return BusConsumer.class.getSimpleName();
+    public String getId() {
+      return null;
     }
   }
 }

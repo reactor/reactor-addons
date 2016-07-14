@@ -19,17 +19,15 @@ package reactor.bus.registry;
 import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
 import reactor.core.flow.Producer;
-import reactor.core.state.Cancellable;
-import reactor.core.state.Introspectable;
-import reactor.bus.registry.Pausable;
+import reactor.core.publisher.PublisherConfig;
+import reactor.core.subscriber.SubscriberState;
 
 /**
  * @author Jon Brisbin
  * @author Stephane Maldini
  */
 final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
-                                                   Cancellable,
-                                                   Introspectable {
+                                                  SubscriberState, PublisherConfig {
 
 	private static final Selector<Void> NO_MATCH = new ObjectSelector<Void, Void>(null) {
 		@Override
@@ -88,12 +86,6 @@ final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
 			this.cancelled = true;
 		}
 	}
-
-	@Override
-	public int getMode() {
-		return INNER;
-	}
-
 
 	@Override
 	public boolean isCancelled() {

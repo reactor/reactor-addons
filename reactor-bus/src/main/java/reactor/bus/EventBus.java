@@ -44,10 +44,9 @@ import reactor.bus.spec.EventBusSpec;
 import reactor.core.flow.Loopback;
 import reactor.core.flow.Producer;
 import reactor.core.publisher.Flux;
-import reactor.core.state.Introspectable;
+import reactor.core.publisher.PublisherConfig;
 import reactor.core.subscriber.Subscribers;
-import reactor.core.util.BackpressureUtils;
-import reactor.core.util.EmptySubscription;
+import reactor.core.subscriber.SubscriptionHelper;
 import reactor.core.util.Logger;
 import reactor.io.util.FlowSerializerUtils;
 
@@ -210,7 +209,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 			for (int i = 0; i < concurrency; i++) {
 				processor.subscribe(Subscribers.unbounded(new DispatchEventSubscriber(), getProcessorErrorHandler()));
 			}
-			processor.onSubscribe(EmptySubscription.INSTANCE);
+			processor.onSubscribe(SubscriptionHelper.empty());
 		}
 
 		this.on(new ClassSelector(Throwable.class), new BusErrorConsumer(uncaughtErrorHandler));
@@ -546,7 +545,9 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		}
 	}
 
-	private static class EventBusConsumer<T extends Event<?>> implements Consumer<T>, Introspectable, Producer {
+	private static class EventBusConsumer<T extends Event<?>> implements Consumer<T>,
+	                                                                     PublisherConfig,
+	                                                                     Producer {
 
 		private final Selector selector;
 		private final Class<?>    tClass;
@@ -575,13 +576,8 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		}
 
 		@Override
-		public int getMode() {
-			return TRACE_ONLY;
-		}
-
-		@Override
-		public String getName() {
-			return EventBusConsumer.class.getSimpleName();
+		public String getId() {
+			return null;
 		}
 	}
 
@@ -713,7 +709,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 
 		@Override
 		public void onSubscribe(Subscription s) {
-			if(BackpressureUtils.validate(this.s, s)) {
+			if(SubscriptionHelper.validate(this.s, s)) {
 				this.s = s;
 				s.request(Long.MAX_VALUE);
 			}

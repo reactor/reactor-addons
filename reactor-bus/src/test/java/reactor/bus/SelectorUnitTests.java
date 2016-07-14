@@ -31,8 +31,8 @@ import reactor.bus.registry.Registries;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
-import reactor.core.tuple.Tuple;
-import reactor.core.tuple.Tuple2;
+import reactor.core.util.function.Tuple;
+import reactor.core.util.function.Tuple2;
 import reactor.core.util.Logger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -55,7 +55,7 @@ public class SelectorUnitTests {
 			@Override
 			public Tuple2<Selector, Object> apply(Integer i) {
 				String key = "test" + i;
-				return Tuple.<Selector, Object>of(Selectors.$(key), key);
+				return Tuple.of(Selectors.$(key), key);
 			}
 		});
 	}
@@ -66,7 +66,7 @@ public class SelectorUnitTests {
 			@Override
 			public Tuple2<Selector, Object> apply(Integer i) {
 				String key = "/test/" + i;
-				return Tuple.<Selector, Object>of(Selectors.U(key), key);
+				return Tuple.of(Selectors.U(key), key);
 			}
 		});
 	}
@@ -81,7 +81,7 @@ public class SelectorUnitTests {
 			public Tuple2<Selector, Object> apply(Integer i) {
 				Selector sel = J(String.format(jsonPathTmpl, i));
 				String json = String.format(jsonTmpl, i);
-				return Tuple.<Selector, Object>of(sel, json);
+				return Tuple.of(sel, json);
 			}
 		});
 
@@ -90,7 +90,7 @@ public class SelectorUnitTests {
 			public Tuple2<Selector, Object> apply(Integer i) {
 				Selector sel = J(String.format(jsonPathTmpl, i));
 				DataNode node = new DataNode(new DataNode.Run(i));
-				return Tuple.<Selector, Object>of(sel, node);
+				return Tuple.of(sel, node);
 			}
 		});
 

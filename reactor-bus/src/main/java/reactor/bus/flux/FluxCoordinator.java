@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package reactor.bus.fluxion;
+package reactor.bus.flux;
 
 import java.util.ArrayList;
 import java.util.List;
