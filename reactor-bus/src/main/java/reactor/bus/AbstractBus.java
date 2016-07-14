@@ -37,10 +37,9 @@ import reactor.bus.selector.Selector;
 import reactor.core.MultiProducer;
 import reactor.core.Producer;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.PublisherConfig;
+import reactor.io.util.UUIDUtils;
 import reactor.util.Exceptions;
 import reactor.util.Logger;
-import reactor.io.util.UUIDUtils;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -275,7 +274,7 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
   }
 
   private static class BusConsumer<K, T>
-          implements BiConsumer<K, T>, PublisherConfig, Producer {
+          implements BiConsumer<K, T>, Producer {
 
     private final Consumer<T> consumer;
 
@@ -291,11 +290,6 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
     @Override
     public void accept(K k, T v) {
       consumer.accept(v);
-    }
-
-    @Override
-    public String getId() {
-      return null;
     }
   }
 }

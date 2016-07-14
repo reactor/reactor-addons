@@ -26,7 +26,6 @@ import reactor.bus.selector.Selector;
 import reactor.core.Producer;
 import reactor.core.Receiver;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.PublisherConfig;
 import reactor.core.subscriber.Subscribers;
 
 /**
@@ -104,7 +103,7 @@ final class BusFlux<T> extends Flux<T> {
 		}
 	}
 
-	private class BusToSubscription implements Subscription, PublisherConfig, Receiver {
+	private class BusToSubscription implements Subscription, Receiver {
 
 		final         Registration<?, ? extends BiConsumer<?, ? extends T>> registration;
 
@@ -127,9 +126,5 @@ final class BusFlux<T> extends Flux<T> {
 			registration.cancel();
 		}
 
-		@Override
-		public String getId() {
-			return null;
-		}
 	}
 }

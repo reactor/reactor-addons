@@ -19,7 +19,6 @@ package reactor.bus.registry;
 import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
 import reactor.core.Producer;
-import reactor.core.publisher.PublisherConfig;
 import reactor.core.subscriber.SubscriberState;
 
 /**
@@ -27,7 +26,7 @@ import reactor.core.subscriber.SubscriberState;
  * @author Stephane Maldini
  */
 final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
-                                                  SubscriberState, PublisherConfig {
+                                                  SubscriberState {
 
 	private static final Selector<Void> NO_MATCH = new ObjectSelector<Void, Void>(null) {
 		@Override
@@ -117,13 +116,6 @@ final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
 	public Object downstream() {
 		return object;
 	}
-
-	@Override
-	public Object getId() {
-		return selector;
-	}
-
-
 
 	@Override
 	public String toString() {
