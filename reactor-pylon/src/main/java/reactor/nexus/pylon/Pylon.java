@@ -38,6 +38,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.TimedScheduler;
 import static reactor.core.Reactor.Logger;
+import reactor.core.Reactor;
 import reactor.io.ipc.Channel;
 import reactor.io.ipc.ChannelHandler;
 import reactor.io.netty.common.Peer;

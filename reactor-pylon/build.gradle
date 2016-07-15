@@ -42,9 +42,9 @@ ext {
   logbackVersion = '1.1.2'
 
   // Libraries
-  nettyVersion = '4.0.31.Final'
   jacksonDatabindVersion = '2.5.1'
   reactorVersion = version
+  reactorNettyVersion = '0.5.0.BUILD-SNAPSHOT'
 
   // Testing
   spockVersion = '1.0-groovy-2.4'
@@ -140,8 +140,7 @@ repositories {
 
 // dependencies that are common across all java projects
 dependencies {
-  compile "io.projectreactor:reactor-netty:$reactorVersion"
-  compile "io.netty:netty-all:$nettyVersion"
+  compile "io.projectreactor:reactor-netty:$reactorNettyVersion"
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
   testCompile "io.projectreactor:reactor-bus:$reactorVersion"
