@@ -18,7 +18,7 @@ package reactor.nexus.pylon;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
-import reactor.core.subscriber.SubmissionEmitter;
+import reactor.core.publisher.BlockingSink;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.Exceptions;
 import reactor.io.netty.nexus.Nexus;
@@ -35,7 +35,7 @@ public class PylonTests {
 
 		Pylon.create().startAndAwait();
 
-		final SubmissionEmitter<Object> s = nexus.streamCannon();
+		final BlockingSink<Object> s = nexus.streamCannon();
 		Schedulers.newTimer("test")
 		          .schedule(() -> {
 			      if (!s.isCancelled()) {

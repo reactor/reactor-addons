@@ -19,14 +19,14 @@ package reactor.bus.registry;
 import reactor.bus.selector.ObjectSelector;
 import reactor.bus.selector.Selector;
 import reactor.core.Producer;
-import reactor.core.subscriber.SubscriberState;
+import reactor.core.Trackable;
 
 /**
  * @author Jon Brisbin
  * @author Stephane Maldini
  */
 final class CachableRegistration<K, V> implements Registration<K, V>, Producer,
-                                                  SubscriberState {
+                                                  Trackable {
 
 	private static final Selector<Void> NO_MATCH = new ObjectSelector<Void, Void>(null) {
 		@Override

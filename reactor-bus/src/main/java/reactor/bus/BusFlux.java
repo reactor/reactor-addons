@@ -26,7 +26,7 @@ import reactor.bus.selector.Selector;
 import reactor.core.Producer;
 import reactor.core.Receiver;
 import reactor.core.publisher.Flux;
-import reactor.core.subscriber.Subscribers;
+import reactor.core.publisher.Operators;
 
 /**
  * Emit signals whenever an Event arrives from the {@link reactor.bus.selector.Selector} topic from the {@link
@@ -66,7 +66,7 @@ final class BusFlux<T> extends Flux<T> {
 	public void subscribe(Subscriber<? super T> s) {
 		final Subscriber<? super T> subscriber;
 		if (!ordering) {
-			subscriber = Subscribers.serialize(s);
+			subscriber = Operators.serialize(s);
 		} else {
 			subscriber = s;
 		}

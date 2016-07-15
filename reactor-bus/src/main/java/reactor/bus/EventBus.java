@@ -43,10 +43,11 @@ import reactor.bus.selector.Selectors;
 import reactor.bus.spec.EventBusSpec;
 import reactor.core.Loopback;
 import reactor.core.Producer;
+import reactor.core.Reactor;
 import reactor.core.publisher.Flux;
-import reactor.core.subscriber.SubscriptionHelper;
+import reactor.core.publisher.Operators;
 import reactor.io.util.FlowSerializerUtils;
-import reactor.util.Logger;
+import static reactor.core.Reactor.Logger;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -208,7 +209,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 				Flux.from(processor)
 				    .subscribe(new DispatchEventSubscriber(), getProcessorErrorHandler());
 			}
-			processor.onSubscribe(SubscriptionHelper.empty());
+			processor.onSubscribe(Operators.emptySubscription());
 		}
 
 		this.on(new ClassSelector(Throwable.class), new BusErrorConsumer(uncaughtErrorHandler));
@@ -601,7 +602,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 
 		public BusErrorConsumer(Consumer<Throwable> uncaughtErrorHandler) {
 			this.uncaughtErrorHandler = uncaughtErrorHandler;
-			log = Logger.getLogger(EventBus.class);
+			log = Reactor.getLogger(EventBus.class);
 		}
 
 		@Override
@@ -703,7 +704,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 
 		@Override
 		public void onSubscribe(Subscription s) {
-			if(SubscriptionHelper.validate(this.s, s)) {
+			if(Operators.validate(this.s, s)) {
 				this.s = s;
 				s.request(Long.MAX_VALUE);
 			}

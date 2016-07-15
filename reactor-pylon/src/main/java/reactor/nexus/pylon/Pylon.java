@@ -37,7 +37,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.util.Logger;
+import static reactor.core.Reactor.Logger;
 import reactor.io.ipc.Channel;
 import reactor.io.ipc.ChannelHandler;
 import reactor.io.netty.common.Peer;
@@ -51,7 +51,7 @@ import reactor.io.netty.http.HttpServer;
  */
 public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf>> {
 
-	private static final Logger log = Logger.getLogger(Pylon.class);
+	private static final Logger log = Reactor.getLogger(Pylon.class);
 
 	private static final String CONSOLE_STATIC_PATH        = "/public";
 	private static final String CONSOLE_STATIC_ASSETS_PATH = "/assets";
