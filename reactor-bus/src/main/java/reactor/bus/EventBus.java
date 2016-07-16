@@ -654,14 +654,6 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 		}
 	}
 
-	/**
-	 *
-	 * @return
-	 */
-	public FlowSerializerUtils.Graph debug(){
-		return FlowSerializerUtils.scan(this);
-	}
-
 	private final class PreparedConsumer<T> implements Consumer<Event<T>> {
 
 		final         List<Registration<Object, ? extends BiConsumer<Object, ? extends Event<?>>>> regs;
