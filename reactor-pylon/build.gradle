@@ -144,7 +144,7 @@ dependencies {
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
   testCompile "io.projectreactor:reactor-bus:$reactorVersion"
-  testCompile "io.projectreactor:reactor-aeron:$reactorVersion"
+  testCompile "io.projectreactor:reactor-aeron:$reactorNettyVersion"
 
   // JSR-305 annotations
   optional "com.google.code.findbugs:jsr305:3.0.0"
