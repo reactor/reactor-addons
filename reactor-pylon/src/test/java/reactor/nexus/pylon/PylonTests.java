@@ -20,7 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 import reactor.core.publisher.BlockingSink;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.Exceptions;
+import reactor.core.Exceptions;
 import reactor.io.netty.nexus.Nexus;
 
 /**

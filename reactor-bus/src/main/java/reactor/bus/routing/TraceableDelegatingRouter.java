@@ -22,9 +22,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import reactor.bus.registry.Registration;
-import reactor.core.Reactor;
+import reactor.util.Loggers;
 
-import static reactor.core.Reactor.Logger;
+import reactor.util.Logger;
 
 /**
  * @author Jon Brisbin
@@ -36,7 +36,7 @@ public class TraceableDelegatingRouter<K, V> implements Router<K, V> {
 
 	public TraceableDelegatingRouter(Router<K, V> delegate) {
 		this.delegate = Objects.requireNonNull(delegate, "Delegate EventRouter cannot be null.");
-		this.log = Reactor.getLogger(delegate.getClass());
+		this.log = Loggers.getLogger(delegate.getClass());
 	}
 
 	@Override

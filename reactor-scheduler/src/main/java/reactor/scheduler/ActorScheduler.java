@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import akka.actor.*;
 import reactor.core.Cancellation;
-import reactor.util.Exceptions;
+import reactor.core.Exceptions;
 
 /**
  * A Scheduler implementation that given an ActorSystem, creates a single Actor and

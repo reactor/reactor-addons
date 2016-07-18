@@ -20,9 +20,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import reactor.core.Reactor;
+import reactor.util.Loggers;
 
-import static reactor.core.Reactor.Logger;
+import reactor.util.Logger;
 
 /**
  * @author Jon Brisbin
@@ -34,7 +34,7 @@ public class TraceableDelegatingFilter implements Filter {
 
 	public TraceableDelegatingFilter(Filter delegate) {
 		this.delegate = Objects.requireNonNull(delegate, "Delegate Filter cannot be null.");
-		this.log = Reactor.getLogger(delegate.getClass());
+		this.log = Loggers.getLogger(delegate.getClass());
 	}
 
 	@Override

@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Display;
 
 import reactor.core.Cancellation;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.util.Exceptions;
+import reactor.core.Exceptions;
 
 /** 
  * Scheduler that runs tasks on Swt's event dispatch thread. 

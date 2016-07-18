@@ -36,11 +36,11 @@ import reactor.bus.routing.Router;
 import reactor.bus.selector.Selector;
 import reactor.core.MultiProducer;
 import reactor.core.Producer;
-import reactor.core.Reactor;
+import reactor.util.Loggers;
 import reactor.core.publisher.Flux;
 import reactor.io.util.UUIDUtils;
-import reactor.util.Exceptions;
-import static reactor.core.Reactor.Logger;
+import reactor.core.Exceptions;
+import reactor.util.Logger;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -105,7 +105,7 @@ public abstract class AbstractBus<K, V> implements Bus<K, V>, MultiProducer {
         @Override
         public void accept(Throwable t) {
           if (uncaughtErrorHandler == null) {
-            final Logger log = Reactor.getLogger(AbstractBus.class);
+            final Logger log = Loggers.getLogger(AbstractBus.class);
             log.error(t.getMessage(), t);
           } else {
             uncaughtErrorHandler.accept(t);

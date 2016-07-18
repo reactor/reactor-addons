@@ -25,7 +25,7 @@ import javax.swing.Timer;
 
 import reactor.core.Cancellation;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.util.Exceptions;
+import reactor.core.Exceptions;
 
 /** 
  * Scheduler that runs tasks on Swing's event dispatch thread. 

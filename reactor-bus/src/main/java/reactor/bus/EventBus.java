@@ -43,11 +43,11 @@ import reactor.bus.selector.Selectors;
 import reactor.bus.spec.EventBusSpec;
 import reactor.core.Loopback;
 import reactor.core.Producer;
-import reactor.core.Reactor;
+import reactor.util.Loggers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Operators;
 import reactor.io.util.FlowSerializerUtils;
-import static reactor.core.Reactor.Logger;
+import reactor.util.Logger;
 
 /**
  * A reactor is an event gateway that allows other components to register {@link Event} {@link Consumer}s that can
@@ -602,7 +602,7 @@ public class EventBus extends AbstractBus<Object, Event<?>> implements Consumer<
 
 		public BusErrorConsumer(Consumer<Throwable> uncaughtErrorHandler) {
 			this.uncaughtErrorHandler = uncaughtErrorHandler;
-			log = Reactor.getLogger(EventBus.class);
+			log = Loggers.getLogger(EventBus.class);
 		}
 
 		@Override

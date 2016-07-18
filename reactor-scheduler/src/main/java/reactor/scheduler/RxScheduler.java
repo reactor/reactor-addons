@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import reactor.core.Cancellation;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.util.Exceptions;
+import reactor.core.Exceptions;
 
 /**
  * Wraps an RxJava scheduler and exposes it as a Reactor-Core Scheduler.

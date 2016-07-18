@@ -31,10 +31,10 @@ import reactor.bus.registry.Registries;
 import reactor.bus.registry.Registry;
 import reactor.bus.selector.Selector;
 import reactor.bus.selector.Selectors;
-import reactor.core.Reactor;
+import reactor.util.Loggers;
 import reactor.util.function.Tuples;
 import reactor.util.function.Tuple2;
-import static reactor.core.Reactor.Logger;
+import reactor.util.Logger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static reactor.bus.selector.JsonPathSelector.J;
@@ -44,7 +44,7 @@ import static reactor.bus.selector.JsonPathSelector.J;
  */
 public class SelectorUnitTests {
 
-	static final Logger LOG        = Reactor.getLogger(SelectorUnitTests.class);
+	static final Logger LOG        = Loggers.getLogger(SelectorUnitTests.class);
 	final        int    selectors  = 50;
 	final        int    iterations = 10000;
 

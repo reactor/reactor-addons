@@ -24,9 +24,9 @@ import java.util.function.Consumer;
 import reactor.bus.Event;
 import reactor.bus.filter.Filter;
 import reactor.bus.registry.Registration;
-import reactor.core.Reactor;
-import reactor.util.Exceptions;
-import static reactor.core.Reactor.Logger;
+import reactor.util.Loggers;
+import reactor.core.Exceptions;
+import reactor.util.Logger;
 
 /**
  * An {@link Router} that {@link Filter#filter filters} consumers before routing events to
@@ -37,7 +37,7 @@ import static reactor.core.Reactor.Logger;
  */
 public class ConsumerFilteringRouter implements Router<Object, Event<?>> {
 
-	private final Logger logger = Reactor.getLogger(getClass());
+	private final Logger logger = Loggers.getLogger(getClass());
 	private final Filter filter;
 
 	/**
