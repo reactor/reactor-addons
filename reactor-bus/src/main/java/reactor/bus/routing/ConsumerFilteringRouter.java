@@ -69,9 +69,11 @@ public class ConsumerFilteringRouter implements Router<Object, Event<?>> {
 				}
 				try {
 					((BiConsumer<Object, E>) reg.getObject()).accept(key, event);
-				} catch (Exceptions.CancelException cancel) {
-					reg.cancel();
 				} catch (Throwable t) {
+					if(Exceptions.isCancel(t)) {
+						reg.cancel();
+						return;
+					}
 					if (null != errorConsumer) {
 						errorConsumer.accept(t);
 					} else {
