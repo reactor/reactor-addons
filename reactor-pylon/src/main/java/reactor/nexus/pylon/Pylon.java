@@ -105,7 +105,7 @@ public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf
 	 */
 	public static Pylon create(HttpServer server, String staticPath) throws Exception {
 
-		Pylon pylon = new Pylon(server.getDefaultTimer(), server, staticPath);
+		Pylon pylon = new Pylon(server, staticPath);
 
 		log.info("Warping Pylon...");
 
