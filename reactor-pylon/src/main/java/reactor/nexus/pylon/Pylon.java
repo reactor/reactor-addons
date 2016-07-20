@@ -39,8 +39,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 import reactor.io.ipc.Channel;
-import reactor.io.ipc.ChannelHandler;
-import reactor.io.netty.common.Peer;
+import reactor.io.netty.common.DuplexSocket;
 import reactor.io.netty.http.HttpChannel;
 import reactor.io.netty.http.HttpMappings;
 import reactor.io.netty.http.HttpServer;
@@ -49,7 +48,7 @@ import reactor.io.netty.http.HttpServer;
  * @author Stephane Maldini
  * @since 2.5
  */
-public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf>> {
+public final class Pylon extends DuplexSocket<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf>> {
 
 	private static final Logger log = Loggers.getLogger(Pylon.class);
 
@@ -159,7 +158,7 @@ public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf
 	}
 
 	/**
-	 * @see this#start(ChannelHandler)
+	 * @see this#start(Function)
 	 */
 	public final void startAndAwait() throws InterruptedException {
 		start().block();
@@ -169,7 +168,7 @@ public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf
 	}
 
 	/**
-	 * @see this#start(ChannelHandler)
+	 * @see this#start(Function)
 	 */
 	public final Mono<Void> start() throws InterruptedException {
 		return start(null);
@@ -241,7 +240,7 @@ public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf
 	}
 
 	private static class CacheManifestHandler
-			implements Function<? super HttpChannel, ? extends Publisher<Void>> {
+			implements Function<HttpChannel, Publisher<Void>> {
 
 		private final File cacheManifest;
 
