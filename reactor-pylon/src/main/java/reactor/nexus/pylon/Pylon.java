@@ -178,7 +178,7 @@ public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf
 	}
 
 	@Override
-	protected Mono<Void> doStart(ChannelHandler<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf>> handler) {
+	protected Mono<Void> doStart(Function<? super Channel<ByteBuf, ByteBuf>, ? extends Publisher<Void>> handler) {
 		return server.start();
 	}
 
@@ -243,7 +243,7 @@ public final class Pylon extends Peer<ByteBuf, ByteBuf, Channel<ByteBuf, ByteBuf
 	}
 
 	private static class CacheManifestHandler
-			implements ChannelHandler<ByteBuf, ByteBuf, HttpChannel> {
+			implements Function<? super HttpChannel, ? extends Publisher<Void>> {
 
 		private final File cacheManifest;
 
