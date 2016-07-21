@@ -1,7 +1,6 @@
-rootProject.name = 'reactor'
+rootProject.name = 'reactor-addons'
 
 include 'reactor-bus',
-		'reactor-pipe',
 		'reactor-logback',
 		'reactor-scheduler',
 		'docs'

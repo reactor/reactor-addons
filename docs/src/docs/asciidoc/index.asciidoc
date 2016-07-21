@@ -1,6 +1,6 @@
 = Reactor Guide
-Stephane Maldini; Jon Brisbin;
-:appversion: 2.5.0.BUILD-SNAPSHOT (wiki)
+Stephane Maldini;
+:appversion: 3.0.0.BUILD-SNAPSHOT (wiki)
 ifndef::host-github[:ext-relative: {outfilesuffix}]
 {appversion}
 :doctype: book
@@ -26,4 +26,3 @@ include::spring.adoc[]
 include::spring.adoc[]
 
 include::groovy.adoc[]
-include::clojure.adoc[]

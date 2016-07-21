@@ -207,7 +207,7 @@ project('reactor-bus') {
 
 	dependencies {
 		compile "io.projectreactor:reactor-core:$version"
-		compile "io.projectreactor:reactor-ipc:$reactorIoVersion"
+		compile "io.projectreactor.ipc:reactor-ipc-api:$reactorIoVersion"
 
 		// Rich Collections
 	  	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"
@@ -221,24 +221,6 @@ project('reactor-bus') {
 			instruction 'Import-Package', bundleImportPackages.join(',')
 		}
 	}
-}
-
-project("reactor-pipe") {
-  description = "Reactor Pipe components"
-
-  apply plugin: 'osgi'
-  apply plugin: 'maven'
-
-  compileJava {
-		sourceCompatibility = 1.8
-		targetCompatibility = 1.8
-	}
-  dependencies {
-    compile "io.projectreactor:reactor-core:$version"
-    compile project(':reactor-bus')
-    compile "org.pcollections:pcollections:$pcollectionsVersion"
-  }
-
 }
 
 
