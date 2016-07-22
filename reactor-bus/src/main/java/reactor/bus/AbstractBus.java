@@ -38,7 +38,7 @@ import reactor.core.MultiProducer;
 import reactor.core.Producer;
 import reactor.util.Loggers;
 import reactor.core.publisher.Flux;
-import reactor.io.util.UUIDUtils;
+import reactor.ipc.util.UUIDUtils;
 import reactor.core.Exceptions;
 import reactor.util.Logger;
 

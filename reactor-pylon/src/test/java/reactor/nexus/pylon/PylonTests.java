@@ -21,7 +21,7 @@ import org.junit.Test;
 import reactor.core.publisher.BlockingSink;
 import reactor.core.scheduler.Schedulers;
 import reactor.core.Exceptions;
-import reactor.io.netty.nexus.Nexus;
+import reactor.ipc.netty.nexus.Nexus;
 
 /**
  * @author Stephane Maldini
