@@ -38,7 +38,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
-import reactor.ipc.ipc.Channel;
+import reactor.ipc.Channel;
 import reactor.ipc.netty.common.DuplexSocket;
 import reactor.ipc.netty.http.HttpChannel;
 import reactor.ipc.netty.http.HttpMappings;
