@@ -81,7 +81,7 @@ configurations.all {
 }
 
 configure(subprojects) { project ->
-	group = 'io.projectreactor'
+	group = 'io.projectreactor.addons'
 
 	apply plugin: 'propdeps'
 	apply plugin: 'java'
