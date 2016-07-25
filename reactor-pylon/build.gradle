@@ -143,7 +143,7 @@ dependencies {
   compile "io.projectreactor.ipc:reactor-netty:$reactorNettyVersion"
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
-  testCompile "io.projectreactor:reactor-bus:$reactorVersion"
+  testCompile "io.projectreactor.addons:reactor-bus:$reactorVersion"
   testCompile "io.projectreactor.ipc:reactor-aeron:$reactorNettyVersion"
 
   // JSR-305 annotations
