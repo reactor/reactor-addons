@@ -24,6 +24,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import reactor.core.Cancellation;
+import reactor.core.publisher.Operators;
 import reactor.core.scheduler.TimedScheduler;
 import reactor.core.Exceptions;
 
@@ -54,7 +55,7 @@ public final class SwingScheduler implements TimedScheduler {
                 task.run();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
-                Exceptions.onErrorDropped(ex);
+	            Operators.onErrorDropped(ex);
             }
         });
         timer.start();
@@ -72,7 +73,7 @@ public final class SwingScheduler implements TimedScheduler {
             } catch (Throwable ex) {
                 timer.stop();
                 Exceptions.throwIfFatal(ex);
-                Exceptions.onErrorDropped(ex);
+	            Operators.onErrorDropped(ex);
             }
         });
         timer.start();
@@ -166,7 +167,7 @@ public final class SwingScheduler implements TimedScheduler {
                         action.run();
                     } catch (Throwable ex) {
                         Exceptions.throwIfFatal(ex);
-                        Exceptions.onErrorDropped(ex);
+	                    Operators.onErrorDropped(ex);
                     }
                 } finally {
                     remove(timer);
@@ -209,7 +210,7 @@ public final class SwingScheduler implements TimedScheduler {
                     timer.stop();
                     remove(timer);
                     Exceptions.throwIfFatal(ex);
-                    Exceptions.onErrorDropped(ex);
+	                Operators.onErrorDropped(ex);
                 }
             });
             
@@ -245,7 +246,7 @@ public final class SwingScheduler implements TimedScheduler {
                     action.run();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    Exceptions.onErrorDropped(ex);
+	                Operators.onErrorDropped(ex);
                 }
             }
         }
@@ -277,7 +278,7 @@ public final class SwingScheduler implements TimedScheduler {
                     action.run();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    Exceptions.onErrorDropped(ex);
+	                Operators.onErrorDropped(ex);
                 }
             }
         }

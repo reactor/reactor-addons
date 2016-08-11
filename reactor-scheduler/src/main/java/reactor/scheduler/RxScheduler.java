@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import reactor.core.Cancellation;
+import reactor.core.publisher.Operators;
 import reactor.core.scheduler.TimedScheduler;
 import reactor.core.Exceptions;
 
@@ -44,7 +45,7 @@ public final class RxScheduler implements TimedScheduler {
                     task.run();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    Exceptions.onErrorDropped(ex);
+                    Operators.onErrorDropped(ex);
                 }
             } finally {
                 w.unsubscribe();
@@ -63,7 +64,7 @@ public final class RxScheduler implements TimedScheduler {
                     task.run();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    Exceptions.onErrorDropped(ex);
+                    Operators.onErrorDropped(ex);
                 }
             } finally {
                 w.unsubscribe();
@@ -82,7 +83,7 @@ public final class RxScheduler implements TimedScheduler {
             } catch (Throwable ex) {
                 w.unsubscribe();
                 Exceptions.throwIfFatal(ex);
-                Exceptions.onErrorDropped(ex);
+                Operators.onErrorDropped(ex);
             }
         }, initialDelay, period, unit);
         return s::unsubscribe;

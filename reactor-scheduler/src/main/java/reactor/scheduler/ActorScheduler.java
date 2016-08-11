@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import akka.actor.*;
 import reactor.core.Cancellation;
 import reactor.core.Exceptions;
+import reactor.core.publisher.Operators;
 
 /**
  * A Scheduler implementation that given an ActorSystem, creates a single Actor and
@@ -176,7 +177,7 @@ public class ActorScheduler implements reactor.core.scheduler.Scheduler {
                 r.run();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
-                Exceptions.onErrorDropped(ex);
+                Operators.onErrorDropped(ex);
             }
         }
     }

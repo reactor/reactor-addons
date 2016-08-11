@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.swt.widgets.Display;
 
 import reactor.core.Cancellation;
+import reactor.core.publisher.Operators;
 import reactor.core.scheduler.TimedScheduler;
 import reactor.core.Exceptions;
 
@@ -182,7 +183,7 @@ public final class SwtScheduler implements TimedScheduler {
 				        action.run();
 				    } catch (Throwable ex) {
 				        Exceptions.throwIfFatal(ex);
-				        Exceptions.onErrorDropped(ex);
+					    Operators.onErrorDropped(ex);
 				    }
 				}
 			}
@@ -212,7 +213,7 @@ public final class SwtScheduler implements TimedScheduler {
                     action.run();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-                    Exceptions.onErrorDropped(ex);
+	                Operators.onErrorDropped(ex);
                 }
             }
         }
@@ -254,7 +255,7 @@ public final class SwtScheduler implements TimedScheduler {
                 task.run();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
-                Exceptions.onErrorDropped(ex);
+	            Operators.onErrorDropped(ex);
                 return;
             }
             
@@ -313,7 +314,7 @@ public final class SwtScheduler implements TimedScheduler {
                 task.run();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
-                Exceptions.onErrorDropped(ex);
+	            Operators.onErrorDropped(ex);
                 return;
             }
 
