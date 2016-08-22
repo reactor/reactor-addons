@@ -1,6 +1,0 @@
----
-applications:
-- name: reactor-pylon
-  path: ./build/libs/reactor-pylon-0.5.0.BUILD-SNAPSHOT-all.jar
-  domain: projectreactor.io
-  disk_quota: 1024M

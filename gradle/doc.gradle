@@ -21,7 +21,7 @@ project('docs') {
 		group = "Reactor Framework Javadoc"
 
 		description = "Generates aggregated Javadoc API documentation."
-		title = "${rootProject.description} ${version} API"
+		title = "All Reactor Addons API"
 
 		if (JavaVersion.current().isJava8Compatible()) {
 			compileTestJava.options.compilerArgs += "-parameters"
@@ -71,11 +71,10 @@ project('docs') {
 				'compat-mode': '',
 				stylesdir: "stylesheets/",
 				stylesheet: 'golo.css',
-				appversion: "$version",
 				'source-highlighter': 'coderay'
 
 		doLast {
-			file("$outputDir/pdf/index.pdf").renameTo("$outputDir/pdf/reference-guide-${version}.pdf")
+			file("$outputDir/pdf/index.pdf").renameTo("$outputDir/pdf/reference-guide.pdf")
 		}
 
 	}

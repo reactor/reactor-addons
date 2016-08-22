@@ -15,61 +15,67 @@
  */
 
 buildscript {
-	repositories {
-		maven { url "http://repo.spring.io/plugins-release" }
-	}
-	dependencies {
-		classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7',
-				'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE',
-				'com.github.jengelman.gradle.plugins:shadow:1.2.3',
-				'org.asciidoctor:asciidoctorj-pdf:1.5.0-alpha.8'
-	}
+  repositories {
+	maven { url "http://repo.spring.io/plugins-release" }
+  }
+  dependencies {
+	classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7',
+			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE',
+			'com.github.jengelman.gradle.plugins:shadow:1.2.3',
+			'org.asciidoctor:asciidoctorj-pdf:1.5.0-alpha.8'
+  }
 }
 
 plugins {
-	id 'org.asciidoctor.convert' version '1.5.2'
+  id 'org.asciidoctor.convert' version '1.5.2'
 }
 
 description = 'Reactive fast data framework for the JVM'
 
 ext {
-	gradleVersion = '2.12'
-	gradleScriptDir = "${rootProject.projectDir}/gradle"
+  gradleVersion = '2.12'
+  gradleScriptDir = "${rootProject.projectDir}/gradle"
+  reactorIpcVersion = '0.6.0.BUILD-SNAPSHOT'
+  reactorCoreVersion = '3.0.1.BUILD-SNAPSHOT'
 
-	// Languages
-	groovyVersion = '2.4.1'
+  // Languages
+  groovyVersion = '2.4.1'
 
-	// Logging
-	slf4jVersion = '1.7.12'
-	logbackVersion = '1.1.2'
+  // Logging
+  slf4jVersion = '1.7.12'
+  logbackVersion = '1.1.2'
 
-	// Libraries
-	gsCollectionsVersion = '5.1.0'
-    pcollectionsVersion = "2.1.2"
-  	nettyVersion = '4.1.2.Final'
-  	reactorIoVersion = '0.5.0.BUILD-SNAPSHOT'
-  	jacksonDatabindVersion = '2.5.1'
-	jsonPathVersion = '2.0.0'
-	openHftChronicleVersion = '3.4.2'
-  	rxJavaVersion = '1.1.3'
-  	
-  	akkaActorVersion = '2.4.4'
-  	
-  	swtVersion = '4.5.2'
-  	swtVersionPlatform = '4.5.2'
+  // Libraries
+  gsCollectionsVersion = '5.1.0'
+  pcollectionsVersion = "2.1.2"
+  nettyVersion = '4.1.3.Final'
+  jacksonDatabindVersion = '2.5.1'
+  jsonPathVersion = '2.0.0'
+  openHftChronicleVersion = '3.4.2'
+  rxJavaVersion = '1.1.3'
 
-	// Testing
-	mockitoVersion = '1.10.19'
-	spockVersion = '1.0-groovy-2.4'
+  // Libraries
+  jacksonDatabindVersion = '2.5.1'
+  protobufVersion = '2.6.1'
+  kryoVersion = '3.0.3'
+  snappyVersion = '1.1.1.6'
 
-	javadocLinks = [
-			"http://docs.oracle.com/javase/7/docs/api/",
-			"http://docs.oracle.com/javaee/6/api/",
-			"http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
-			"http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
-			"http://www.reactive-streams.org/reactive-streams-1.0.0-javadoc/",
-			"http://projectreactor.io/core/docs/api/"
-	] as String[]
+  akkaActorVersion = '2.4.4'
+
+  swtVersion = '4.5.2'
+  swtVersionPlatform = '4.5.2'
+
+  // Testing
+  mockitoVersion = '1.10.19'
+  spockVersion = '1.0-groovy-2.4'
+
+  javadocLinks = ["http://docs.oracle.com/javase/7/docs/api/",
+				  "http://docs.oracle.com/javaee/6/api/",
+				  "http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
+				  "http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
+				  "http://www.reactive-streams.org/reactive-streams-1.0.0-javadoc/",
+				  "http://projectreactor.io/ipc/docs/api/",
+				  "http://projectreactor.io/core/docs/api/"] as String[]
 }
 
 apply from: "$gradleScriptDir/setup.gradle"
@@ -81,214 +87,241 @@ configurations.all {
 }
 
 configure(subprojects) { project ->
-	group = 'io.projectreactor.addons'
+  group = 'io.projectreactor.addons'
 
-	apply plugin: 'propdeps'
-	apply plugin: 'java'
-	apply plugin: 'groovy'
-	apply from: "${gradleScriptDir}/ide.gradle"
+  apply plugin: 'propdeps'
+  apply plugin: 'java'
+  apply plugin: 'groovy'
+  apply from: "${gradleScriptDir}/ide.gradle"
 
-	[compileJava, compileTestJava]*.options*.compilerArgs = [
-			"-Xlint:varargs",
-			"-Xlint:cast",
-			"-Xlint:classfile",
-			"-Xlint:dep-ann",
-			"-Xlint:divzero",
-			"-Xlint:empty",
-			"-Xlint:finally",
-			"-Xlint:overrides",
-			"-Xlint:path",
-			"-Xlint:processing",
-			"-Xlint:static",
-			"-Xlint:try",
-			"-Xlint:deprecation",
-			"-Xlint:unchecked",
-			"-Xlint:-serial",      // intentionally disabled
-			"-Xlint:-options",     // intentionally disabled
-			"-Xlint:-fallthrough", // intentionally disabled
-			"-Xlint:-rawtypes"     // TODO enable and fix warnings
-	]
+  [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
+														   "-Xlint:cast",
+														   "-Xlint:classfile",
+														   "-Xlint:dep-ann",
+														   "-Xlint:divzero",
+														   "-Xlint:empty",
+														   "-Xlint:finally",
+														   "-Xlint:overrides",
+														   "-Xlint:path",
+														   "-Xlint:processing",
+														   "-Xlint:static",
+														   "-Xlint:try",
+														   "-Xlint:deprecation",
+														   "-Xlint:unchecked",
+														   "-Xlint:-serial",      // intentionally disabled
+														   "-Xlint:-options",     // intentionally disabled
+														   "-Xlint:-fallthrough", // intentionally disabled
+														   "-Xlint:-rawtypes"     // TODO enable and fix warnings
+  ]
 
-	compileJava {
-		sourceCompatibility = 1.8
-		targetCompatibility = 1.8
+  compileJava {
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
+  }
+
+  compileTestJava {
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
+  }
+
+  if (JavaVersion.current().isJava8Compatible()) {
+	compileTestJava.options.compilerArgs += "-parameters"
+	tasks.withType(Javadoc) {
+	  options.addStringOption('Xdoclint:none', '-quiet')
 	}
+  }
 
-	compileTestJava {
-		sourceCompatibility = 1.8
-		targetCompatibility = 1.8
-	}
+  [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
-	if (JavaVersion.current().isJava8Compatible()) {
-		compileTestJava.options.compilerArgs += "-parameters"
-		tasks.withType(Javadoc) {
-			options.addStringOption('Xdoclint:none', '-quiet')
-		}
-	}
+  sourceSets.test.resources.srcDirs = ["src/test/resources", "src/test/java"]
 
-  	[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+  configurations.all {
+	exclude group: 'commons-logging', module: 'commons-logging'
+  }
 
-	sourceSets.test.resources.srcDirs = ["src/test/resources", "src/test/java"]
+  project.tasks.withType(Test).all {
+	systemProperty("java.awt.headless", "true")
+	systemProperty("reactor.trace.cancel", "true")
+	systemProperty("reactor.trace.nocapacity", "true")
+	systemProperty("testGroups", project.properties.get("testGroups"))
+	scanForTestClasses = false
+	include '**/*Tests.*'
+	include '**/*Spec.*'
+	exclude '**/*Abstract*.*'
+  }
 
-	configurations.all {
-		exclude group: 'commons-logging', module: 'commons-logging'
-	}
+  repositories {
+	mavenLocal()
+	maven { url 'http://repo.spring.io/libs-milestone' }
+	maven { url 'http://repo.spring.io/libs-snapshot' }
+	maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+	jcenter()
+	mavenCentral()
+  }
 
-	project.tasks.withType(Test).all {
-		systemProperty("java.awt.headless", "true")
-		systemProperty("reactor.trace.cancel", "true")
-		systemProperty("reactor.trace.nocapacity", "true")
-		systemProperty("testGroups", project.properties.get("testGroups"))
-		scanForTestClasses = false
-		include '**/*Tests.*'
-		include '**/*Spec.*'
-		exclude '**/*Abstract*.*'
-	}
+  // dependencies that are common across all java projects
+  dependencies {
+	// JSR-305 annotations
+	optional "com.google.code.findbugs:jsr305:3.0.0"
+
+	// Logging
+	optional "org.slf4j:slf4j-api:$slf4jVersion"
+
+	testRuntime "ch.qos.logback:logback-classic:$logbackVersion"
+	// Testing
+	testCompile "org.codehaus.groovy:groovy:$groovyVersion",
+			"org.spockframework:spock-core:$spockVersion",
+			"org.hamcrest:hamcrest-library:1.3",
+			"org.testng:testng:6.8.5"
+  }
+
+
+  if (project.hasProperty('platformVersion')) {
+	apply plugin: 'spring-io'
 
 	repositories {
-		mavenLocal()
-		maven { url 'http://repo.spring.io/libs-milestone' }
-		maven { url 'http://repo.spring.io/libs-snapshot' }
-		maven { url "https://oss.sonatype.org/content/repositories/releases/" }
-		jcenter()
-		mavenCentral()
+	  maven { url 'http://repo.spring.io/libs-snapshot' }
 	}
 
-	// dependencies that are common across all java projects
-	dependencies {
-		// JSR-305 annotations
-		optional "com.google.code.findbugs:jsr305:3.0.0"
-
-		// Logging
-		optional "org.slf4j:slf4j-api:$slf4jVersion"
-
-		testRuntime "ch.qos.logback:logback-classic:$logbackVersion"
-		// Testing
-		testCompile "org.codehaus.groovy:groovy:$groovyVersion",
-				"org.spockframework:spock-core:$spockVersion",
-				"org.hamcrest:hamcrest-library:1.3",
-				"org.testng:testng:6.8.5"
-	}
-
-
-	if (project.hasProperty('platformVersion')) {
-		apply plugin: 'spring-io'
-
-		repositories {
-			maven { url 'http://repo.spring.io/libs-snapshot' }
+	dependencyManagement {
+	  springIoTestRuntime {
+		imports {
+		  mavenBom "io.spring.platform:platform-bom:$platformVersion"
 		}
-
-		dependencyManagement {
-			springIoTestRuntime {
-				imports {
-					mavenBom "io.spring.platform:platform-bom:$platformVersion"
-				}
-			}
-		}
+	  }
 	}
+  }
 }
 
 project('reactor-bus') {
-	description = 'Reactor Event Bus components'
+  version=reactorBusVersion
+  description = 'Reactor Event Bus components'
 
-	apply plugin: 'osgi'
-	apply plugin: 'groovy'
+  apply plugin: 'osgi'
+  apply plugin: 'groovy'
 
-	ext.bundleImportPackages = [
-			'com.jayway.jsonpath;resolution:=optional',
-			'com.jayway.jsonpath.internal;resolution:=optional',
-			'com.jayway.jsonpath.spi;resolution:=optional',
-			'com.fasterxml.jackson.core;resolution:=optional',
-			'com.fasterxml.jackson.databind;resolution:=optional',
-			'com.fasterxml.jackson.databind.node;resolution:=optional',
-			'com.fasterxml.jackson.databind.type;resolution:=optional',
-			'*'
-	]
+  ext.bundleImportPackages = ['com.jayway.jsonpath;resolution:=optional',
+							  'com.jayway.jsonpath.internal;resolution:=optional',
+							  'com.jayway.jsonpath.spi;resolution:=optional',
+							  'com.fasterxml.jackson.core;resolution:=optional',
+							  'com.fasterxml.jackson.databind;resolution:=optional',
+							  'com.fasterxml.jackson.databind.node;resolution:=optional',
+							  'com.fasterxml.jackson.databind.type;resolution:=optional',
+							  '*']
 
-	dependencies {
-		compile "io.projectreactor:reactor-core:$version"
-		compile "io.projectreactor.ipc:reactor-ipc:$reactorIoVersion"
+  dependencies {
+	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
+	compile "io.projectreactor.ipc:reactor-ipc:$reactorIpcVersion"
 
-		// Rich Collections
-	  	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"
+	// Rich Collections
+	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"
 
-		optional "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
-		optional "com.jayway.jsonpath:json-path:$jsonPathVersion"
+	optional "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
+	optional "com.jayway.jsonpath:json-path:$jsonPathVersion"
+  }
+
+  jar {
+	manifest {
+	  instruction 'Import-Package', bundleImportPackages.join(',')
 	}
-
-	jar {
-		manifest {
-			instruction 'Import-Package', bundleImportPackages.join(',')
-		}
-	}
+  }
 }
 
 
 project('reactor-logback') {
-	description = 'Async Logback appender implementation'
+  version=reactorLogbackVersion
+  description = 'Async Logback appender implementation'
 
-	apply plugin: 'application'
-	apply plugin: 'com.github.johnrengelman.shadow'
+  apply plugin: 'application'
+  apply plugin: 'com.github.johnrengelman.shadow'
 
-	mainClassName = "reactor.logback.DurableLogUtility"
-	ext.baseName = "${archivesBaseName}-${version}"
+  mainClassName = "reactor.logback.DurableLogUtility"
+  ext.baseName = "${archivesBaseName}-${version}"
 
+  dependencies {
+	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
+
+	compile "ch.qos.logback:logback-classic:$logbackVersion",
+			"net.openhft:chronicle:$openHftChronicleVersion",
+			"commons-cli:commons-cli:1.2"
+  }
+
+  shadowJar {
 	dependencies {
-		compile "io.projectreactor:reactor-core:$version"
-
-		compile "ch.qos.logback:logback-classic:$logbackVersion",
-				"net.openhft:chronicle:$openHftChronicleVersion",
-				"commons-cli:commons-cli:1.2"
+	  include(dependency("net.openhft:chronicle:$openHftChronicleVersion"))
+	  include(dependency("commons-cli:commons-cli:1.2"))
+	  //include(project(":reactor-core"))
 	}
+  }
+}
 
-	shadowJar {
-		dependencies {
-			include(dependency("net.openhft:chronicle:$openHftChronicleVersion"))
-			include(dependency("commons-cli:commons-cli:1.2"))
-			//include(project(":reactor-core"))
-		}
-	}
+project('reactor-scheduler') {
+  version = reactorSchedulerVersion
+  description = 'Scheduler implementations on top of various async boundary providers'
+
+  ext.baseName = "${archivesBaseName}-${version}"
+
+  repositories {
+	maven { url "http://maven-eclipse.github.io/maven" }
+  }
+
+
+  dependencies {
+	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
+
+	optional "io.reactivex:rxjava:$rxJavaVersion"
+
+	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
+
+	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
+  }
+}
+
+
+project('reactor-codec') {
+  description = 'IPC contracts for Reactive transport and protocol'
+  version = reactorCodecVersion
+
+  ext.baseName = "${archivesBaseName}-${version}"
+
+
+  dependencies {
+	// JSR-305 annotations
+	optional "com.google.code.findbugs:jsr305:3.0.0"
+
+	// Logging
+	optional "org.slf4j:slf4j-api:$slf4jVersion"
+
+	compile "io.projectreactor.ipc:reactor-ipc:$reactorIpcVersion"
+
+	// JSON handling
+	optional "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
+
+	// Serialization
+	optional "com.esotericsoftware:kryo:$kryoVersion",
+			"com.google.protobuf:protobuf-java:$protobufVersion",
+			"org.xerial.snappy:snappy-java:$snappyVersion"
+  }
 }
 
 
 def getPlatform() {
-   String osname = System.properties['os.name']
-   String osarch = System.properties['os.arch']
-   if (osname.toLowerCase(Locale.ROOT).contains('win')) {
-       if (osarch.contains("64")) {
-           return "win32.win32.x86_64"
-       }
-       return "win32.win32.x86"
-   }
-   if (osname.toLowerCase(Locale.ROOT).contains("nux")) {
-       if (osarch.contains("64")) {
-           return "gtk.linux.x86_64"
-       }
-       return "gtk.linux.x86"
-   }
-   if (osname.toLowerCase(Locale.ROOT).contains("mac")) {
-       return "cocoa.macosx.x86_64"
-   }
-   throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch);
-}
-
-project('reactor-scheduler') {
-	description = 'Scheduler implementations on top of various async boundary providers'
-
-	ext.baseName = "${archivesBaseName}-${version}"
-
-	repositories {
-		maven { url "http://maven-eclipse.github.io/maven" }
+  String osname = System.properties['os.name']
+  String osarch = System.properties['os.arch']
+  if (osname.toLowerCase(Locale.ROOT).contains('win')) {
+	if (osarch.contains("64")) {
+	  return "win32.win32.x86_64"
 	}
-
-
-	dependencies {
-		compile "io.projectreactor:reactor-core:$version"
-
-        optional "io.reactivex:rxjava:$rxJavaVersion"
-
-	  	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
-
-	  	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
+	return "win32.win32.x86"
+  }
+  if (osname.toLowerCase(Locale.ROOT).contains("nux")) {
+	if (osarch.contains("64")) {
+	  return "gtk.linux.x86_64"
 	}
+	return "gtk.linux.x86"
+  }
+  if (osname.toLowerCase(Locale.ROOT).contains("mac")) {
+	return "cocoa.macosx.x86_64"
+  }
+  throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch);
 }
