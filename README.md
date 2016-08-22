@@ -28,7 +28,7 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
 
     ext {
       reactorVersion = '3.0.0.BUILD-SNAPSHOT'
-      reactorIpcVersion = '0.5.0.BUILD-SNAPSHOT'
+      reactorIpcVersion = '0.6.0.BUILD-SNAPSHOT'
     }
 
     repositories {
