@@ -49,7 +49,7 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
        // compile "io.projectreactor.ipc:reactor-netty:$reactorIpcVersion"
 
        // Reactor Codecs (Jackson, Kryo...)
-       // compile "io.projectreactor.ipc:reactor-codec:$reactorIpcVersion"
+       // compile "io.projectreactor.addons:reactor-codec:$reactorIpcVersion"
 
     }
 
