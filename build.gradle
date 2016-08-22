@@ -236,7 +236,6 @@ project('reactor-logback') {
   apply plugin: 'com.github.johnrengelman.shadow'
 
   mainClassName = "reactor.logback.DurableLogUtility"
-  ext.baseName = "${archivesBaseName}-${version}"
 
   dependencies {
 	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
@@ -259,8 +258,6 @@ project('reactor-scheduler') {
   version = reactorSchedulerVersion
   description = 'Scheduler implementations on top of various async boundary providers'
 
-  ext.baseName = "${archivesBaseName}-${version}"
-
   repositories {
 	maven { url "http://maven-eclipse.github.io/maven" }
   }
@@ -281,9 +278,6 @@ project('reactor-scheduler') {
 project('reactor-codec') {
   description = 'IPC contracts for Reactive transport and protocol'
   version = reactorCodecVersion
-
-  ext.baseName = "${archivesBaseName}-${version}"
-
 
   dependencies {
 	// JSR-305 annotations
