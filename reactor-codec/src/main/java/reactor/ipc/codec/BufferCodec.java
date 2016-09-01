@@ -224,7 +224,8 @@ public abstract class BufferCodec<IN, OUT> extends Codec<Buffer, IN, OUT> {
 				cursor = views.next();
 				if (cursor != null) {
 					next = codec.decodeNext(cursor.get(), decoderContext);
-					if (next != null && Operators.getAndSub(PENDING_UPDATER, this, 1L) > 0) {
+					if (next != null && Operators.produced(PENDING_UPDATER, this, 1L) >
+							0) {
 						subscriber.onNext(next);
 					}
 					else {
