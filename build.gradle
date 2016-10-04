@@ -211,7 +211,7 @@ project('reactor-bus') {
 
   dependencies {
 	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-	compileTest "io.projectreactor.ipc:reactor-ipc:$reactorIpcVersion"
+	testCompile "io.projectreactor.ipc:reactor-ipc:$reactorIpcVersion"
 
 	// Rich Collections
 	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"
