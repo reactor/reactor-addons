@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 
 import reactor.util.function.Tuples;
 import reactor.util.function.Tuple2;
-import reactor.ipc.util.UUIDUtils;
+import reactor.bus.util.UUIDUtils;
 
 /**
  * Wrapper for an object that needs to be processed by {@link java.util.function.Consumer}s.

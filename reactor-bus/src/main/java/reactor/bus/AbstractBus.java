@@ -39,7 +39,7 @@ import reactor.core.MultiProducer;
 import reactor.core.Producer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Operators;
-import reactor.ipc.util.UUIDUtils;
+import reactor.bus.util.UUIDUtils;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 

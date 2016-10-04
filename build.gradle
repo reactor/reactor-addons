@@ -211,7 +211,7 @@ project('reactor-bus') {
 
   dependencies {
 	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-	compile "io.projectreactor.ipc:reactor-ipc:$reactorIpcVersion"
+	compileTest "io.projectreactor.ipc:reactor-ipc:$reactorIpcVersion"
 
 	// Rich Collections
 	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"
@@ -324,5 +324,5 @@ def getPlatform() {
   if (osname.toLowerCase(Locale.ROOT).contains("mac")) {
 	return "cocoa.macosx.x86_64"
   }
-  throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch);
+  throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch)
 }
