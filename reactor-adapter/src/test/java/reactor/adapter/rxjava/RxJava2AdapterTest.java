@@ -16,18 +16,16 @@
 
 package reactor.adapter.rxjava;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.NoSuchElementException;
 
-import io.reactivex.Completable;
-import io.reactivex.Flowable;
-import io.reactivex.Single;
+import org.junit.*;
+
+import io.reactivex.*;
 import io.reactivex.internal.fuseable.QueueSubscription;
-import org.junit.Assert;
-import org.junit.Test;
 import reactor.core.Fuseable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 import reactor.test.subscriber.AssertSubscriber;
 
 public class RxJava2AdapterTest {
@@ -189,4 +187,98 @@ public class RxJava2AdapterTest {
         .assertComplete();
     }
 
+    @Test
+    public void maybeToMono() {
+        
+    }
+    
+    @Test
+    public void monoToMaybeJust() {
+        Mono.just(1)
+        .as(RxJava2Adapter::monoToMaybe)
+        .test()
+        .assertResult(1);
+    }
+    
+    @Test
+    public void monoToMaybeEmpty() {
+        Mono.empty()
+        .as(RxJava2Adapter::monoToMaybe)
+        .test()
+        .assertResult();
+    }
+    
+    @Test
+    public void monoToMaybeError() {
+        Mono.error(new IOException("Forced failure"))
+        .as(RxJava2Adapter::monoToMaybe)
+        .test()
+        .assertFailureAndMessage(IOException.class, "Forced failure");
+    }
+    
+    @Test
+    public void maybeToMonoJust() {
+        Maybe.just(1)
+        .to(RxJava2Adapter::maybeToMono)
+        .subscribeWith(AssertSubscriber.create())
+        .assertSubscribed()
+        .assertValues(1)
+        .assertNoError()
+        .assertComplete();
+    }
+    
+    @Test
+    public void maybeToMonoEmpty() {
+        Maybe.empty()
+        .to(RxJava2Adapter::maybeToMono)
+        .subscribeWith(AssertSubscriber.create())
+        .assertSubscribed()
+        .assertNoValues()
+        .assertNoError()
+        .assertComplete();
+    }
+    
+    @Test
+    public void maybeToMonoError() {
+        Maybe.error(new IOException("Forced failure"))
+        .to(RxJava2Adapter::maybeToMono)
+        .subscribeWith(AssertSubscriber.create())
+        .assertSubscribed()
+        .assertNoValues()
+        .assertError(IOException.class)
+        .assertErrorMessage("Forced failure")
+        .assertNotComplete();
+    }
+
+    @Test
+    public void maybeToMonoEmptyFused() {
+        AssertSubscriber<Object> ts = AssertSubscriber.create();
+        ts.requestedFusionMode(Fuseable.ANY);
+        
+        Maybe.empty()
+        .to(RxJava2Adapter::maybeToMono)
+        .subscribe(ts);
+        
+        ts
+        .assertFusionMode(Fuseable.ASYNC)
+        .assertNoValues()
+        .assertNoError()
+        .assertComplete();
+    }
+
+    @Test
+    public void maybeToMonoJustFused() {
+        AssertSubscriber<Object> ts = AssertSubscriber.create();
+        ts.requestedFusionMode(Fuseable.ANY);
+        
+        Maybe.just(1)
+        .to(RxJava2Adapter::maybeToMono)
+        .subscribe(ts);
+        
+        ts
+        .assertFusionMode(Fuseable.ASYNC)
+        .assertValues(1)
+        .assertNoError()
+        .assertComplete();
+    }
 }

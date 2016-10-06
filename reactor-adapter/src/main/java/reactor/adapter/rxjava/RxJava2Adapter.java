@@ -18,24 +18,14 @@ package reactor.adapter.rxjava;
 
 import java.util.NoSuchElementException;
 
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Completable;
-import io.reactivex.CompletableObserver;
-import io.reactivex.Flowable;
-import io.reactivex.Observable;
-import io.reactivex.Single;
-import io.reactivex.SingleObserver;
+import org.reactivestreams.*;
+
+import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.internal.operators.completable.CompletableFromPublisher;
 import io.reactivex.internal.operators.single.SingleFromPublisher;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-import reactor.core.Exceptions;
-import reactor.core.Fuseable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Operators;
+import reactor.core.*;
+import reactor.core.publisher.*;
 import reactor.core.publisher.Operators.MonoSubscriber;
 
 /**
@@ -139,6 +129,26 @@ public abstract class RxJava2Adapter {
         return fluxToFlowable(source).toObservable();
     }
 
+    /**
+     * Wraps an RxJava Maybe into a Mono instance.
+     * @param <T> the value type
+     * @param source the source Maybe
+     * @return the new Mono instance
+     */
+    public static <T> Mono<T> maybeToMono(Maybe<T> source) {
+        return new MaybeAsMono<>(source);
+    }
+    
+    /**
+     * WRaps Mono instance into an RxJava Maybe.
+     * @param <T> the value type
+     * @param source the source Mono
+     * @return the new Maybe instance
+     */
+    public static <T> Maybe<T> monoToMaybe(Mono<T> source) {
+        return new MonoAsMaybe<>(source);
+    }
+    
     static final class FlowableAsFlux<T> extends Flux<T> implements Fuseable {
         
         final Publisher<T> source;
@@ -635,6 +645,109 @@ public abstract class RxJava2Adapter {
             @Override
             public void onSuccess(T value) {
                 complete(value);
+            }
+        }
+    }
+
+    static final class MonoAsMaybe<T> extends Maybe<T> {
+        final Mono<T> source;
+        
+        public MonoAsMaybe(Mono<T> source) {
+            this.source = source;
+        }
+        
+        @Override
+        protected void subscribeActual(MaybeObserver<? super T> observer) {
+            source.subscribe(new MonoSubscriber<T>(observer));
+        }
+        
+        static final class MonoSubscriber<T> implements Subscriber<T>, Disposable {
+            final MaybeObserver<? super T> actual;
+            
+            Subscription s;
+            
+            public MonoSubscriber(MaybeObserver<? super T> actual) {
+                this.actual = actual;
+            }
+            
+            @Override
+            public void onSubscribe(Subscription s) {
+                this.s = s;
+                
+                actual.onSubscribe(this);
+                
+                s.request(Long.MAX_VALUE);
+            }
+            
+            @Override
+            public void onNext(T t) {
+                s = Operators.cancelledSubscription();
+                actual.onSuccess(t);
+            }
+            
+            @Override
+            public void onError(Throwable t) {
+                s = Operators.cancelledSubscription();
+                actual.onError(t);
+            }
+            
+            @Override
+            public void onComplete() {
+                if (s != Operators.cancelledSubscription()) {
+                    s = Operators.cancelledSubscription();
+                    actual.onComplete();
+                }
+            }
+            
+            @Override
+            public void dispose() {
+                s.cancel();
+                s = Operators.cancelledSubscription();
+            }
+            
+            @Override
+            public boolean isDisposed() {
+                return s == Operators.cancelledSubscription();
+            }
+        }
+    }
+    
+    static final class MaybeAsMono<T> extends Mono<T> implements Fuseable {
+        final Maybe<T> source;
+        
+        public MaybeAsMono(Maybe<T> source) {
+            this.source = source;
+        }
+        
+        @Override
+        public void subscribe(Subscriber<? super T> s) {
+            source.subscribe(new MaybeAsMonoObserver<T>(s));
+        }
+        
+        static final class MaybeAsMonoObserver<T> extends MonoSubscriber<T, T> implements MaybeObserver<T> {
+
+            Disposable d;
+            
+            public MaybeAsMonoObserver(Subscriber<? super T> subscriber) {
+                super(subscriber);
+            }
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                this.d = d;
+                
+                subscriber.onSubscribe(this);
+            }
+
+            @Override
+            public void onSuccess(T value) {
+                complete(value);
+            }
+            
+            @Override
+            public void cancel() {
+                super.cancel();
+                d.dispose();
             }
         }
     }
