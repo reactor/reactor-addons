@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.MonoProcessor
 import reactor.core.publisher.UnicastProcessor
 import reactor.core.publisher.WorkQueueProcessor
-import reactor.ipc.util.FlowSerializerUtils
+import reactor.test.util.FlowSerializerUtils
 import spock.lang.Specification
 
 import java.util.concurrent.CountDownLatch

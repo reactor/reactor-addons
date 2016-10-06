@@ -35,8 +35,6 @@ description = 'Reactive fast data framework for the JVM'
 ext {
   gradleVersion = '2.12'
   gradleScriptDir = "${rootProject.projectDir}/gradle"
-  reactorIpcVersion = '0.6.0.BUILD-SNAPSHOT'
-  reactorCoreVersion = '3.0.2.RELEASE'
 
   // Languages
   groovyVersion = '2.4.1'
@@ -52,7 +50,8 @@ ext {
   jacksonDatabindVersion = '2.5.1'
   jsonPathVersion = '2.0.0'
   openHftChronicleVersion = '3.4.2'
-  rxJavaVersion = '1.1.3'
+  rxJavaVersion = '1.2.1'
+  rxJava2Version = '2.0.0-RC3'
 
   // Libraries
   jacksonDatabindVersion = '2.5.1'
@@ -168,7 +167,9 @@ configure(subprojects) { project ->
 	// Logging
 	optional "org.slf4j:slf4j-api:$slf4jVersion"
 
+
 	testRuntime "ch.qos.logback:logback-classic:$logbackVersion"
+
 	// Testing
 	testCompile "org.codehaus.groovy:groovy:$groovyVersion",
 			"org.spockframework:spock-core:$spockVersion",
@@ -211,13 +212,13 @@ project('reactor-bus') {
 
   dependencies {
 	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-	testCompile "io.projectreactor.ipc:reactor-ipc:$reactorIpcVersion"
 
 	// Rich Collections
 	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"
 
 	optional "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
 	optional "com.jayway.jsonpath:json-path:$jsonPathVersion"
+	testCompile(project(":reactor-test"))
   }
 
   jar {
@@ -254,8 +255,8 @@ project('reactor-logback') {
   }
 }
 
-project('reactor-scheduler') {
-  version = reactorSchedulerVersion
+project('reactor-adapter') {
+  version = reactorAdapterVersion
   description = 'Scheduler implementations on top of various async boundary providers'
 
   repositories {
@@ -267,10 +268,28 @@ project('reactor-scheduler') {
 	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
 
 	optional "io.reactivex:rxjava:$rxJavaVersion"
+	//Optional RxJava 2 Converter
+	optional "io.reactivex.rxjava2:rxjava:$rxJava2Version"
 
 	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
 
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
+
+	testCompile(project(":reactor-test"))
+	testCompile "org.reactivestreams:reactive-streams-tck:1.0.0"
+  }
+}
+
+project('reactor-test') {
+  version = reactorTestVersion
+  description = 'Reactor Test support'
+
+  repositories {
+	maven { url "http://maven-eclipse.github.io/maven" }
+  }
+
+  dependencies {
+	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
   }
 }
 

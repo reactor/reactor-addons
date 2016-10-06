@@ -184,7 +184,7 @@ public class UUIDUtilsTests {
 		doTest("Create time-based", new Supplier<UUID>() {
 			@Override
 			public UUID get() {
-				return reactor.ipc.util.UUIDUtils.random();
+				return UUIDUtils.random();
 			}
 		});
 		doTest("Create random", new Supplier<UUID>() {
