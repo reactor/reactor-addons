@@ -1,21 +1,36 @@
 # Reactor Addons
 
+[![Travis CI](https://travis-ci.org/reactor/reactor-addons.svg?branch=master)](https://travis-ci.org/reactor/reactor-addons)
+   
+   
 [![Join the chat at https://gitter.im/reactor/reactor](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/reactor/reactor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-`Reactor` is a foundational library building for reactive fast data applications on the JVM. It provides abstractions for Java, Groovy, [Clojure](https://github.com/clojurewerkz/meltdown) and other JVM languages to make building event and data-driven applications easier. It’s also really fast. On a recent laptop with a dual-core processor, it's possible to process over 15,000,000 events per second with the `TopicProcessor` and over 25,000,000 events per second in a single thread. Other processors are available to provide the developer with a range of choices from thread-pool style, long-running task execution to non-blocking, high-volume task dispatching.
+# Addons List
 
-[![Build Status](https://drone.io/github.com/reactor/reactor-extensions/status.png)](https://drone.io/github.com/reactor/reactor-extensions/latest)
+# reactor-adapter [![Reactor Adapter](https://maven-badges.herokuapp.com/maven-central/io.projectreactor.addons/reactor-adapter/badge.svg?style=plastic)](http://mvnrepository.com/artifact/io.projectreactor.addons/reactor-adapter) 
 
-### Enrolling
+Bridge to RxJava 1 or 2 Observable, Completable, Flowable, Single, Maybe, Scheduler, and also Swing/SWT Scheduler, Akka Scheduler ...
 
-[Join the initiative](https://support.springsource.com/spring_committer_signup), fork, discuss and PR anytime. Roadmap is collaborative and we do enjoy new ideas, simplifications, doc, feedback, and, did we mention feedback already ;) ? As any other open source project, you are the hero, Reactor is only useful because of you and we can't wait to see your pull request mate !
+# reactor-test
+
+Test Support with various Subscribers, mocking scheduler (virtual time) and graph representations.
+
+# reactor-bus
+
+TBD
+
+# reactor-logback
+
+TBD
+
+# Contributing an Addon
 
 ### Build instructions
 
 `Reactor` uses a Gradle-based build system. Building the code yourself should be a straightforward case of:
 
-    git clone git@github.com:reactor/reactor.git
-    cd reactor
+    git clone git@github.com:reactor/reactor-addons.git
+    cd reactor-addons
     ./gradlew test
 
 This should cause the submodules to be compiled and the tests to be run. To install these artifacts to your local Maven repo, use the handly Gradle Maven plugin:
@@ -27,14 +42,14 @@ This should cause the submodules to be compiled and the tests to be run. To inst
 Snapshot Maven artifacts are provided in the SpringSource snapshot repositories. To add this repo to your Gradle build, specify the URL like the following:
 
     ext {
-      reactorVersion = '3.0.2.BUILD-SNAPSHOT'
+      reactorVersion = '3.0.3.BUILD-SNAPSHOT'
       reactorIpcVersion = '0.6.0.BUILD-SNAPSHOT'
     }
 
     repositories {
-      //maven { url 'http://repo.spring.io/libs-release' }
-      //maven { url 'http://repo.spring.io/libs-milestone' }
-      maven { url 'http://repo.spring.io/libs-snapshot' }
+      //maven { url 'http://repo.spring.io/release' }
+      //maven { url 'http://repo.spring.io/milestone' }
+      maven { url 'http://repo.spring.io/snapshot' }
       mavenCentral()
     }
 
@@ -42,29 +57,26 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
       // Reactor Core
       compile "io.projectreactor:reactor-core:$reactorVersion"
 
-      // Reactor Spring
-      // compile "io.projectreactor:reactor-spring:$reactorVersion"
+      // Reactor Adapter (RxJava and more)
+      // compile "io.projectreactor.addons:reactor-adapter:$reactorVersion"
 
-       // Reactor Netty
-       // compile "io.projectreactor.ipc:reactor-netty:$reactorIpcVersion"
-
-       // Reactor Codecs (Jackson, Kryo...)
-       // compile "io.projectreactor.addons:reactor-codec:$reactorIpcVersion"
+       // Reactor Test
+       // compile "io.projectreactor.addons:reactor-test:$reactorVersion"
+       
+       // ...
 
     }
 
 
-### Documentation
+## Documentation
 
 * [Guides](http://projectreactor.io/docs/)
-* [API Reference](http://reactor.github.io/docs/api/)
 * [Reactive Streams](http://www.reactive-streams.org/)
 
-### Community / Support
+## Community / Support
 
-* [reactor-framework Google Group](https://groups.google.com/forum/?#!forum/reactor-framework)
-* [GitHub Issues](https://github.com/reactor/reactor/issues)
+* [GitHub Issues](https://github.com/reactor/reactor-addons/issues)
 
-### License
+## License
 
 Reactor is [Apache 2.0 licensed](http://www.apache.org/licenses/LICENSE-2.0.html).
