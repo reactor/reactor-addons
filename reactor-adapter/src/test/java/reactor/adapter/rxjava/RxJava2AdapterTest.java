@@ -28,12 +28,12 @@ import org.junit.Test;
 import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.test.subscriber.TestSubscriber;
+import reactor.test.subscriber.AssertSubscriber;
 
 public class RxJava2AdapterTest {
     @Test
     public void flowableToFlux() {
-        TestSubscriber<Integer> ts = TestSubscriber.create();
+        AssertSubscriber<Integer> ts = AssertSubscriber.create();
         
         Flowable.range(1, 10)
                 .hide()
@@ -47,7 +47,7 @@ public class RxJava2AdapterTest {
 
     @Test
     public void flowableToFluxFused() {
-        TestSubscriber<Integer> ts = TestSubscriber.create();
+        AssertSubscriber<Integer> ts = AssertSubscriber.create();
         ts.requestedFusionMode(Fuseable.ANY);
         
         Flowable.range(1, 10)
@@ -63,7 +63,7 @@ public class RxJava2AdapterTest {
 
     @Test
     public void fluxToFlowable() {
-        TestSubscriber<Integer> ts = TestSubscriber.create();
+        AssertSubscriber<Integer> ts = AssertSubscriber.create();
         
         Flux.range(1, 10)
         .hide()
@@ -101,7 +101,7 @@ public class RxJava2AdapterTest {
     
     @Test
     public void singleToMono() {
-        TestSubscriber<Integer> ts = TestSubscriber.create();
+        AssertSubscriber<Integer> ts = AssertSubscriber.create();
         
         Single.just(1)
         .to(RxJava2Adapter::singleToMono)
@@ -115,7 +115,7 @@ public class RxJava2AdapterTest {
 
     @Test
     public void singleToMonoFused() {
-        TestSubscriber<Integer> ts = TestSubscriber.create();
+        AssertSubscriber<Integer> ts = AssertSubscriber.create();
         ts.requestedFusionMode(Fuseable.ANY);
         
         Single.just(1)
@@ -151,7 +151,7 @@ public class RxJava2AdapterTest {
 
     @Test
     public void completableToMono() {
-        TestSubscriber<Object> ts = TestSubscriber.create();
+        AssertSubscriber<Object> ts = AssertSubscriber.create();
         
         Completable.complete()
                    .to(RxJava2Adapter::completableToMono)
@@ -165,7 +165,7 @@ public class RxJava2AdapterTest {
 
     @Test
     public void completableToMonoFused() {
-        TestSubscriber<Object> ts = TestSubscriber.create();
+        AssertSubscriber<Object> ts = AssertSubscriber.create();
         ts.requestedFusionMode(Fuseable.ANY);
         
         Completable.complete()
