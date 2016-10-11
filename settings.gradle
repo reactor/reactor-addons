@@ -2,7 +2,6 @@ rootProject.name = 'reactor-addons'
 
 include 'reactor-bus',
 		'reactor-logback',
-		'reactor-codec',
 		'reactor-test',
 		'reactor-adapter',
 		'docs'
