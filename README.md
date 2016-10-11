@@ -15,13 +15,9 @@ Bridge to RxJava 1 or 2 Observable, Completable, Flowable, Single, Maybe, Schedu
 
 Test Support with various Subscribers, mocking scheduler (virtual time) and graph representations.
 
-# reactor-bus
-
-TBD
-
 # reactor-logback
 
-TBD
+Logback support over asynchronous Reactor Core Processors.
 
 # Contributing an Addon
 
