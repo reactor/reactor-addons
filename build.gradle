@@ -44,21 +44,9 @@ ext {
   logbackVersion = '1.1.2'
 
   // Libraries
-  gsCollectionsVersion = '5.1.0'
-  pcollectionsVersion = "2.1.2"
-  nettyVersion = '4.1.3.Final'
-  jacksonDatabindVersion = '2.5.1'
-  jsonPathVersion = '2.0.0'
   openHftChronicleVersion = '3.4.2'
   rxJavaVersion = '1.2.1'
   rxJava2Version = '2.0.0-RC3'
-
-  // Libraries
-  jacksonDatabindVersion = '2.5.1'
-  protobufVersion = '2.6.1'
-  kryoVersion = '3.0.3'
-  snappyVersion = '1.1.1.6'
-
   akkaActorVersion = '2.4.4'
 
   swtVersion = '4.5.2'
@@ -190,40 +178,6 @@ configure(subprojects) { project ->
 		  mavenBom "io.spring.platform:platform-bom:$platformVersion"
 		}
 	  }
-	}
-  }
-}
-
-project('reactor-bus') {
-  version=reactorBusVersion
-  description = 'Reactor Event Bus components'
-
-  apply plugin: 'osgi'
-  apply plugin: 'groovy'
-
-  ext.bundleImportPackages = ['com.jayway.jsonpath;resolution:=optional',
-							  'com.jayway.jsonpath.internal;resolution:=optional',
-							  'com.jayway.jsonpath.spi;resolution:=optional',
-							  'com.fasterxml.jackson.core;resolution:=optional',
-							  'com.fasterxml.jackson.databind;resolution:=optional',
-							  'com.fasterxml.jackson.databind.node;resolution:=optional',
-							  'com.fasterxml.jackson.databind.type;resolution:=optional',
-							  '*']
-
-  dependencies {
-	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-
-	// Rich Collections
-	optional "com.goldmansachs:gs-collections:$gsCollectionsVersion"
-
-	optional "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion"
-	optional "com.jayway.jsonpath:json-path:$jsonPathVersion"
-	testCompile(project(":reactor-test"))
-  }
-
-  jar {
-	manifest {
-	  instruction 'Import-Package', bundleImportPackages.join(',')
 	}
   }
 }
