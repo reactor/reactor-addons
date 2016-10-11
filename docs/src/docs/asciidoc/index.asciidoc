@@ -1,0 +1,28 @@
+= Reactor Guide
+Stephane Maldini;
+:appversion: 3.0.2.BUILD-SNAPSHOT (wiki)
+ifndef::host-github[:ext-relative: {outfilesuffix}]
+{appversion}
+:doctype: book
+:icons: font
+
+ifdef::backend-html5[]
+++++
+include::nav.html[]
+++++
+endif::[]
+
+include::20to25.adoc[]
+
+[[reactor-bus]]
+= *reactor-bus*
+include::event-bus.adoc[]
+
+[[reactor-extensions]]
+= *Extensions*
+include::spring.adoc[]
+
+[[reactor-spring]]
+include::spring.adoc[]
+
+include::groovy.adoc[]
