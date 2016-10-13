@@ -39,8 +39,8 @@ import org.reactivestreams.Subscription;
 import reactor.core.publisher.Signal;
 
 /**
- * Default implementation of {@link reactor.test.ScriptedSubscriber.ValueBuilder} and
- * {@link reactor.test.ScriptedSubscriber.TerminationBuilder}.
+ * Default implementation of {@link ScriptedSubscriber.ValueBuilder} and
+ * {@link ScriptedSubscriber.TerminationBuilder}.
  *
  * @author Arjen Poutsma
  * @since 1.0
@@ -106,19 +106,13 @@ class DefaultScriptedSubscriberBuilder<T> implements ScriptedSubscriber.ValueBui
 
 	@Override
 	public ScriptedSubscriber.ValueBuilder<T> expectValueWith(Predicate<T> predicate) {
-		return expectValueWith(predicate, t -> String.format("predicate failed on value: %s", t));
-	}
-
-	@Override
-	public ScriptedSubscriber.ValueBuilder<T> expectValueWith(Predicate<T> predicate,
-			Function<T, String> assertionMessage) {
 
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnNext()) {
 				return Optional.of(String.format("expected: onNext(); actual: %s", signal));
 			}
 			else if (!predicate.test(signal.get())) {
-				return Optional.of(assertionMessage.apply(signal.get()));
+				return Optional.of(String.format("predicate failed on value: %s", signal.get()));
 			}
 			else {
 				return Optional.empty();
@@ -127,6 +121,26 @@ class DefaultScriptedSubscriberBuilder<T> implements ScriptedSubscriber.ValueBui
 		this.script.add(event);
 		return this;
 
+	}
+
+	@Override
+	public ScriptedSubscriber.ValueBuilder<T> consumeValueWith(Consumer<T> consumer) {
+		SignalEvent<T> event = new SignalEvent<>(signal -> {
+			if (!signal.isOnNext()) {
+				return Optional.of(String.format("expected: onNext(); actual: %s", signal));
+			}
+			else {
+				try {
+					consumer.accept(signal.get());
+					return Optional.empty();
+				}
+				catch (AssertionError assertion) {
+					return Optional.of(assertion.getMessage());
+				}
+			}
+		});
+		this.script.add(event);
+		return this;
 	}
 
 	@Override
@@ -165,23 +179,37 @@ class DefaultScriptedSubscriberBuilder<T> implements ScriptedSubscriber.ValueBui
 
 	@Override
 	public ScriptedSubscriber<T> expectErrorWith(Predicate<Throwable> predicate) {
-		return expectErrorWith(predicate,
-				t -> String.format("predicate failed on exception: %s", t));
-	}
-
-	@Override
-	public ScriptedSubscriber<T> expectErrorWith(Predicate<Throwable> predicate,
-			Function<Throwable, String> assertionMessage) {
 
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnError()) {
 				return Optional.of(String.format("expected: onError(); actual: %s", signal));
 			}
 			else if (!predicate.test(signal.getThrowable())) {
-				return Optional.of(assertionMessage.apply(signal.getThrowable()));
+				return Optional.of(String.format("predicate failed on exception: %s",
+						signal.getThrowable()));
 			}
 			else {
 				return Optional.empty();
+			}
+		});
+		this.script.add(event);
+		return build();
+	}
+
+	@Override
+	public ScriptedSubscriber<T> consumeErrorWith(Consumer<Throwable> consumer) {
+		SignalEvent<T> event = new SignalEvent<>(signal -> {
+			if (!signal.isOnError()) {
+				return Optional.of(String.format("expected: onError(); actual: %s", signal));
+			}
+			else {
+				try {
+					consumer.accept(signal.getThrowable());
+					return Optional.empty();
+				}
+				catch (AssertionError assertion) {
+					return Optional.of(assertion.getMessage());
+				}
 			}
 		});
 		this.script.add(event);

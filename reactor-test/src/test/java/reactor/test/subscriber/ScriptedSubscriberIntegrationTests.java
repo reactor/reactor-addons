@@ -122,9 +122,13 @@ public class ScriptedSubscriberIntegrationTests {
 	}
 
 	@Test
-	public void expectValueWithCustomMessage() throws InterruptedException {
+	public void consumeValueWith() throws Exception {
 		ScriptedSubscriber<String> subscriber = ScriptedSubscriber.<String>create()
-				.expectValueWith("foo"::equals, s -> s)
+				.consumeValueWith(s -> {
+					if (!"foo".equals(s)) {
+						throw new AssertionError(s);
+					}
+				})
 				.expectComplete();
 
 		Flux<String> flux = Flux.just("bar");
@@ -222,11 +226,14 @@ public class ScriptedSubscriberIntegrationTests {
 	}
 
 	@Test
-	public void errorWithCustomMessage() throws InterruptedException {
+	public void consumeErrorWith() throws InterruptedException {
 		ScriptedSubscriber<String> subscriber = ScriptedSubscriber.<String>create()
 				.expectValue("foo")
-				.expectErrorWith(t -> t instanceof IllegalStateException,
-						throwable -> throwable.getClass().getSimpleName());
+				.consumeErrorWith(throwable -> {
+					if (!(throwable instanceof IllegalStateException)) {
+						throw new AssertionError(throwable.getClass().getSimpleName());
+					}
+				});
 
 		Flux<String> flux = Flux.just("foo").concatWith(Mono.error(new IllegalArgumentException()));
 		flux.subscribe(subscriber);
