@@ -39,7 +39,7 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
 
     ext {
       reactorVersion = '3.0.3.BUILD-SNAPSHOT'
-      reactorIpcVersion = '0.6.0.BUILD-SNAPSHOT'
+      reactorTestVersion = '1.0.0.BUILD-SNAPSHOT'
     }
 
     repositories {
@@ -57,7 +57,7 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
       // compile "io.projectreactor.addons:reactor-adapter:$reactorVersion"
 
        // Reactor Test
-       // compile "io.projectreactor.addons:reactor-test:$reactorVersion"
+       // compile "io.projectreactor.addons:reactor-test:$reactorTestVersion"
        
        // ...
 
