@@ -21,8 +21,10 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReference;
 
 import reactor.core.Cancellation;
+import reactor.core.Exceptions;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.core.scheduler.TimedScheduler;
@@ -81,8 +83,8 @@ public class TestScheduler implements TimedScheduler {
 	 * AFTER all tested code has been run (teardown etc).
 	 */
 	public static void reset() {
-		Schedulers.resetFactory();
 		Schedulers.shutdownNow();
+		Schedulers.resetFactory();
 	}
 
 	final Queue<TimedRunnable> queue =
@@ -148,7 +150,13 @@ public class TestScheduler implements TimedScheduler {
 			long initialDelay,
 			long period,
 			TimeUnit unit) {
-		return createWorker().schedulePeriodically(task, initialDelay, period, unit);
+		final TimedWorker w = createWorker();
+
+		PeriodicDirectTask periodicTask = new PeriodicDirectTask(task, w);
+
+		w.schedulePeriodically(periodicTask, initialDelay, period, unit);
+
+		return periodicTask;
 	}
 
 	final void advanceTime(long targetTimeInNanoseconds) {
@@ -280,7 +288,17 @@ public class TestScheduler implements TimedScheduler {
 				long initialDelay,
 				long period,
 				TimeUnit unit) {
-			return null;
+			final long periodInNanoseconds = unit.toNanos(period);
+			final long firstNowNanoseconds = now(TimeUnit.NANOSECONDS);
+			final long firstStartInNanoseconds = firstNowNanoseconds + unit.toNanos(initialDelay);
+
+			PeriodicTask periodicTask = new PeriodicTask(firstStartInNanoseconds, task,
+					firstNowNanoseconds,
+					periodInNanoseconds);
+
+			replace(periodicTask, schedule(periodicTask, initialDelay, unit));
+
+			return periodicTask;
 		}
 
 		@Override
@@ -290,6 +308,123 @@ public class TestScheduler implements TimedScheduler {
 
 	}
 
+	static final Cancellation CANCELLED = () -> {
+	};
+	static final Cancellation EMPTY = () -> {
+	};
+
+	final class PeriodicTask extends AtomicReference<Cancellation> implements Runnable,
+	                                                                          Cancellation {
+
+		final Runnable decoratedRun;
+		final long     periodInNanoseconds;
+		long count;
+		long lastNowNanoseconds;
+		long startInNanoseconds;
+
+		PeriodicTask(long firstStartInNanoseconds,
+				Runnable decoratedRun,
+				long firstNowNanoseconds,
+				long periodInNanoseconds) {
+			this.decoratedRun = decoratedRun;
+			this.periodInNanoseconds = periodInNanoseconds;
+			lastNowNanoseconds = firstNowNanoseconds;
+			startInNanoseconds = firstStartInNanoseconds;
+			lazySet(EMPTY);
+		}
+
+		@Override
+		public void run() {
+			decoratedRun.run();
+
+			if (get() != CANCELLED) {
+
+				long nextTick;
+
+				long nowNanoseconds = now(TimeUnit.NANOSECONDS);
+				// If the clock moved in a direction quite a bit, rebase the repetition period
+				if (nowNanoseconds + CLOCK_DRIFT_TOLERANCE_NANOSECONDS < lastNowNanoseconds || nowNanoseconds >= lastNowNanoseconds + periodInNanoseconds + CLOCK_DRIFT_TOLERANCE_NANOSECONDS) {
+					nextTick = nowNanoseconds + periodInNanoseconds;
+		                /*
+                         * Shift the start point back by the drift as if the whole thing
+                         * started count periods ago.
+                         */
+					startInNanoseconds = nextTick - (periodInNanoseconds * (++count));
+				}
+				else {
+					nextTick = startInNanoseconds + (++count * periodInNanoseconds);
+				}
+				lastNowNanoseconds = nowNanoseconds;
+
+				long delay = nextTick - nowNanoseconds;
+				replace(this, schedule(this, delay, TimeUnit.NANOSECONDS));
+			}
+		}
+
+		@Override
+		public void dispose() {
+			getAndSet(CANCELLED).dispose();
+		}
+	}
+
+	static boolean replace(AtomicReference<Cancellation> ref, Cancellation c) {
+		for (; ; ) {
+			Cancellation current = ref.get();
+			if (current == CANCELLED) {
+				if (c != null) {
+					c.dispose();
+				}
+				return false;
+			}
+			if (ref.compareAndSet(current, c)) {
+				return true;
+			}
+		}
+	}
+
+	static class PeriodicDirectTask implements Runnable, Cancellation {
+
+		final Runnable run;
+
+		final Scheduler.Worker worker;
+
+		volatile boolean disposed;
+
+		PeriodicDirectTask(Runnable run, Worker worker) {
+			this.run = run;
+			this.worker = worker;
+		}
+
+		@Override
+		public void run() {
+			if (!disposed) {
+				try {
+					run.run();
+				}
+				catch (Throwable ex) {
+					Exceptions.throwIfFatal(ex);
+					worker.shutdown();
+					throw Exceptions.propagate(ex);
+				}
+			}
+		}
+
+		@Override
+		public void dispose() {
+			disposed = true;
+			worker.shutdown();
+		}
+	}
+
 	static final AtomicLongFieldUpdater<TestScheduler> COUNTER =
 			AtomicLongFieldUpdater.newUpdater(TestScheduler.class, "counter");
+	static final long CLOCK_DRIFT_TOLERANCE_NANOSECONDS;
+
+	static {
+		CLOCK_DRIFT_TOLERANCE_NANOSECONDS = TimeUnit.MINUTES.toNanos(Long.getLong(
+				"reactor.scheduler.drift-tolerance",
+				15));
+	}
+
+
 }

@@ -271,7 +271,7 @@ public class ScriptedSubscriberIntegrationTests {
 	}
 
 	@Test
-	public void verifyVirtualTime() {
+	public void verifyVirtualTimeOnSubscribe() {
 		ScriptedSubscriber.enableVirtualTime();
 		Mono<String> mono = Mono.delay(Duration.ofDays(2))
 		                        .map(l -> "foo");
@@ -285,7 +285,7 @@ public class ScriptedSubscriberIntegrationTests {
 	}
 
 	@Test
-	public void verifyVirtualTime2() {
+	public void verifyVirtualTimeOnError() {
 		ScriptedSubscriber.enableVirtualTime();
 		Mono<String> mono = Mono.never()
 		                        .timeout(Duration.ofDays(2))
@@ -299,11 +299,11 @@ public class ScriptedSubscriberIntegrationTests {
 	}
 
 	@Test
-	public void verifyVirtualTimeAll() {
+	public void verifyVirtualTimeOnNext() {
 		ScriptedSubscriber.enableVirtualTime();
-		Flux<String> mono = Flux.just("foo", "bar", "foobar")
+		Flux<String> flux = Flux.just("foo", "bar", "foobar")
 		                        .delay(Duration.ofHours(1))
-				.log();
+		                        .log();
 
 		ScriptedSubscriber.create()
 		                  .advanceTimeBy(Duration.ofHours(1))
@@ -313,7 +313,39 @@ public class ScriptedSubscriberIntegrationTests {
 		                  .advanceTimeBy(Duration.ofHours(1))
 		                  .expectValue("foobar")
 		                  .expectComplete()
-		                  .verify(mono);
+		                  .verify(flux);
+
+	}
+
+	@Test
+	public void verifyVirtualTimeOnComplete() {
+		ScriptedSubscriber.enableVirtualTime();
+		Flux<?> flux = Flux.empty()
+		                   .delaySubscription(Duration.ofHours(1))
+		                   .log();
+
+		ScriptedSubscriber.create()
+		                  .advanceTimeBy(Duration.ofHours(1))
+		                  .expectComplete()
+		                  .verify(flux);
+
+	}
+
+	@Test
+	public void verifyVirtualTimeOnNextInterval() {
+		ScriptedSubscriber.enableVirtualTime();
+		Flux<String> flux = Flux.interval(Duration.ofSeconds(3))
+		                        .map(d -> "t" + d);
+
+		ScriptedSubscriber.create()
+		                  .advanceTimeBy(Duration.ofSeconds(3))
+		                  .expectValue("t0")
+		                  .advanceTimeBy(Duration.ofSeconds(3))
+		                  .expectValue("t1")
+		                  .advanceTimeBy(Duration.ofSeconds(3))
+		                  .expectValue("t2")
+		                  .doCancel()
+		                  .verify(flux);
 
 	}
 
