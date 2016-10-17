@@ -82,6 +82,7 @@ public class TestScheduler implements TimedScheduler {
 	 */
 	public static void reset() {
 		Schedulers.resetFactory();
+		Schedulers.shutdownNow();
 	}
 
 	final Queue<TimedRunnable> queue =

@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.After;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Arjen Poutsma
  * @author Sebastien Deleuze
+ * @author Stephane Maldini
  */
 public class ScriptedSubscriberIntegrationTests {
 
@@ -280,7 +282,6 @@ public class ScriptedSubscriberIntegrationTests {
 		                  .expectComplete()
 		                  .verify(mono);
 
-		ScriptedSubscriber.disableVirtualTime();
 	}
 
 	@Test
@@ -295,7 +296,25 @@ public class ScriptedSubscriberIntegrationTests {
 		                  .expectError(TimeoutException.class)
 		                  .verify(mono);
 
-		ScriptedSubscriber.disableVirtualTime();
+	}
+
+	@Test
+	public void verifyVirtualTimeAll() {
+		ScriptedSubscriber.enableVirtualTime();
+		Flux<String> mono = Flux.just("foo", "bar", "foobar")
+		                        .delay(Duration.ofHours(1))
+				.log();
+
+		ScriptedSubscriber.create()
+		                  .advanceTimeBy(Duration.ofHours(1))
+		                  .expectValue("foo")
+		                  .advanceTimeBy(Duration.ofHours(1))
+		                  .expectValue("bar")
+		                  .advanceTimeBy(Duration.ofHours(1))
+		                  .expectValue("foobar")
+		                  .expectComplete()
+		                  .verify(mono);
+
 	}
 
 	@Test(expected = AssertionError.class)
@@ -309,4 +328,8 @@ public class ScriptedSubscriberIntegrationTests {
 				.verify(flux, Duration.ofMillis(300));
 	}
 
+	@After
+	public void cleanup(){
+		ScriptedSubscriber.disableVirtualTime();
+	}
 }
