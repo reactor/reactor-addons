@@ -50,7 +50,7 @@ public class TestScheduler implements TimedScheduler {
 	 */
 	public static void enable(boolean allSchedulers) {
 		TestScheduler s = new TestScheduler();
-		if (allSchedulers) {
+		if (!allSchedulers) {
 			Schedulers.setFactory(new TimedOnlyFactory(s));
 		}
 		else {
@@ -64,14 +64,14 @@ public class TestScheduler implements TimedScheduler {
 	 * @throws IllegalStateException if no {@link TestScheduler} has been found
 	 */
 	public static TestScheduler get(){
-		Scheduler s = Schedulers.newSingle("");
+		Scheduler s = Schedulers.newTimer("");
 		if(s instanceof TestScheduler){
 			@SuppressWarnings("unchecked")
 			TestScheduler _s = (TestScheduler)s;
 			return _s;
 		}
-		throw new IllegalStateException("A TestScheduler has noot been returned from " +
-				"Schedulers#timer, check if TestScheduler#enable has been invoked first" +
+		throw new IllegalStateException("Check if TestScheduler#enable has been invoked" +
+				" first" +
 				": "+s);
 	}
 

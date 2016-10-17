@@ -355,7 +355,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 				if (event == null || event instanceof SignalEvent) {
 					break;
 				}
-				else if (event instanceof DefaultScriptedSubscriberBuilder.VirtualTimeEvent) {
+				else if (event instanceof VirtualTimeEvent) {
 					if (!actualSignal.isOnSubscribe()) {
 						VirtualTimeEvent<T> virtualTimeEvent =
 								(VirtualTimeEvent<T>) this.script.poll();

@@ -17,6 +17,8 @@
 package reactor.test.subscriber;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 import reactor.core.publisher.Flux;
@@ -276,7 +278,22 @@ public class ScriptedSubscriberIntegrationTests {
 		                  .advanceTimeBy(Duration.ofDays(3))
 		                  .expectValue("foo")
 		                  .expectComplete()
-		                  .verify(mono, Duration.ofMillis(500));
+		                  .verify(mono);
+
+		ScriptedSubscriber.disableVirtualTime();
+	}
+
+	@Test
+	public void verifyVirtualTime2() {
+		ScriptedSubscriber.enableVirtualTime();
+		Mono<String> mono = Mono.never()
+		                        .timeout(Duration.ofDays(2))
+		                        .map(l -> "foo");
+
+		ScriptedSubscriber.create()
+		                  .advanceTimeTo(Instant.now().plus(Duration.ofDays(2)))
+		                  .expectError(TimeoutException.class)
+		                  .verify(mono);
 
 		ScriptedSubscriber.disableVirtualTime();
 	}
