@@ -287,7 +287,7 @@ public class ScriptedSubscriberIntegrationTests {
 		Mono<String> mono = Mono.delay(Duration.ofDays(2))
 		                        .map(l -> "foo");
 
-		ScriptedSubscriber.create()
+		ScriptedSubscriber.withVirtualTime()
 		                  .advanceTimeBy(Duration.ofDays(3))
 		                  .expectValue("foo")
 		                  .expectComplete()
@@ -297,12 +297,11 @@ public class ScriptedSubscriberIntegrationTests {
 
 	@Test
 	public void verifyVirtualTimeOnError() {
-		ScriptedSubscriber.enableVirtualTime();
 		Mono<String> mono = Mono.never()
 		                        .timeout(Duration.ofDays(2))
 		                        .map(l -> "foo");
 
-		ScriptedSubscriber.create()
+		ScriptedSubscriber.withVirtualTime()
 		                  .advanceTimeTo(Instant.now().plus(Duration.ofDays(2)))
 		                  .expectError(TimeoutException.class)
 		                  .verify(mono);
@@ -311,12 +310,11 @@ public class ScriptedSubscriberIntegrationTests {
 
 	@Test
 	public void verifyVirtualTimeOnNext() {
-		ScriptedSubscriber.enableVirtualTime();
 		Flux<String> flux = Flux.just("foo", "bar", "foobar")
 		                        .delay(Duration.ofHours(1))
 		                        .log();
 
-		ScriptedSubscriber.create()
+		ScriptedSubscriber.withVirtualTime()
 		                  .advanceTimeBy(Duration.ofHours(1))
 		                  .expectValue("foo")
 		                  .advanceTimeBy(Duration.ofHours(1))
@@ -330,12 +328,11 @@ public class ScriptedSubscriberIntegrationTests {
 
 	@Test
 	public void verifyVirtualTimeOnComplete() {
-		ScriptedSubscriber.enableVirtualTime();
 		Flux<?> flux = Flux.empty()
 		                   .delaySubscription(Duration.ofHours(1))
 		                   .log();
 
-		ScriptedSubscriber.create()
+		ScriptedSubscriber.withVirtualTime()
 		                  .advanceTimeBy(Duration.ofHours(1))
 		                  .expectComplete()
 		                  .verify(flux);
@@ -344,11 +341,10 @@ public class ScriptedSubscriberIntegrationTests {
 
 	@Test
 	public void verifyVirtualTimeOnNextInterval() {
-		ScriptedSubscriber.enableVirtualTime();
 		Flux<String> flux = Flux.interval(Duration.ofSeconds(3))
 		                        .map(d -> "t" + d);
 
-		ScriptedSubscriber.create()
+		ScriptedSubscriber.withVirtualTime()
 		                  .advanceTimeBy(Duration.ofSeconds(3))
 		                  .expectValue("t0")
 		                  .advanceTimeBy(Duration.ofSeconds(3))

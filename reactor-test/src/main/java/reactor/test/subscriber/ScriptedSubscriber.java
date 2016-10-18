@@ -18,6 +18,7 @@ package reactor.test.subscriber;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -76,22 +77,31 @@ import reactor.test.scheduler.VirtualTimeScheduler;
 public interface ScriptedSubscriber<T> extends Subscriber<T> {
 
 	/**
-	 *
+	 * Enables use of a {@link VirtualTimeScheduler virtual clock}. Prefer using
+	 * {@link #withVirtualTime()} (instead of {@link #create()}) to automatically
+	 * activate this feature and obtain methods to manipulate the clock.
 	 */
 	static void enableVirtualTime(){
 		enableVirtualTime(false);
 	}
 
 	/**
+	 * Enables use of a {@link VirtualTimeScheduler virtual clock}. Prefer using
+	 * {@link #withVirtualTime()} (instead of {@link #create()}) to automatically
+	 * activate this feature and obtain methods to manipulate the clock.
 	 *
-	 * @param allSchedulers
+	 * @param allSchedulers true to activate for all the schedulers in
+	 * {@link reactor.core.scheduler.Schedulers}, false to activate only for
+	 * {@link reactor.core.scheduler.TimedScheduler TimedSchedulers}
 	 */
 	static void enableVirtualTime(boolean allSchedulers){
 		VirtualTimeScheduler.enable(allSchedulers);
 	}
 
 	/**
+	 * Disables use of the {@link VirtualTimeScheduler virtual clock}.
 	 *
+	 * @see #enableVirtualTime()
 	 */
 	static void disableVirtualTime(){
 		VirtualTimeScheduler.reset();
@@ -150,7 +160,17 @@ public interface ScriptedSubscriber<T> extends Subscriber<T> {
 	 */
 	static <T> ValueBuilder<T> create(long n) {
 		DefaultScriptedSubscriberBuilder.checkForNegative(n);
-		return new DefaultScriptedSubscriberBuilder<T>(n);
+		return new DefaultScriptedSubscriberBuilder<>(n);
+	}
+
+	static <T> VirtualTimeValueBuilder<T> withVirtualTime() {
+		return withVirtualTime(Long.MAX_VALUE);
+	}
+
+	static <T> VirtualTimeValueBuilder<T> withVirtualTime(long n) {
+		DefaultScriptedSubscriberBuilder.checkForNegative(n);
+		enableVirtualTime(true);
+		return new DefaultScriptedSubscriberBuilder<>(n);
 	}
 
 	/**
@@ -235,26 +255,6 @@ public interface ScriptedSubscriber<T> extends Subscriber<T> {
 	interface ValueBuilder<T> extends TerminationBuilder<T> {
 
 		/**
-		 *
-		 * @return this builder
-		 */
-		ValueBuilder<T> advanceTime();
-
-		/**
-		 *
-		 * @param timeshift
-		 * @return this builder
-		 */
-		ValueBuilder<T> advanceTimeBy(Duration timeshift);
-
-		/**
-		 *
-		 * @param instant
-		 * @return this builder
-		 */
-		ValueBuilder<T> advanceTimeTo(Instant instant);
-
-		/**
 		 * Request the given amount of elements from the upstream {@code Publisher}. This is in
 		 * addition to the initial number of elements requested by
 		 * {@link ScriptedSubscriber#create(long)}.
@@ -296,4 +296,57 @@ public interface ScriptedSubscriber<T> extends Subscriber<T> {
 		 */
 		ValueBuilder<T> consumeValueWith(Consumer<T> consumer);
 	}
+
+	/**
+	 * Define a builder for expecting individual values, that uses a virtual clock and is
+	 * able to manipulate it.
+	 *
+	 * @param <T> the type of values that the subscriber contains
+	 */
+	interface VirtualTimeValueBuilder<T> extends ValueBuilder<T> {
+
+		/**
+		 * Triggers any tasks that have not yet been executed and that are scheduled to be
+		 * executed at or before the {@link VirtualTimeScheduler virtual clock}'s
+		 * present time.
+		 *
+		 * @return this builder
+		 */
+		VirtualTimeValueBuilder<T> advanceTime();
+
+		/**
+		 * Moves the {@link VirtualTimeScheduler virtual clock} forward by a specified
+		 * amount of time.
+		 *
+		 * @param timeshift the amount of time to move by
+		 * @return this builder
+		 */
+		VirtualTimeValueBuilder<T> advanceTimeBy(Duration timeshift);
+
+		/**
+		 * Moves the {@link VirtualTimeScheduler virtual clock} to a particular instant in
+		 * time.
+		 *
+		 * @param instant the instant in time to move to
+		 * @return this builder
+		 */
+		VirtualTimeValueBuilder<T> advanceTimeTo(Instant instant);
+
+		@Override
+		VirtualTimeValueBuilder<T> doRequest(long n);
+
+		@Override
+		VirtualTimeValueBuilder<T> expectValue(T t);
+
+		@Override
+		VirtualTimeValueBuilder<T> expectValues(T... ts);
+
+		@Override
+		VirtualTimeValueBuilder<T> expectValueWith(Predicate<T> predicate);
+
+		@Override
+		VirtualTimeValueBuilder<T> consumeValueWith(Consumer<T> consumer);
+	}
+
+
 }
