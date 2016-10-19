@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.reactivestreams.Publisher;
@@ -42,7 +43,7 @@ import reactor.core.Receiver;
 import reactor.core.Trackable;
 import reactor.core.publisher.Operators;
 import reactor.core.publisher.Signal;
-import reactor.test.scheduler.TestScheduler;
+import reactor.test.scheduler.VirtualTimeScheduler;
 
 /**
  * Default implementation of {@link ScriptedSubscriber.ValueBuilder} and
@@ -52,7 +53,7 @@ import reactor.test.scheduler.TestScheduler;
  * @since 1.0
  */
 final class DefaultScriptedSubscriberBuilder<T>
-		implements ScriptedSubscriber.ValueBuilder<T> {
+		implements ScriptedSubscriber.VirtualTimeValueBuilder<T> {
 
 	final List<Event<T>> script = new ArrayList<>();
 
@@ -87,31 +88,29 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.ValueBuilder<T> advanceTime() {
-		this.script.add(new TaskEvent<>(() -> TestScheduler.get()
-		                                                   .advanceTime()));
+	public ScriptedSubscriber.VirtualTimeValueBuilder<T> advanceTime() {
+		this.script.add(new TaskEvent<>(
+				() -> VirtualTimeScheduler.get().advanceTime()));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.ValueBuilder<T> advanceTimeBy(Duration timeshift) {
-		this.script.add(new TaskEvent<>(() -> TestScheduler.get()
-		                                                   .advanceTimeBy(timeshift.toNanos(),
-				                                                          TimeUnit.NANOSECONDS)));
+	public ScriptedSubscriber.VirtualTimeValueBuilder<T> advanceTimeBy(Duration timeshift) {
+		this.script.add(new TaskEvent<>(
+				() -> VirtualTimeScheduler.get().advanceTimeBy(timeshift.toNanos(), TimeUnit.NANOSECONDS)));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.ValueBuilder<T> advanceTimeTo(Instant instant) {
+	public ScriptedSubscriber.VirtualTimeValueBuilder<T> advanceTimeTo(Instant instant) {
 
-		this.script.add(new TaskEvent<>(() -> TestScheduler.get()
-		                                                   .advanceTimeTo(instant.toEpochMilli(),
-				                                                          TimeUnit.MILLISECONDS)));
+		this.script.add(new TaskEvent<>(
+				() -> VirtualTimeScheduler.get().advanceTimeTo(instant.toEpochMilli(), TimeUnit.MILLISECONDS)));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.ValueBuilder<T> expectValue(T t) {
+	public ScriptedSubscriber.VirtualTimeValueBuilder<T> expectValue(T t) {
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnNext()) {
 				return Optional.of(String.format("expected: onNext(%s); actual: %s", t, signal));
@@ -130,13 +129,13 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.ValueBuilder<T> expectValues(T... ts) {
+	public ScriptedSubscriber.VirtualTimeValueBuilder<T> expectValues(T... ts) {
 		Arrays.stream(ts).forEach(this::expectValue);
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.ValueBuilder<T> expectValueWith(Predicate<T> predicate) {
+	public ScriptedSubscriber.VirtualTimeValueBuilder<T> expectValueWith(Predicate<T> predicate) {
 
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnNext()) {
@@ -155,7 +154,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.ValueBuilder<T> consumeValueWith(Consumer<T> consumer) {
+	public ScriptedSubscriber.VirtualTimeValueBuilder<T> consumeValueWith(Consumer<T> consumer) {
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnNext()) {
 				return Optional.of(String.format("expected: onNext(); actual: %s", signal));
@@ -283,7 +282,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.ValueBuilder<T> doRequest(long n) {
+	public ScriptedSubscriber.VirtualTimeValueBuilder<T> doRequest(long n) {
 		checkForNegative(n);
 		this.script.add(new SubscriptionEvent<T>(subscription -> subscription.request(n), false));
 		return this;
@@ -465,7 +464,9 @@ final class DefaultScriptedSubscriberBuilder<T>
 		}
 
 		@Override
-		public void verify(Publisher<? extends T> publisher) {
+		public void verify(Supplier<? extends Publisher<? extends T>> supplier) throws AssertionError {
+			Publisher<? extends T> publisher = supplier.get();
+			Objects.requireNonNull(publisher, "supplied publisher must be non-null");
 			publisher.subscribe(this);
 			verify();
 		}
@@ -482,7 +483,9 @@ final class DefaultScriptedSubscriberBuilder<T>
 		}
 
 		@Override
-		public void verify(Publisher<? extends T> publisher, Duration duration) {
+		public void verify(Supplier<? extends Publisher<? extends T>> supplier, Duration duration) throws AssertionError {
+			Publisher<? extends T> publisher = supplier.get();
+			Objects.requireNonNull(publisher, "supplied publisher must be non-null");
 			publisher.subscribe(this);
 			verify(duration);
 		}
