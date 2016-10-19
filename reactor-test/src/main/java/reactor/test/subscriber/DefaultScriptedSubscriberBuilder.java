@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.reactivestreams.Publisher;
@@ -463,7 +464,9 @@ final class DefaultScriptedSubscriberBuilder<T>
 		}
 
 		@Override
-		public void verify(Publisher<? extends T> publisher) {
+		public void verify(Supplier<? extends Publisher<? extends T>> supplier) throws AssertionError {
+			Publisher<? extends T> publisher = supplier.get();
+			Objects.requireNonNull(publisher, "supplied publisher must be non-null");
 			publisher.subscribe(this);
 			verify();
 		}
@@ -480,7 +483,9 @@ final class DefaultScriptedSubscriberBuilder<T>
 		}
 
 		@Override
-		public void verify(Publisher<? extends T> publisher, Duration duration) {
+		public void verify(Supplier<? extends Publisher<? extends T>> supplier, Duration duration) throws AssertionError {
+			Publisher<? extends T> publisher = supplier.get();
+			Objects.requireNonNull(publisher, "supplied publisher must be non-null");
 			publisher.subscribe(this);
 			verify(duration);
 		}

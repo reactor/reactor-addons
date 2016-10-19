@@ -86,6 +86,7 @@ public class VirtualTimeScheduler implements TimedScheduler {
 	 * AFTER all tested code has been run (teardown etc).
 	 */
 	public static void reset() {
+		//TODO Schedulers.resetFactory will perform a shutdownNow anyway in 3.0.3
 		Schedulers.shutdownNow();
 		Schedulers.resetFactory();
 	}
