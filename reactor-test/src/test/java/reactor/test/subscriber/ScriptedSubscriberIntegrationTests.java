@@ -19,6 +19,7 @@ package reactor.test.subscriber;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 import org.junit.After;
 import org.junit.Test;
@@ -255,6 +256,17 @@ public class ScriptedSubscriberIntegrationTests {
 		                  .expectComplete()
 		                  .verify(() -> Mono.delay(Duration.ofDays(2))
 		                                    .map(l -> "foo"));
+	}
+
+	@Test
+	public void verifyVirtualTimeIntermediateVariable() {
+		Supplier<Mono<String>> monoSupplier = () -> Mono.delay(Duration.ofDays(2))
+		                                                .map(l -> "foo");
+		ScriptedSubscriber.withVirtualTime()
+		                  .advanceTimeBy(Duration.ofDays(3))
+		                  .expectValue("foo")
+		                  .expectComplete()
+		                  .verify(monoSupplier);
 	}
 
 	@Test
