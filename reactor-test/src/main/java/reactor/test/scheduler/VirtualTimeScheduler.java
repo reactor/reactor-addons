@@ -47,13 +47,17 @@ public class VirtualTimeScheduler implements TimedScheduler {
 	}
 
 	/**
-	 * Assign a singleton {@link VirtualTimeScheduler} to all or timed-only {@link
-	 * Schedulers.Factory} factories. While the method is thread safe, its usually advised
-	 * to execute such wide-impact BEFORE all tested code runs (setup etc).
+	 * Assign a single newly created {@link VirtualTimeScheduler} to all or timed-only
+	 * {@link Schedulers.Factory} factories. While the method is thread safe, its usually
+	 * advised to execute such wide-impact BEFORE all tested code runs (setup etc).
+	 * The created scheduler is returned.
 	 *
 	 * @param allSchedulers true if all {@link Schedulers.Factory} factories
+	 * @return the VirtualTimeScheduler that was created and set through the factory
 	 */
-	public static void enable(boolean allSchedulers) {
+	public static VirtualTimeScheduler enable(boolean allSchedulers) {
+		//TODO in 3.0.3 setting a factory will shutdown the previous Schedulers
+		Schedulers.shutdownNow();
 		VirtualTimeScheduler s = new VirtualTimeScheduler();
 		if (!allSchedulers) {
 			Schedulers.setFactory(new TimedOnlyFactory(s));
@@ -61,6 +65,7 @@ public class VirtualTimeScheduler implements TimedScheduler {
 		else {
 			Schedulers.setFactory(new AllFactory(s));
 		}
+		return s;
 	}
 
 	/**
