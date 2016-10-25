@@ -33,7 +33,7 @@ plugins {
 description = 'Reactive fast data framework for the JVM'
 
 ext {
-  gradleVersion = '2.12'
+  gradleVersion = '3.1'
   gradleScriptDir = "${rootProject.projectDir}/gradle"
 
   // Languages
@@ -46,8 +46,8 @@ ext {
   // Libraries
   openHftChronicleVersion = '3.4.2'
   rxJavaVersion = '1.2.1'
-  rxJava2Version = '2.0.0-RC3'
-  akkaActorVersion = '2.4.4'
+  rxJava2Version = '2.0.0-RC5'
+  akkaActorVersion = '2.4.10'
 
   swtVersion = '4.5.2'
   swtVersionPlatform = '4.5.2'

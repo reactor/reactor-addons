@@ -16,23 +16,34 @@
 
 package reactor.adapter.misc;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.swt.widgets.Display;
-
 import reactor.core.Cancellation;
+import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.core.Exceptions;
 
 /** 
  * Scheduler that runs tasks on Swt's event dispatch thread. 
  */
 public final class SwtScheduler implements TimedScheduler {
+
+	/**
+	 *
+	 * @param display a {@link Display}
+	 * @return a new {@link TimedScheduler}
+	 */
+	public static TimedScheduler from(Display display){
+		Objects.requireNonNull(display, "display");
+		return new SwtScheduler(display);
+	}
+
 	final Display display;
 
-	public SwtScheduler(Display display) {
+	SwtScheduler(Display display) {
 		this.display = display;
 	}
 

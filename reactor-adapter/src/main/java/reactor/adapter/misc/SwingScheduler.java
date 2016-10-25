@@ -16,22 +16,32 @@
 
 package reactor.adapter.misc;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import reactor.core.Cancellation;
+import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.core.Exceptions;
 
 /** 
  * Scheduler that runs tasks on Swing's event dispatch thread. 
  */
 public final class SwingScheduler implements TimedScheduler {
+
+	/**
+	 * @return a new {@link TimedScheduler}
+	 */
+	public static TimedScheduler create() {
+		return new SwingScheduler();
+	}
+
+	SwingScheduler() {
+	}
 
 	@Override
 	public Cancellation schedule(Runnable task) {
@@ -242,38 +252,6 @@ public final class SwingScheduler implements TimedScheduler {
         @Override
         public void run() {
             if (!get()) {
-                try {
-                    action.run();
-                } catch (Throwable ex) {
-                    Exceptions.throwIfFatal(ex);
-	                Operators.onErrorDropped(ex);
-                }
-            }
-        }
-        
-        @Override
-        public void dispose() {
-            set(true);
-        }
-    }
-
-    static final class SwingScheduledAction
-    extends AtomicBoolean implements Runnable, Cancellation {
-        /** */
-        private static final long serialVersionUID = 2378266891882031635L;
-        
-        final Runnable action;
-        
-        final SwingSchedulerWorker parent;
-
-        public SwingScheduledAction(Runnable action, SwingSchedulerWorker parent) {
-            this.action = action;
-            this.parent = parent;
-        }
-        
-        @Override
-        public void run() {
-            if (!get() && !parent.unsubscribed) {
                 try {
                     action.run();
                 } catch (Throwable ex) {

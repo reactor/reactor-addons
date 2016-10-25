@@ -17,9 +17,13 @@
 package reactor.adapter.akka;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import akka.actor.*;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.actor.UntypedActor;
 import reactor.core.Cancellation;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
@@ -30,13 +34,33 @@ import reactor.core.publisher.Operators;
  */
 public class ActorScheduler implements reactor.core.scheduler.Scheduler {
 
+	/**
+	 *
+	 * @param system an {@link ActorSystem}
+	 * @return a new {@link reactor.core.scheduler.Scheduler}
+	 */
+	public static reactor.core.scheduler.Scheduler from(ActorSystem system) {
+		Objects.requireNonNull(system, "system");
+		return new ActorScheduler(system.actorOf(Props.create(ActorExecutor.class)));
+	}
+
+	/**
+	 *
+	 * @param actorRef an {@link ActorRef}
+	 * @return a new {@link reactor.core.scheduler.Scheduler}
+	 */
+	public static reactor.core.scheduler.Scheduler from(ActorRef actorRef) {
+		Objects.requireNonNull(actorRef, "actorRef");
+		return new ActorScheduler(actorRef);
+	}
+
     final ActorRef actor;
-    
-    public ActorScheduler(ActorSystem system) {
-        this.actor = system.actorOf(Props.create(ActorExecutor.class));
-    }
-    
-    @Override
+
+	ActorScheduler(ActorRef actor) {
+		this.actor = actor;
+	}
+
+	@Override
     public Cancellation schedule(Runnable task) {
         DirectRunnable dr = new DirectRunnable(task);
         actor.tell(dr, ActorRef.noSender());

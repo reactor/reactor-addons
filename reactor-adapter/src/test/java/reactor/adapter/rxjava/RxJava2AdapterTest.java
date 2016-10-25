@@ -20,57 +20,67 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.NoSuchElementException;
 
-import org.junit.*;
-
-import io.reactivex.*;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Maybe;
+import io.reactivex.Single;
 import io.reactivex.internal.fuseable.QueueSubscription;
+import io.reactivex.observers.BaseTestConsumer;
+import io.reactivex.schedulers.Schedulers;
+import org.junit.Test;
 import reactor.core.Fuseable;
-import reactor.core.publisher.*;
-import reactor.test.subscriber.AssertSubscriber;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.subscriber.ScriptedSubscriber;
+
+import static org.junit.Assert.assertEquals;
 
 public class RxJava2AdapterTest {
     @Test
     public void flowableToFlux() {
-        AssertSubscriber<Integer> ts = AssertSubscriber.create();
-        
-        Flowable.range(1, 10)
-                .hide()
-                .to(RxJava2Adapter::flowableToFlux)
-                .subscribe(ts);
-        
-        ts.assertValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-        .assertNoError()
-        .assertComplete();
+	    Flux<Integer> f = Flowable.range(1, 10)
+	                              .hide()
+	                              .to(RxJava2Adapter::flowableToFlux);
+
+	    ScriptedSubscriber.create()
+	                      .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	                      .expectComplete()
+	                      .verify(f);
+    }
+
+	@Test
+	public void scheduler() {
+		Flux<Integer> f = Flux.range(1, 10)
+		                      .publishOn(RxJava2Scheduler.from(Schedulers.computation()));
+
+		ScriptedSubscriber.create()
+		                  .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+		                  .expectComplete()
+		                  .verify(f);
     }
 
     @Test
     public void flowableToFluxFused() {
-        AssertSubscriber<Integer> ts = AssertSubscriber.create();
-        ts.requestedFusionMode(Fuseable.ANY);
-        
-        Flowable.range(1, 10)
-        .to(RxJava2Adapter::flowableToFlux)
-        .subscribe(ts);
-        
-        ts
-        .assertFusionMode(Fuseable.SYNC)
-        .assertValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-        .assertNoError()
-        .assertComplete();
+	    Flux<Integer> f = Flowable.range(1, 10)
+	                              .to(RxJava2Adapter::flowableToFlux);
+
+	    ScriptedSubscriber.create()
+	                      .expectFusion()
+	                      .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	                      .expectComplete()
+	                      .verify(f);
     }
 
     @Test
     public void fluxToFlowable() {
-        AssertSubscriber<Integer> ts = AssertSubscriber.create();
-        
-        Flux.range(1, 10)
-        .hide()
-        .as(RxJava2Adapter::fluxToFlowable)
-        .subscribe(ts);
-        
-        ts.assertValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-        .assertNoError()
-        .assertComplete();
+	    Flowable<Integer> f = Flux.range(1, 10)
+	                              .hide()
+	                              .as(RxJava2Adapter::fluxToFlowable);
+
+	    ScriptedSubscriber.create()
+	                      .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	                      .expectComplete()
+	                      .verify(f);
     }
 
     @Test
@@ -78,9 +88,9 @@ public class RxJava2AdapterTest {
         io.reactivex.subscribers.TestSubscriber<Integer> ts = new io.reactivex.subscribers.TestSubscriber<>();
         
         // Testing for fusion is an RxJava 2 internal affair unfortunately
-        Field f = io.reactivex.subscribers.TestSubscriber.class.getDeclaredField("initialFusionMode");
-        f.setAccessible(true);
-        f.setInt(ts, QueueSubscription.ANY);
+	    Field f = BaseTestConsumer.class.getDeclaredField("initialFusionMode");
+	    f.setAccessible(true);
+	    f.setInt(ts, QueueSubscription.ANY);
         
         Flux.range(1, 10)
         .as(RxJava2Adapter::fluxToFlowable)
@@ -92,39 +102,32 @@ public class RxJava2AdapterTest {
         .assertComplete();
         
         // Testing for fusion is an RxJava 2 internal affair unfortunately
-        f = io.reactivex.subscribers.TestSubscriber.class.getDeclaredField("establishedFusionMode");
-        f.setAccessible(true);
-        Assert.assertEquals(QueueSubscription.SYNC, f.getInt(ts));
+	    f = BaseTestConsumer.class.getDeclaredField("establishedFusionMode");
+	    f.setAccessible(true);
+	    assertEquals(QueueSubscription.SYNC, f.getInt(ts));
     }
     
     @Test
     public void singleToMono() {
-        AssertSubscriber<Integer> ts = AssertSubscriber.create();
-        
-        Single.just(1)
-        .to(RxJava2Adapter::singleToMono)
-        .subscribe(ts);
-        
-        ts
-        .assertValues(1)
-        .assertNoError()
-        .assertComplete();
+	    Mono<Integer> m = Single.just(1)
+	                            .to(RxJava2Adapter::singleToMono);
+
+	    ScriptedSubscriber.create()
+	                      .expectNext(1)
+	                      .expectComplete()
+	                      .verify(m);
     }
 
     @Test
     public void singleToMonoFused() {
-        AssertSubscriber<Integer> ts = AssertSubscriber.create();
-        ts.requestedFusionMode(Fuseable.ANY);
-        
-        Single.just(1)
-              .to(RxJava2Adapter::singleToMono)
-              .subscribe(ts);
-        
-        ts
-        .assertFusionMode(Fuseable.ASYNC)
-        .assertValues(1)
-        .assertNoError()
-        .assertComplete();
+	    Mono<Integer> m = Single.just(1)
+	                            .to(RxJava2Adapter::singleToMono);
+
+	    ScriptedSubscriber.create()
+	                      .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
+	                      .expectNext(1)
+	                      .expectComplete()
+	                      .verify(m);
     }
     
     @Test
@@ -149,32 +152,23 @@ public class RxJava2AdapterTest {
 
     @Test
     public void completableToMono() {
-        AssertSubscriber<Object> ts = AssertSubscriber.create();
-        
-        Completable.complete()
-                   .to(RxJava2Adapter::completableToMono)
-                   .subscribe(ts);
-        
-        ts
-        .assertNoValues()
-        .assertNoError()
-        .assertComplete();
+	    Mono<Void> m = Completable.complete()
+	                              .to(RxJava2Adapter::completableToMono);
+
+	    ScriptedSubscriber.create()
+	                      .expectComplete()
+	                      .verify(m);
     }
 
     @Test
     public void completableToMonoFused() {
-        AssertSubscriber<Object> ts = AssertSubscriber.create();
-        ts.requestedFusionMode(Fuseable.ANY);
-        
-        Completable.complete()
-        .to(RxJava2Adapter::completableToMono)
-        .subscribe(ts);
-        
-        ts
-        .assertFusionMode(Fuseable.ASYNC)
-        .assertNoValues()
-        .assertNoError()
-        .assertComplete();
+	    Mono<Void> m = Completable.complete()
+	                              .to(RxJava2Adapter::completableToMono);
+
+	    ScriptedSubscriber.create()
+	                      .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
+	                      .expectComplete()
+	                      .verify(m);
     }
     
     @Test
@@ -185,11 +179,6 @@ public class RxJava2AdapterTest {
         .assertNoValues()
         .assertNoErrors()
         .assertComplete();
-    }
-
-    @Test
-    public void maybeToMono() {
-        
     }
     
     @Test
@@ -218,67 +207,40 @@ public class RxJava2AdapterTest {
     
     @Test
     public void maybeToMonoJust() {
-        Maybe.just(1)
-        .to(RxJava2Adapter::maybeToMono)
-        .subscribeWith(AssertSubscriber.create())
-        .assertSubscribed()
-        .assertValues(1)
-        .assertNoError()
-        .assertComplete();
+	    Mono<Integer> m = Maybe.just(1)
+	                           .to(RxJava2Adapter::maybeToMono);
+
+	    ScriptedSubscriber.create()
+	                      .expectNext(1)
+	                      .expectComplete()
+	                      .verify(m);
     }
     
     @Test
     public void maybeToMonoEmpty() {
-        Maybe.empty()
-        .to(RxJava2Adapter::maybeToMono)
-        .subscribeWith(AssertSubscriber.create())
-        .assertSubscribed()
-        .assertNoValues()
-        .assertNoError()
-        .assertComplete();
+	    Mono<Void> m = Maybe.<Void>empty().to(RxJava2Adapter::maybeToMono);
+	    ScriptedSubscriber.create()
+	                      .expectComplete()
+	                      .verify(m);
     }
     
     @Test
     public void maybeToMonoError() {
-        Maybe.error(new IOException("Forced failure"))
-        .to(RxJava2Adapter::maybeToMono)
-        .subscribeWith(AssertSubscriber.create())
-        .assertSubscribed()
-        .assertNoValues()
-        .assertError(IOException.class)
-        .assertErrorMessage("Forced failure")
-        .assertNotComplete();
+	    Mono<Void> m =
+			    Maybe.<Void>error(new IOException("Forced failure")).to(RxJava2Adapter::maybeToMono);
+
+	    ScriptedSubscriber.create()
+	                      .expectErrorMessage("Forced failure")
+	                      .verify(m);
     }
 
     @Test
     public void maybeToMonoEmptyFused() {
-        AssertSubscriber<Object> ts = AssertSubscriber.create();
-        ts.requestedFusionMode(Fuseable.ANY);
-        
-        Maybe.empty()
-        .to(RxJava2Adapter::maybeToMono)
-        .subscribe(ts);
-        
-        ts
-        .assertFusionMode(Fuseable.ASYNC)
-        .assertNoValues()
-        .assertNoError()
-        .assertComplete();
-    }
+	    Mono<Void> m = Maybe.<Void>empty().to(RxJava2Adapter::maybeToMono);
 
-    @Test
-    public void maybeToMonoJustFused() {
-        AssertSubscriber<Object> ts = AssertSubscriber.create();
-        ts.requestedFusionMode(Fuseable.ANY);
-        
-        Maybe.just(1)
-        .to(RxJava2Adapter::maybeToMono)
-        .subscribe(ts);
-        
-        ts
-        .assertFusionMode(Fuseable.ASYNC)
-        .assertValues(1)
-        .assertNoError()
-        .assertComplete();
+	    ScriptedSubscriber.create()
+	                      .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
+	                      .expectComplete()
+	                      .verify(m);
     }
 }
