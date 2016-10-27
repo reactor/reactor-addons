@@ -1,13 +1,14 @@
 # Reactor Addons
 
 [![Travis CI](https://travis-ci.org/reactor/reactor-addons.svg?branch=master)](https://travis-ci.org/reactor/reactor-addons)
-   
-   
+
 [![Join the chat at https://gitter.im/reactor/reactor](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/reactor/reactor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+[![Latest addons](https://maven-badges.herokuapp.com/maven-central/io.projectreactor.addons/reactor-test/badge.svg?style=plastic)](http://mvnrepository.com/artifact/io.projectreactor.addons/reactor-test)
 
 # Addons List
 
-# reactor-adapter [![Reactor Adapter](https://maven-badges.herokuapp.com/maven-central/io.projectreactor.addons/reactor-adapter/badge.svg?style=plastic)](http://mvnrepository.com/artifact/io.projectreactor.addons/reactor-adapter) 
+# reactor-adapter
 
 Bridge to RxJava 1 or 2 Observable, Completable, Flowable, Single, Maybe, Scheduler, and also Swing/SWT Scheduler, Akka Scheduler ...
 
@@ -39,7 +40,6 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
 
     ext {
       reactorVersion = '3.0.3.BUILD-SNAPSHOT'
-      reactorTestVersion = '1.0.0.BUILD-SNAPSHOT'
     }
 
     repositories {
@@ -50,16 +50,13 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
     }
 
     dependencies {
-      // Reactor Core
-      compile "io.projectreactor:reactor-core:$reactorVersion"
-
-      // Reactor Adapter (RxJava and more)
+      // Reactor Adapter (RxJava2, Akka Actors scheduler and more)
       // compile "io.projectreactor.addons:reactor-adapter:$reactorVersion"
 
-       // Reactor Test
-       // compile "io.projectreactor.addons:reactor-test:$reactorTestVersion"
+      // Reactor Test (ScriptedVerification, ScriptedSubscriber, VirtualTimeScheduler)
+      // compile "io.projectreactor.addons:reactor-test:$reactorVersion"
        
-       // ...
+      // ...
 
     }
 

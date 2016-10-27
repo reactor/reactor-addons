@@ -60,9 +60,7 @@ ext {
 				  "http://docs.oracle.com/javaee/6/api/",
 				  "http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
 				  "http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
-				  "http://www.reactive-streams.org/reactive-streams-1.0.0-javadoc/",
-				  "http://projectreactor.io/ipc/docs/api/",
-				  "http://projectreactor.io/core/docs/api/"] as String[]
+				  "http://www.reactive-streams.org/reactive-streams-1.0.0-javadoc/"] as String[]
 }
 
 apply from: "$gradleScriptDir/setup.gradle"
@@ -149,6 +147,8 @@ configure(subprojects) { project ->
 
   // dependencies that are common across all java projects
   dependencies {
+	compile "io.projectreactor:reactor-core:$version"
+
 	// JSR-305 annotations
 	optional "com.google.code.findbugs:jsr305:3.0.0"
 
@@ -184,7 +184,6 @@ configure(subprojects) { project ->
 
 
 project('reactor-logback') {
-  version=reactorLogbackVersion
   description = 'Async Logback appender implementation'
 
   apply plugin: 'application'
@@ -193,8 +192,6 @@ project('reactor-logback') {
   mainClassName = "reactor.logback.DurableLogUtility"
 
   dependencies {
-	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-
 	compile "ch.qos.logback:logback-classic:$logbackVersion",
 			"net.openhft:chronicle:$openHftChronicleVersion",
 			"commons-cli:commons-cli:1.2"
@@ -210,7 +207,6 @@ project('reactor-logback') {
 }
 
 project('reactor-adapter') {
-  version = reactorAdapterVersion
   description = 'Scheduler implementations on top of various async boundary providers'
 
   repositories {
@@ -219,8 +215,6 @@ project('reactor-adapter') {
 
 
   dependencies {
-	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-
 	optional "io.reactivex:rxjava:$rxJavaVersion"
 	//Optional RxJava 2 Converter
 	optional "io.reactivex.rxjava2:rxjava:$rxJava2Version"
@@ -235,16 +229,7 @@ project('reactor-adapter') {
 }
 
 project('reactor-test') {
-  version = reactorTestVersion
   description = 'Reactor Test support'
-
-  repositories {
-	maven { url "http://maven-eclipse.github.io/maven" }
-  }
-
-  dependencies {
-	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
-  }
 }
 
 task release {
