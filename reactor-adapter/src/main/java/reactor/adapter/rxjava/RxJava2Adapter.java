@@ -639,7 +639,7 @@ public abstract class RxJava2Adapter {
             @Override
             public void onSubscribe(Disposable d) {
                 this.d = d;
-                subscriber.onSubscribe(this);
+                actual.onSubscribe(this);
             }
 
             @Override
