@@ -736,7 +736,7 @@ public abstract class RxJava2Adapter {
             public void onSubscribe(Disposable d) {
                 this.d = d;
                 
-                subscriber.onSubscribe(this);
+                actual.onSubscribe(this);
             }
 
             @Override
