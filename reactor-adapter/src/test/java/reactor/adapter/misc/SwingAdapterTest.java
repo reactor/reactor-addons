@@ -19,7 +19,7 @@ package reactor.adapter.misc;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.test.subscriber.ScriptedSubscriber;
+import reactor.test.subscriber.Verifier;
 
 /**
  * @author Stephane Maldini
@@ -33,10 +33,10 @@ public class SwingAdapterTest {
 		Flux<Integer> swingFlux = Flux.range(0, 1_000_000)
 		                              .publishOn(swingScheduler);
 
-		ScriptedSubscriber.create()
-		                  .expectNextCount(1_000_000)
-		                  .expectComplete()
-		                  .verify(swingFlux);
+		Verifier.create(swingFlux)
+		        .expectNextCount(1_000_000)
+		        .expectComplete()
+		        .verify();
 	}
 
 	@Test
@@ -46,9 +46,9 @@ public class SwingAdapterTest {
 		Flux<Long> swingFlux = Flux.intervalMillis(100, swingScheduler)
 		                           .take(3);
 
-		ScriptedSubscriber.create()
-		                  .expectNext(0L, 1L, 2L)
-		                  .expectComplete()
-		                  .verify(swingFlux);
+		Verifier.create(swingFlux)
+		        .expectNext(0L, 1L, 2L)
+		        .expectComplete()
+		        .verify();
 	}
 }
