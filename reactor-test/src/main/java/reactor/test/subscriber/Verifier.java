@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,8 @@
 package reactor.test.subscriber;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -30,48 +30,38 @@ import reactor.core.Fuseable;
 import reactor.test.scheduler.VirtualTimeScheduler;
 
 /**
- * Subscriber implementation that verifies pre-defined expectations as part of its
- * subscription. Typical usage consists of the following steps: <ul> <li>Create a {@code
- * ScriptedSubscriber} builder using {@link #create()} or {@link #create(long)},</li>
- * <li>Set individual up value expectations using {@link StepBuilder#expectNext(Object[])}
- * expectNext(Object)}, {@link StepBuilder#expectNext(Object[])
- * expectNext(Object[])}, {@link StepBuilder#expectNextWith(Predicate)
+ * A {@link Verifier} is a verifiable, blocking script usually produced by
+ * terminal expectations of the said script.
+ * <ul> <li>Create a {@code
+ * Verifier} builder using {@link #with(Supplier)} or
+ * {@link #with(long, Supplier)}</li>
+ * <li>Set individual up value expectations using {@link Step#expectNext(Object[])}
+ * expectNext(Object)}, {@link Step#expectNext(Object[])
+ * expectNext(Object[])}, {@link Step#expectNextWith(Predicate)
  * expectNextWith(Predicate)}.</li> and/or <li>Set up subscription actions using either
- * {@link StepBuilder#thenRequest(long) thenRequest(long)} or {@link
- * StepBuilder#thenCancel() thenCancel()}. </li> <li>Build the {@code
- * ScriptedSubscriber} using {@link LastStepBuilder#expectComplete() expectComplete()},
- * {@link LastStepBuilder#expectError() expectError()}, {@link
- * LastStepBuilder#expectError(Class) expectError(Class)}, {@link
- * LastStepBuilder#expectErrorWith(Predicate) expectErrorWith(Predicate)}, or {@link
- * LastStepBuilder#thenCancel() thenCancel()}. </li> <li>Subscribe the built {@code
- * ScriptedSubscriber} to a {@code Publisher}.</li> <li>Verify the expectations using
+ * {@link Step#thenRequest(long) thenRequest(long)} or {@link
+ * Step#thenCancel() thenCancel()}. </li> <li>Build the {@code
+ * Verifier} using {@link LastStep#expectComplete() expectComplete()},
+ * {@link LastStep#expectError() expectError()}, {@link
+ * LastStep#expectError(Class) expectError(Class)}, {@link
+ * LastStep#expectErrorWith(Predicate) expectErrorWith(Predicate)}, or {@link
+ * LastStep#thenCancel() thenCancel()}. </li> <li>Subscribe the built {@code
+ * Verifier} to a {@code Publisher}.</li> <li>Verify the expectations using
  * either {@link #verify()} or {@link #verify(Duration)}.</li> <li>If any expectations
  * failed, an {@code AssertionError} will be thrown indicating the failures.</li> </ul>
- * <p>
- * <p>For example:
- * <pre>
- * ScriptedSubscriber&lt;String&gt; subscriber = ScriptedSubscriber.&lt;String&gt;create()
- *   .expectNext("foo")
- *   .expectNext("bar")
- *   .expectComplete();
- *
- * Publisher&lt;String&gt; publisher = Flux.just("foo", "bar");
- * publisher.subscribe(subscriber);
- *
- * subscriber.verify();
- * </pre>
  *
  * @author Arjen Poutsma
  * @author Stephane Maldini
- * @since 1.0
+ * @see VerifySubscriber
  */
-public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<T> {
+public interface Verifier {
 
 	/**
-	 * Make the specified publisher subscribe to this subscriber and then verify the
-	 * signals received by this subscriber. This method will <strong>block</strong>
-	 * indefinitely until the stream has been terminated (either through {@link
-	 * #onComplete()}, {@link #onError(Throwable)} or {@link Subscription#cancel()}).
+	 * Prepare a new {@code Verifier} in an uncontrolled environment: Expect non-virtual
+	 * blocking
+	 * wait via
+	 * {@link Step#thenAwait}. Each {@link #verify()} will fully (re)play the
+	 * scenario.
 	 *
 	 * @param publisher the publisher to subscribe to
 	 *
@@ -79,97 +69,176 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 	 *
 	 * @throws AssertionError in case of expectation failures
 	 */
-	Duration verify(Publisher<? extends T> publisher) throws AssertionError;
+	static <T> FirstStep<T, Verifier> create(Publisher<? extends T> publisher) {
+		return create(publisher, Long.MAX_VALUE);
+	}
 
 	/**
-	 * Make the specified publisher subscribe to this subscriber and then verify the
-	 * signals received by this subscriber. This method will <strong>block</strong> for
-	 * the given duration or until the stream has been terminated (either through {@link
-	 * #onComplete()}, {@link #onError(Throwable)} or {@link Subscription#cancel()}).
+	 * Prepare a new {@code Verifier} in an uncontrolled environment: Expect non-virtual
+	 * blocking
+	 * wait via
+	 * {@link Step#thenAwait}. Each {@link #verify()} will fully (re)play the
+	 * scenario. The verification will request a
+	 * specified amount of
+	 * values.
 	 *
 	 * @param publisher the publisher to subscribe to
+	 * @param n the amount of items to request
 	 *
 	 * @return the {@link Duration} of the verification
 	 *
 	 * @throws AssertionError in case of expectation failures, or when the verification
 	 *                        times out
 	 */
-	Duration verify(Publisher<? extends T> publisher, Duration duration)
-			throws AssertionError;
+	static <T> FirstStep<T, Verifier> create(Publisher<? extends T> publisher,
+			long n) {
+		return with(n, () -> publisher, null);
+	}
 
 	/**
-	 * Create a new {@code ScriptedSubscriber} that requests an unbounded amount of
+	 * Prepare a new {@code Verifier} in a controlled environment using
+	 * {@link VirtualTimeScheduler} to schedule and expect virtual wait via
+	 * {@link Step#thenAwait}. Each {@link #verify()} will fully (re)play the
+	 * scenario. The
+	 * verification will request an
+	 * unbounded amount of
 	 * values.
 	 *
 	 * @param <T> the type of the subscriber
 	 *
 	 * @return a builder for setting up value expectations
 	 */
-	static <T> FirstStepBuilder<T> create() {
-		return create(Long.MAX_VALUE);
+	static <T> FirstStep<T, Verifier> with(Supplier<? extends Publisher<? extends T>> scenarioSupplier) {
+		return with(Long.MAX_VALUE, scenarioSupplier);
 	}
 
 	/**
-	 * Create a new {@code ScriptedSubscriber} that requests a specified amount of values.
+	 * Prepare a new {@code Verifier} in a controlled environment using
+	 * {@link VirtualTimeScheduler} to schedule and expect virtual wait via
+	 * {@link Step#thenAwait}. Each {@link #verify()} will fully (re)play the
+	 * scenario. The verification will request a
+	 * specified amount of
+	 * values.
 	 *
 	 * @param n the amount of items to request
+	 * @param scenarioSupplier {@link Publisher} scenario
 	 * @param <T> the type of the subscriber
 	 *
 	 * @return a builder for setting up value expectations
 	 */
-	static <T> FirstStepBuilder<T> create(long n) {
+	static <T> FirstStep<T, Verifier> with(long n,
+			Supplier<? extends Publisher<? extends T>> scenarioSupplier) {
 		DefaultScriptedSubscriberBuilder.checkPositive(n);
-		return new DefaultScriptedSubscriberBuilder<>(n);
+		Objects.requireNonNull(scenarioSupplier, "scenarioSupplier");
+
+		return with(n, scenarioSupplier, () -> VirtualTimeScheduler.enable(false));
 	}
+
+	/**
+	 * Create a new {@code Verifier} in a parameterized environment using
+	 * passed
+	 * {@link VirtualTimeScheduler} to schedule and expect virtual wait via
+	 * {@link Step#thenAwait}. Each {@link #verify()} will fully (re)play the
+	 * scenario. The verification will request a
+	 * specified amount of
+	 * values.
+	 * <p>Note: verification can fallback to non-virtual time by passing an undefined
+	 * reference {@code null} of {@link VirtualTimeScheduler}.
+	 *
+	 * @param n the amount of items to request
+	 * @param scenarioSupplier scenarioSupplier
+	 * @param vtsLookup a {@link VirtualTimeScheduler} lookup to use in {@code thenAwait}
+	 * @param <T> the type of the subscriber
+	 *
+	 * @return a builder for setting up value expectations
+	 */
+	static <T> FirstStep<T, Verifier> with(long n,
+			Supplier<? extends Publisher<? extends T>> scenarioSupplier,
+			Supplier<? extends VirtualTimeScheduler> vtsLookup) {
+
+		@SuppressWarnings("unchecked")
+		FirstStep<T, Verifier> verifier = (FirstStep<T, Verifier>)
+				DefaultScriptedSubscriberBuilder.newVerifier(n,
+				scenarioSupplier,
+				vtsLookup);
+
+		return verifier;
+	}
+
+	/**
+	 * Verify the signals received by this subscriber. This method will
+	 * <strong>block</strong> indefinitely until the stream has been terminated (either
+	 * through {@link Subscriber#onComplete()}, {@link Subscriber#onError(Throwable)} or
+	 * {@link Subscription#cancel()}).
+	 *
+	 * @return the {@link Duration} of the verification
+	 *
+	 * @throws AssertionError in case of expectation failures
+	 */
+	Duration verify() throws AssertionError;
+
+	/**
+	 * Verify the signals received by this subscriber. This method will
+	 * <strong>block</strong> for the given duration or until the stream has been
+	 * terminated (either through {@link Subscriber#onComplete()},
+	 * {@link Subscriber#onError(Throwable)} or
+	 * {@link Subscription#cancel()}).
+	 *
+	 * @return the {@link Duration} of the verification
+	 *
+	 * @throws AssertionError in case of expectation failures, or when the verification
+	 *                        times out
+	 */
+	Duration verify(Duration duration) throws AssertionError;
 
 	/**
 	 * Define a builder for terminal states.
 	 *
-	 * @param <T> the type of values that the subscriber contains
+	 * @param <TARGET> the target {@link Verifier} type
 	 */
-	interface LastStepBuilder<T> {
+	interface LastStep<TARGET extends Verifier> {
 
 		/**
 		 * Expect an unspecified error.
 		 *
-		 * @return the built subscriber
+		 * @return the built verification
 		 *
 		 * @see Subscriber#onError(Throwable)
 		 */
-		ScriptedSubscriber<T> expectError();
+		TARGET expectError();
 
 		/**
 		 * Expect an error of the specified type.
 		 *
 		 * @param clazz the expected error type
 		 *
-		 * @return the built subscriber
+		 * @return the built verification
 		 *
 		 * @see Subscriber#onError(Throwable)
 		 */
-		ScriptedSubscriber<T> expectError(Class<? extends Throwable> clazz);
+		TARGET expectError(Class<? extends Throwable> clazz);
 
 		/**
 		 * Expect an error with the specified message.
 		 *
 		 * @param errorMessage the expected error message
 		 *
-		 * @return the built subscriber
+		 * @return the built verification
 		 *
 		 * @see Subscriber#onError(Throwable)
 		 */
-		ScriptedSubscriber<T> expectErrorMessage(String errorMessage);
+		TARGET expectErrorMessage(String errorMessage);
 
 		/**
 		 * Expect an error and evaluate with the given predicate.
 		 *
 		 * @param predicate the predicate to test on the next received error
 		 *
-		 * @return the built subscriber
+		 * @return the built verification
 		 *
 		 * @see Subscriber#onError(Throwable)
 		 */
-		ScriptedSubscriber<T> expectErrorWith(Predicate<Throwable> predicate);
+		TARGET expectErrorWith(Predicate<Throwable> predicate);
 
 		/**
 		 * Expect an error and consume with the given consumer. Any {@code
@@ -178,36 +247,37 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @param consumer the consumer for the exception
 		 *
-		 * @return the built subscriber
+		 * @return the built verification
 		 */
-		ScriptedSubscriber<T> consumeErrorWith(Consumer<Throwable> consumer);
+		TARGET consumeErrorWith(Consumer<Throwable> consumer);
 
 		/**
 		 * Expect the completion signal.
 		 *
-		 * @return the built subscriber
+		 * @return the built verification
 		 *
 		 * @see Subscriber#onComplete()
 		 */
-		ScriptedSubscriber<T> expectComplete();
+		TARGET expectComplete();
 
 		/**
 		 * Cancel the underlying subscription.
-		 * {@link ScriptedSubscriber#create(long)}.
+		 * {@link VerifySubscriber#create(long)}.
 		 *
-		 * @return the built subscriber
+		 * @return the built verification
 		 *
 		 * @see Subscription#cancel()
 		 */
-		ScriptedSubscriber<T> thenCancel();
+		TARGET thenCancel();
 	}
 
 	/**
 	 * Define a builder for expecting main sequence individual signals.
 	 *
 	 * @param <T> the type of values that the subscriber contains
+	 * @param <TARGET> the target {@link Verifier} type
 	 */
-	interface StepBuilder<T> extends LastStepBuilder<T> {
+	interface Step<T, TARGET extends Verifier> extends LastStep<TARGET> {
 
 		/**
 		 * Expect an element and consume with the given consumer. Any {@code
@@ -218,7 +288,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @return this builder
 		 */
-		StepBuilder<T> consumeNextWith(Consumer<? super T> consumer);
+		Step<T, TARGET> consumeNextWith(Consumer<? super T> consumer);
 
 		/**
 		 * Expect a recording session started via {@link #recordWith} and
@@ -232,7 +302,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @return this builder
 		 */
-		StepBuilder<T> consumeRecordedWith(Consumer<? super Collection<T>> consumer);
+		Step<T, TARGET> consumeRecordedWith(Consumer<? super Collection<T>> consumer);
 
 		/**
 		 * Expect the next elements received to be equal to the given values.
@@ -243,7 +313,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscriber#onNext(Object)
 		 */
-		StepBuilder<T> expectNext(T... ts);
+		Step<T, TARGET> expectNext(T... ts);
 
 		/**
 		 * Expect an element count starting from the last expectation or onSubscribe.
@@ -254,7 +324,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscriber#onNext(Object)
 		 */
-		StepBuilder<T> expectNextCount(long count);
+		Step<T, TARGET> expectNextCount(long count);
 
 		/**
 		 * Expect the next elements to match the given {@link Iterable} until its
@@ -266,7 +336,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscriber#onNext(Object)
 		 */
-		StepBuilder<T> expectNextSequence(Iterable<? extends T> iterable);
+		Step<T, TARGET> expectNextSequence(Iterable<? extends T> iterable);
 
 		/**
 		 * Expect an element and evaluate with the given predicate.
@@ -277,7 +347,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscriber#onNext(Object)
 		 */
-		StepBuilder<T> expectNextWith(Predicate<? super T> predicate);
+		Step<T, TARGET> expectNextWith(Predicate<? super T> predicate);
 
 		/**
 		 * Expect and end a recording session started via {@link #recordWith} and
@@ -291,10 +361,11 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscriber#onNext(Object)
 		 */
-		StepBuilder<T> expectRecordedWith(Predicate<? super Collection<T>> predicate);
+		Step<T, TARGET> expectRecordedWith(Predicate<? super Collection<T>> predicate);
 
 		/**
-		 * Start a recording session storing {@link #onNext(Object)} values in the
+		 * Start a recording session storing {@link Subscriber#onNext(Object)} values in
+		 * the
 		 * supplied {@link Collection}. Further steps
 		 * {@link #expectRecordedWith(Predicate)} and
 		 * {@link #consumeRecordedWith(Consumer)} can consume the session.
@@ -306,7 +377,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @return this builder
 		 */
-		StepBuilder<T> recordWith(Supplier<? extends Collection<T>> supplier);
+		Step<T, TARGET> recordWith(Supplier<? extends Collection<T>> supplier);
 
 		/**
 		 * Run an arbitrary task scheduled after previous expectations or tasks.
@@ -315,17 +386,19 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @return this builder
 		 */
-		StepBuilder<T> then(Runnable task);
+		Step<T, TARGET> then(Runnable task);
 
 		/**
-		 * Pause the expectation evaluation until any further event occurs.
+		 * Mark a Pause in the expectation evaluation.
 		 * If a {@link VirtualTimeScheduler} has been configured,
 		 * {@link VirtualTimeScheduler#advanceTime()} will be used and the
 		 * pause will not block testing or {@link Publisher} thread.
 		 *
 		 * @return this builder
 		 */
-		StepBuilder<T> thenAwait();
+		default Step<T, TARGET> thenAwait() {
+			return thenAwait(Duration.ZERO);
+		}
 
 		/**
 		 * Pause the expectation evaluation for a given {@link Duration}.
@@ -337,24 +410,12 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @return this builder
 		 */
-		StepBuilder<T> thenAwait(Duration timeshift);
-
-		/**
-		 * Pause the expectation evaluation until the passed {@link Instant}.
-		 * If a {@link VirtualTimeScheduler} has been configured,
-		 * {@link VirtualTimeScheduler#advanceTimeTo(Instant)} will be used and the
-		 * pause will not block testing or {@link Publisher} thread.
-		 *
-		 * @param instant An {@link Instant} in the future
-		 *
-		 * @return this builder
-		 */
-		StepBuilder<T> thenAwaitUntil(Instant instant);
+		Step<T, TARGET> thenAwait(Duration timeshift);
 
 		/**
 		 * Request the given amount of elements from the upstream {@code Publisher}. This
 		 * is in addition to the initial number of elements requested by {@link
-		 * ScriptedSubscriber#create(long)}.
+		 * VerifySubscriber#create(long)}.
 		 *
 		 * @param n the number of elements to request
 		 *
@@ -362,21 +423,21 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscription#request(long)
 		 */
-		StepBuilder<T> thenRequest(long n);
+		Step<T, TARGET> thenRequest(long n);
 	}
 
 	/**
 	 * Define a builder for explicitly expecting an initializing {@link Subscription} as
 	 * first signal.
 	 * <p>
-	 * If {@link FirstStepBuilder} expectations are not used, the produced
-	 * {@link ScriptedSubscriber} keeps a first expectation that will be checking if
+	 * If {@link FirstStep} expectations are not used, the produced
+	 * {@link VerifySubscriber} keeps a first expectation that will be checking if
 	 * the first signal is a
 	 * {@link Subscription}.
 	 *
 	 * @param <T> the type of values that the subscriber contains
 	 */
-	interface FirstStepBuilder<T> extends StepBuilder<T> {
+	interface FirstStep<T, TARGET extends Verifier> extends Step<T, TARGET> {
 
 		/**
 		 * Expect a {@link Subscription} and consume with the given consumer. Any {@code
@@ -389,7 +450,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscriber#onSubscribe(Subscription)
 		 */
-		StepBuilder<T> consumeSubscriptionWith(Consumer<? super Subscription> consumer);
+		Step<T, TARGET> consumeSubscriptionWith(Consumer<? super Subscription> consumer);
 
 		/**
 		 * Expect a {@link Subscription}.
@@ -399,7 +460,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscriber#onSubscribe(Subscription)
 		 */
-		StepBuilder<T> expectSubscription();
+		Step<T, TARGET> expectSubscription();
 
 		/**
 		 * Expect a {@link Subscription} and evaluate with the given predicate.
@@ -410,7 +471,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Subscriber#onSubscribe(Subscription)
 		 */
-		StepBuilder<T> expectSubscriptionWith(Predicate<? super Subscription> predicate);
+		Step<T, TARGET> expectSubscriptionWith(Predicate<? super Subscription> predicate);
 
 		/**
 		 * Expect the source {@link Publisher} to NOT run with Reactor Fusion flow
@@ -421,7 +482,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Fuseable
 		 */
-		StepBuilder<T> expectNoFusionSupport();
+		Step<T, TARGET> expectNoFusionSupport();
 
 		/**
 		 * Expect the source {@link Publisher} to run with Reactor Fusion flow
@@ -431,7 +492,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Fuseable
 		 */
-		StepBuilder<T> expectFusion();
+		Step<T, TARGET> expectFusion();
 
 		/**
 		 * Expect the source {@link Publisher} to run the requested Reactor Fusion mode
@@ -445,7 +506,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Fuseable
 		 */
-		StepBuilder<T> expectFusion(int requested);
+		Step<T, TARGET> expectFusion(int requested);
 
 		/**
 		 * Expect the source {@link Publisher} to run with Reactor Fusion flow
@@ -462,6 +523,7 @@ public interface ScriptedSubscriber<T> extends ScriptedVerification, Subscriber<
 		 *
 		 * @see Fuseable
 		 */
-		StepBuilder<T> expectFusion(int requested, int expected);
+		Step<T, TARGET> expectFusion(int requested, int expected);
 	}
+
 }

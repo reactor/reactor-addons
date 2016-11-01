@@ -31,7 +31,7 @@ import org.junit.Test;
 import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.test.subscriber.ScriptedSubscriber;
+import reactor.test.subscriber.Verifier;
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,10 +42,10 @@ public class RxJava2AdapterTest {
 	                              .hide()
 	                              .to(RxJava2Adapter::flowableToFlux);
 
-	    ScriptedSubscriber.create()
-	                      .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	                      .expectComplete()
-	                      .verify(f);
+	    Verifier.create(f)
+	            .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	            .expectComplete()
+	            .verify();
     }
 
 	@Test
@@ -53,22 +53,22 @@ public class RxJava2AdapterTest {
 		Flux<Integer> f = Flux.range(1, 10)
 		                      .publishOn(RxJava2Scheduler.from(Schedulers.computation()));
 
-		ScriptedSubscriber.create()
-		                  .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-		                  .expectComplete()
-		                  .verify(f);
-    }
+		Verifier.create(f)
+		        .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+		        .expectComplete()
+		        .verify();
+	}
 
     @Test
     public void flowableToFluxFused() {
 	    Flux<Integer> f = Flowable.range(1, 10)
 	                              .to(RxJava2Adapter::flowableToFlux);
 
-	    ScriptedSubscriber.create()
-	                      .expectFusion()
-	                      .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	                      .expectComplete()
-	                      .verify(f);
+	    Verifier.create(f)
+	            .expectFusion()
+	            .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	            .expectComplete()
+	            .verify();
     }
 
     @Test
@@ -77,10 +77,10 @@ public class RxJava2AdapterTest {
 	                              .hide()
 	                              .as(RxJava2Adapter::fluxToFlowable);
 
-	    ScriptedSubscriber.create()
-	                      .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-	                      .expectComplete()
-	                      .verify(f);
+	    Verifier.create(f)
+	            .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	            .expectComplete()
+	            .verify();
     }
 
     @Test
@@ -112,10 +112,10 @@ public class RxJava2AdapterTest {
 	    Mono<Integer> m = Single.just(1)
 	                            .to(RxJava2Adapter::singleToMono);
 
-	    ScriptedSubscriber.create()
-	                      .expectNext(1)
-	                      .expectComplete()
-	                      .verify(m);
+	    Verifier.create(m)
+	            .expectNext(1)
+	            .expectComplete()
+	            .verify();
     }
 
     @Test
@@ -123,11 +123,11 @@ public class RxJava2AdapterTest {
 	    Mono<Integer> m = Single.just(1)
 	                            .to(RxJava2Adapter::singleToMono);
 
-	    ScriptedSubscriber.create()
-	                      .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
-	                      .expectNext(1)
-	                      .expectComplete()
-	                      .verify(m);
+	    Verifier.create(m)
+	            .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
+	            .expectNext(1)
+	            .expectComplete()
+	            .verify();
     }
     
     @Test
@@ -155,9 +155,9 @@ public class RxJava2AdapterTest {
 	    Mono<Void> m = Completable.complete()
 	                              .to(RxJava2Adapter::completableToMono);
 
-	    ScriptedSubscriber.create()
-	                      .expectComplete()
-	                      .verify(m);
+	    Verifier.create(m)
+	            .expectComplete()
+	            .verify();
     }
 
     @Test
@@ -165,10 +165,10 @@ public class RxJava2AdapterTest {
 	    Mono<Void> m = Completable.complete()
 	                              .to(RxJava2Adapter::completableToMono);
 
-	    ScriptedSubscriber.create()
-	                      .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
-	                      .expectComplete()
-	                      .verify(m);
+	    Verifier.create(m)
+	            .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
+	            .expectComplete()
+	            .verify();
     }
     
     @Test
@@ -210,18 +210,18 @@ public class RxJava2AdapterTest {
 	    Mono<Integer> m = Maybe.just(1)
 	                           .to(RxJava2Adapter::maybeToMono);
 
-	    ScriptedSubscriber.create()
-	                      .expectNext(1)
-	                      .expectComplete()
-	                      .verify(m);
+	    Verifier.create(m)
+	            .expectNext(1)
+	            .expectComplete()
+	            .verify();
     }
     
     @Test
     public void maybeToMonoEmpty() {
 	    Mono<Void> m = Maybe.<Void>empty().to(RxJava2Adapter::maybeToMono);
-	    ScriptedSubscriber.create()
-	                      .expectComplete()
-	                      .verify(m);
+	    Verifier.create(m)
+	            .expectComplete()
+	            .verify();
     }
     
     @Test
@@ -229,18 +229,18 @@ public class RxJava2AdapterTest {
 	    Mono<Void> m =
 			    Maybe.<Void>error(new IOException("Forced failure")).to(RxJava2Adapter::maybeToMono);
 
-	    ScriptedSubscriber.create()
-	                      .expectErrorMessage("Forced failure")
-	                      .verify(m);
+	    Verifier.create(m)
+	            .expectErrorMessage("Forced failure")
+	            .verify();
     }
 
     @Test
     public void maybeToMonoEmptyFused() {
 	    Mono<Void> m = Maybe.<Void>empty().to(RxJava2Adapter::maybeToMono);
 
-	    ScriptedSubscriber.create()
-	                      .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
-	                      .expectComplete()
-	                      .verify(m);
+	    Verifier.create(m)
+	            .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
+	            .expectComplete()
+	            .verify();
     }
 }

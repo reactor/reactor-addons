@@ -22,7 +22,7 @@ import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Scheduler;
-import reactor.test.subscriber.ScriptedSubscriber;
+import reactor.test.subscriber.Verifier;
 
 /**
  * @author Stephane Maldini
@@ -40,10 +40,10 @@ public class ActorAdapterTest {
 		Flux<Integer> actorFlux = Flux.range(0, 1_000_000)
 		                              .publishOn(actorScheduler);
 
-		ScriptedSubscriber.create()
-		                  .expectNextCount(1_000_000)
-		                  .expectComplete()
-		                  .verify(actorFlux);
+		Verifier.create(actorFlux)
+		        .expectNextCount(1_000_000)
+		        .expectComplete()
+		        .verify();
 	}
 
 }

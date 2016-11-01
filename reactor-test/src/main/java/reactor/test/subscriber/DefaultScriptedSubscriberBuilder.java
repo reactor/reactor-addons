@@ -29,11 +29,9 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -51,14 +49,14 @@ import reactor.core.publisher.Signal;
 import reactor.test.scheduler.VirtualTimeScheduler;
 
 /**
- * Default implementation of {@link ScriptedSubscriber.StepBuilder} and
- * {@link ScriptedSubscriber.LastStepBuilder}.
+ * Default implementation of {@link Verifier.Step} and
+ * {@link Verifier.LastStep}.
  *
  * @author Arjen Poutsma
  * @since 1.0
  */
 final class DefaultScriptedSubscriberBuilder<T>
-		implements ScriptedSubscriber.FirstStepBuilder<T> {
+		implements Verifier.FirstStep<T, VerifySubscriber<T>> {
 
 	static void checkPositive(long n) {
 		if (n < 0) {
@@ -72,23 +70,41 @@ final class DefaultScriptedSubscriberBuilder<T>
 		}
 	}
 
+	static <T> Verifier.FirstStep<T, ? extends Verifier> newVerifier(long n,
+			Supplier<? extends Publisher<? extends T>> scenarioSupplier,
+			Supplier<? extends VirtualTimeScheduler> vtsLookup){
+		DefaultScriptedSubscriberBuilder.checkPositive(n);
+		Objects.requireNonNull(scenarioSupplier, "scenarioSupplier");
+
+		return new DefaultScriptedSubscriberBuilder<>
+				(n, scenarioSupplier, vtsLookup);
+	}
+
 	@SuppressWarnings("unchecked")
 	static <T> SignalEvent<T> defaultFirstStep() {
 		return (SignalEvent<T>) DEFAULT_ONSUBSCRIBE_STEP;
 	}
 
-	final List<Event<T>> script = new ArrayList<>();
-	final long initialRequest;
+	final List<Event<T>>                             script;
+	final long                                       initialRequest;
+	final Supplier<? extends VirtualTimeScheduler>   vtsLookup;
+	final Supplier<? extends Publisher<? extends T>> sourceSupplier;
+
 	int requestedFusionMode = -1;
 	int expectedFusionMode  = -1;
 
-	DefaultScriptedSubscriberBuilder(long initialRequest) {
+	DefaultScriptedSubscriberBuilder(long initialRequest,
+			Supplier<? extends Publisher<? extends T>> sourceSupplier,
+			Supplier<? extends VirtualTimeScheduler> vtsLookup) {
 		this.initialRequest = initialRequest;
+		this.vtsLookup = vtsLookup;
+		this.sourceSupplier = sourceSupplier;
+		this.script = new ArrayList<>();
 		this.script.add(defaultFirstStep());
 	}
 
 	@Override
-	public ScriptedSubscriber<T> consumeErrorWith(Consumer<Throwable> consumer) {
+	public VerifySubscriber<T> consumeErrorWith(Consumer<Throwable> consumer) {
 		Objects.requireNonNull(consumer, "consumer");
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnError()) {
@@ -104,7 +120,8 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> consumeNextWith(Consumer<? super T> consumer) {
+	public Verifier.Step<T, VerifySubscriber<T>> consumeNextWith(
+			Consumer<? super T> consumer) {
 		Objects.requireNonNull(consumer, "consumer");
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnNext()) {
@@ -120,13 +137,15 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> consumeRecordedWith(Consumer<? super Collection<T>> consumer) {
+	public Verifier.Step<T, VerifySubscriber<T>> consumeRecordedWith(
+			Consumer<? super Collection<T>> consumer) {
 		this.script.add(new CollectEvent<>(consumer));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> consumeSubscriptionWith(Consumer<? super Subscription> consumer) {
+	public Verifier.Step<T, VerifySubscriber<T>> consumeSubscriptionWith(
+			Consumer<? super Subscription> consumer) {
 		Objects.requireNonNull(consumer, "consumer");
 		this.script.set(0, new SignalEvent<>(signal -> {
 			if (!signal.isOnSubscribe()) {
@@ -141,7 +160,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber<T> expectComplete() {
+	public VerifySubscriber<T> expectComplete() {
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnComplete()) {
 				return fail("expected: onComplete(); actual: %s", signal);
@@ -155,7 +174,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber<T> expectError() {
+	public VerifySubscriber<T> expectError() {
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnError()) {
 				return fail("expected: onError(); actual: %s", signal);
@@ -170,7 +189,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber<T> expectError(Class<? extends Throwable> clazz) {
+	public VerifySubscriber<T> expectError(Class<? extends Throwable> clazz) {
 		Objects.requireNonNull(clazz, "clazz");
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnError()) {
@@ -190,7 +209,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber<T> expectErrorMessage(String errorMessage) {
+	public VerifySubscriber<T> expectErrorMessage(String errorMessage) {
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnError()) {
 				return fail("expected: onError(\"%s\"); actual: %s",
@@ -213,7 +232,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber<T> expectErrorWith(Predicate<Throwable> predicate) {
+	public VerifySubscriber<T> expectErrorWith(Predicate<Throwable> predicate) {
 		Objects.requireNonNull(predicate, "predicate");
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnError()) {
@@ -231,23 +250,24 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectNoFusionSupport() {
+	public Verifier.Step<T, VerifySubscriber<T>> expectNoFusionSupport() {
 		requestedFusionMode = NO_FUSION_SUPPORT;
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectFusion() {
+	public Verifier.Step<T, VerifySubscriber<T>> expectFusion() {
 		return expectFusion(Fuseable.ANY, Fuseable.ANY);
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectFusion(int requested) {
+	public Verifier.Step<T, VerifySubscriber<T>> expectFusion(int requested) {
 		return expectFusion(requested, requested);
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectFusion(int requested, int expected) {
+	public Verifier.Step<T, VerifySubscriber<T>> expectFusion(int requested,
+			int expected) {
 		checkPositive(requested);
 		checkPositive(expected);
 		requestedFusionMode = requested;
@@ -256,7 +276,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectNext(T... ts) {
+	public Verifier.Step<T, VerifySubscriber<T>> expectNext(T... ts) {
 		Objects.requireNonNull(ts, "ts");
 		SignalEvent<T> event;
 		for (T t : ts) {
@@ -278,21 +298,23 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectNextSequence(Iterable<? extends T> iterable) {
+	public Verifier.Step<T, VerifySubscriber<T>> expectNextSequence(
+			Iterable<? extends T> iterable) {
 		Objects.requireNonNull(iterable, "iterable");
 		this.script.add(new SignalSequenceEvent<>(iterable));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectNextCount(long count) {
+	public Verifier.Step<T, VerifySubscriber<T>> expectNextCount(long count) {
 		checkPositive(count);
 		this.script.add(new SignalCountEvent<>(count));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectNextWith(Predicate<? super T> predicate) {
+	public Verifier.Step<T, VerifySubscriber<T>> expectNextWith(
+			Predicate<? super T> predicate) {
 		Objects.requireNonNull(predicate, "predicate");
 		SignalEvent<T> event = new SignalEvent<>(signal -> {
 			if (!signal.isOnNext()) {
@@ -311,19 +333,21 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectRecordedWith(Predicate<? super Collection<T>> predicate) {
+	public Verifier.Step<T, VerifySubscriber<T>> expectRecordedWith(
+			Predicate<? super Collection<T>> predicate) {
 		this.script.add(new CollectEvent<>(predicate));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectSubscription() {
+	public Verifier.Step<T, VerifySubscriber<T>> expectSubscription() {
 		this.script.set(0, defaultFirstStep());
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> expectSubscriptionWith(Predicate<? super Subscription> predicate) {
+	public Verifier.Step<T, VerifySubscriber<T>> expectSubscriptionWith(
+			Predicate<? super Subscription> predicate) {
 		Objects.requireNonNull(predicate, "predicate");
 		this.script.set(0, new SignalEvent<>(signal -> {
 			if (!signal.isOnSubscribe()) {
@@ -341,59 +365,45 @@ final class DefaultScriptedSubscriberBuilder<T>
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> recordWith(Supplier<? extends Collection<T>> supplier) {
+	public Verifier.Step<T, VerifySubscriber<T>> recordWith(Supplier<? extends Collection<T>> supplier) {
 		this.script.add(new CollectEvent<>(supplier));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> then(Runnable task) {
+	public Verifier.Step<T, VerifySubscriber<T>> then(Runnable task) {
 		Objects.requireNonNull(task, "task");
 		this.script.add(new TaskEvent<>(task));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber<T> thenCancel() {
+	public VerifySubscriber<T> thenCancel() {
 		this.script.add(new SubscriptionEvent<>());
 		return build();
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> thenRequest(long n) {
+	public Verifier.Step<T, VerifySubscriber<T>> thenRequest(long n) {
 		checkStrictlyPositive(n);
 		this.script.add(new SubscriptionEvent<>(subscription -> subscription.request(n)));
 		return this;
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> thenAwait() {
-		this.script.add(new TaskEvent<>(() -> VirtualTimeScheduler.get()
-		                                                          .advanceTime()));
-		return this;
+	public Verifier.Step<T, VerifySubscriber<T>> thenAwait() {
+		return thenAwait(Duration.ZERO);
 	}
 
 	@Override
-	public ScriptedSubscriber.StepBuilder<T> thenAwait(Duration timeshift) {
-		this.script.add(new TaskEvent<>(() -> VirtualTimeScheduler.get()
-		                                                          .advanceTimeBy(timeshift)));
+	public Verifier.Step<T, VerifySubscriber<T>> thenAwait(Duration timeshift) {
+		Objects.requireNonNull(timeshift, "timeshift");
+		this.script.add(new WaitEvent<>(timeshift));
 		return this;
 	}
 
-	@Override
-	public ScriptedSubscriber.StepBuilder<T> thenAwaitUntil(Instant instant) {
-
-		this.script.add(new TaskEvent<>(() -> VirtualTimeScheduler.get()
-		                                                          .advanceTimeTo(instant)));
-		return this;
-	}
-
-	final ScriptedSubscriber<T> build() {
-		Queue<Event<T>> copy = new ConcurrentLinkedQueue<>(this.script);
-		return new DefaultScriptedSubscriber<>(copy,
-				this.initialRequest,
-				requestedFusionMode,
-				expectedFusionMode);
+	final VerifySubscriber<T> build() {
+		return new DefaultVerifySubscriber<>(this);
 	}
 
 	@SuppressWarnings("unused")
@@ -401,31 +411,17 @@ final class DefaultScriptedSubscriberBuilder<T>
 
 	}
 
-	final static class DefaultScriptedSubscriber<T> extends AtomicBoolean
-			implements ScriptedSubscriber<T>, Trackable, Receiver {
+	final static class DefaultVerifySubscriber<T>
+			implements VerifySubscriber<T>, Trackable, Receiver {
 
-		static String formatFusionMode(int m) {
-			switch (m) {
-				case Fuseable.ANY:
-					return "(any)";
-				case Fuseable.SYNC:
-					return "(sync)";
-				case Fuseable.ASYNC:
-					return "(async)";
-				case Fuseable.NONE:
-					return "none";
-				case Fuseable.THREAD_BARRIER:
-					return "(thread-barrier)";
-			}
-			return "" + m;
-		}
-
-		final AtomicReference<Subscription> subscription;
-		final CountDownLatch                completeLatch;
-		final Queue<Event<T>>               script;
-		final long                          initialRequest;
-		final int                           requestedFusionMode;
-		final int                           expectedFusionMode;
+		final AtomicReference<Subscription>       subscription;
+		final CountDownLatch                      completeLatch;
+		final Queue<Event<T>>                     script;
+		final Queue<TaskEvent<T>>                 taskEvents;
+		final int                                 requestedFusionMode;
+		final int                                 expectedFusionMode;
+		final DefaultScriptedSubscriberBuilder<T> parent;
+		final boolean                             supplyOnVerify;
 
 		int                           establishedFusionMode;
 		Fuseable.QueueSubscription<T> qs;
@@ -435,20 +431,35 @@ final class DefaultScriptedSubscriberBuilder<T>
 
 		@SuppressWarnings("unused")
 		volatile int wip;
-
 		@SuppressWarnings("unused")
 		volatile Throwable errors;
 
-		DefaultScriptedSubscriber(Queue<Event<T>> script,
-				long initialRequest,
-				int requestedFusionMode,
-				int expectedFusionMode) {
-			this.script = script;
-			this.requestedFusionMode = requestedFusionMode;
+		DefaultVerifySubscriber(DefaultScriptedSubscriberBuilder<T> parent) {
+			this(parent, parent.sourceSupplier != null);
+		}
+
+		@SuppressWarnings("unchecked")
+		DefaultVerifySubscriber(DefaultScriptedSubscriberBuilder<T> parent,
+				boolean supplyOnVerify) {
+			this.parent = parent;
+			this.script = new ConcurrentLinkedQueue<>(parent.script);
+			this.taskEvents = new ConcurrentLinkedQueue<>();
+			Event<T> event;
+			for (; ; ) {
+				event = this.script.peek();
+				if (event instanceof TaskEvent) {
+					taskEvents.add((TaskEvent<T>) this.script.poll());
+				}
+				else {
+					break;
+				}
+			}
+			this.supplyOnVerify = supplyOnVerify;
+			this.requestedFusionMode = parent.requestedFusionMode;
 			this.expectedFusionMode =
-					expectedFusionMode == -1 ? requestedFusionMode : expectedFusionMode;
+					parent.expectedFusionMode == -1 ? parent.requestedFusionMode :
+							parent.expectedFusionMode;
 			this.produced = 0L;
-			this.initialRequest = initialRequest;
 			this.completeLatch = new CountDownLatch(1);
 			this.subscription = new AtomicReference<>();
 		}
@@ -538,8 +549,8 @@ final class DefaultScriptedSubscriberBuilder<T>
 						this.completeLatch.countDown();
 					}
 				}
-				else if (this.initialRequest != 0L) {
-					subscription.request(this.initialRequest);
+				else if (parent.initialRequest != 0L) {
+					subscription.request(parent.initialRequest);
 				}
 			}
 			else {
@@ -563,20 +574,37 @@ final class DefaultScriptedSubscriberBuilder<T>
 
 		@Override
 		public Duration verify() {
-			Instant now = Instant.now();
-			try {
-				pollTaskEventOrComplete(Duration.ZERO);
-			}
-			catch (InterruptedException ex) {
-				Thread.currentThread()
-				      .interrupt();
-			}
-			validate();
-			return Duration.between(now, Instant.now());
+			return verify(Duration.ZERO);
 		}
 
 		@Override
 		public Duration verify(Duration duration) {
+			Objects.requireNonNull(duration, "duration");
+			if (supplyOnVerify) {
+				VirtualTimeScheduler vts = null;
+				if (parent.vtsLookup != null) {
+					vts = parent.vtsLookup.get();
+				}
+				try {
+					Publisher<? extends T> publisher = parent.sourceSupplier.get();
+					precheckVerify(publisher);
+					Instant now = Instant.now();
+
+					DefaultVerifySubscriber<T> newVerifier =
+							new DefaultVerifySubscriber<>(parent, false);
+
+					publisher.subscribe(newVerifier);
+					newVerifier.verify(duration);
+
+					return Duration.between(now, Instant.now());
+				}
+				finally {
+					if (vts != null) {
+						vts.shutdown();
+					}
+				}
+			}
+
 			Instant now = Instant.now();
 			try {
 				pollTaskEventOrComplete(duration);
@@ -588,24 +616,6 @@ final class DefaultScriptedSubscriberBuilder<T>
 			validate();
 			return Duration.between(now, Instant.now());
 
-		}
-
-		@Override
-		public Duration verify(Publisher<? extends T> publisher) {
-			precheckVerify(publisher);
-			Instant now = Instant.now();
-			publisher.subscribe(this);
-			verify();
-			return Duration.between(now, Instant.now());
-		}
-
-		@Override
-		public Duration verify(Publisher<? extends T> publisher, Duration duration) {
-			precheckVerify(publisher);
-			Instant now = Instant.now();
-			publisher.subscribe(this);
-			verify(duration);
-			return Duration.between(now, Instant.now());
 		}
 
 		final void addFailure(String msg, Object... arguments) {
@@ -671,13 +681,11 @@ final class DefaultScriptedSubscriberBuilder<T>
 				Event<T> event = this.script.peek();
 				if (event == null) {
 					addFailure("did not expect: %s", actualSignal);
+					return;
 				}
-				else if (event instanceof TaskEvent) {
-					if (onTaskEvent()) {
-						return;
-					}
-				}
-				else if (event instanceof SignalCountEvent) {
+
+				onTaskEvent();
+				if (event instanceof SignalCountEvent) {
 					if (onSignalCount(actualSignal, (SignalCountEvent<T>) event)) {
 						return;
 					}
@@ -716,6 +724,9 @@ final class DefaultScriptedSubscriberBuilder<T>
 						if (onCollect()) {
 							return;
 						}
+					}
+					else {
+						onTaskEvent();
 					}
 					event = this.script.peek();
 				}
@@ -800,19 +811,22 @@ final class DefaultScriptedSubscriberBuilder<T>
 			return false;
 		}
 
-		boolean onTaskEvent() {
+		void onTaskEvent() {
 			Event<T> event;
 			for (; ; ) {
 				if (isCancelled()) {
-					return true;
+					return;
 				}
 				event = this.script.peek();
 				if (!(event instanceof TaskEvent)) {
 					break;
 				}
-				LockSupport.parkNanos(1_000);
+				event = this.script.poll();
+				if (!(event instanceof TaskEvent)) {
+					return;
+				}
+				taskEvents.add((TaskEvent<T>) event);
 			}
-			return false;
 		}
 
 		boolean onSubscription() {
@@ -848,12 +862,10 @@ final class DefaultScriptedSubscriberBuilder<T>
 
 			boolean skip = true;
 			for (; ; ) {
-				event = script.peek();
-				if (event != null && event instanceof TaskEvent) {
-					event = script.poll();
-					skip = false;
+				while ((event = taskEvents.poll()) != null) {
 					try {
-						((TaskEvent<T>) event).run();
+						skip = false;
+						((TaskEvent<T>) event).run(this);
 					}
 					catch (Throwable t) {
 						Exceptions.throwIfFatal(t);
@@ -861,7 +873,8 @@ final class DefaultScriptedSubscriberBuilder<T>
 						throw Exceptions.propagate(t);
 					}
 				}
-				else if (!skip) {
+				if (!skip) {
+					event = script.peek();
 					if (event instanceof SubscriptionEvent) {
 						onSubscription();
 					}
@@ -872,10 +885,10 @@ final class DefaultScriptedSubscriberBuilder<T>
 				if (timeout != Duration.ZERO && stop.isBefore(Instant.now())) {
 					if (!isStarted()) {
 						throw new IllegalStateException(
-								"ScriptedSubscriber has not been subscribed");
+								"VerifySubscriber has not been subscribed");
 					}
 					else {
-						throw new AssertionError("ScriptedSubscriber timed out on " + upstream());
+						throw new AssertionError("VerifySubscriber timed out on " + upstream());
 					}
 				}
 			}
@@ -883,10 +896,6 @@ final class DefaultScriptedSubscriberBuilder<T>
 
 		void precheckVerify(Publisher<? extends T> publisher) {
 			Objects.requireNonNull(publisher, "publisher");
-
-			if (!compareAndSet(false, true)) {
-				throw new IllegalStateException("The ScriptedSubscriber has already " + "been started");
-			}
 			if (requestedFusionMode == NO_FUSION_SUPPORT && publisher instanceof Fuseable){
 				throw new AssertionError("The source publisher supports fusion");
 			}
@@ -932,8 +941,8 @@ final class DefaultScriptedSubscriberBuilder<T>
 						onNext(v);
 					}
 				}
-				else if (this.initialRequest != 0) {
-					s.request(this.initialRequest);
+				else if (parent.initialRequest != 0) {
+					s.request(parent.initialRequest);
 				}
 				return true;
 			}
@@ -949,7 +958,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 		final void validate() {
 			if (!isStarted()) {
 				throw new IllegalStateException(
-						"ScriptedSubscriber has not been subscribed");
+						"VerifySubscriber has not been subscribed");
 			}
 			Throwable errors = this.errors;
 
@@ -1003,8 +1012,8 @@ final class DefaultScriptedSubscriberBuilder<T>
 		boolean isTerminal() {
 			return consumer == null;
 		}
-	}
 
+	}
 	static final class SignalEvent<T> implements Event<T> {
 
 		final Function<Signal<T>, Optional<AssertionError>> function;
@@ -1032,9 +1041,9 @@ final class DefaultScriptedSubscriberBuilder<T>
 	static final class CollectEvent<T> implements EagerEvent<T> {
 
 		final Supplier<? extends Collection<T>> supplier;
+
 		final Predicate<? super Collection<T>>  predicate;
 		final Consumer<? super Collection<T>>   consumer;
-
 		CollectEvent(Supplier<? extends Collection<T>> supplier) {
 			this.supplier = supplier;
 			this.predicate = null;
@@ -1075,7 +1084,7 @@ final class DefaultScriptedSubscriberBuilder<T>
 
 	}
 
-	static final class TaskEvent<T> implements Event<T> {
+	static class TaskEvent<T> implements EagerEvent<T> {
 
 		final Runnable task;
 
@@ -1083,8 +1092,30 @@ final class DefaultScriptedSubscriberBuilder<T>
 			this.task = task;
 		}
 
-		void run() {
+		void run(DefaultVerifySubscriber<T> parent) throws Exception {
 			task.run();
+		}
+
+	}
+
+	static final class WaitEvent<T> extends TaskEvent<T> {
+
+		final Duration duration;
+
+		WaitEvent(Duration duration) {
+			super(null);
+			this.duration = duration;
+		}
+
+		@Override
+		void run(DefaultVerifySubscriber<T> parent) throws Exception {
+			if (parent.parent.vtsLookup == null) {
+				parent.completeLatch.await(duration.toMillis(), TimeUnit.MILLISECONDS);
+			}
+			else {
+				parent.parent.vtsLookup.get()
+				                       .advanceTimeBy(duration);
+			}
 		}
 
 	}
@@ -1126,6 +1157,22 @@ final class DefaultScriptedSubscriberBuilder<T>
 		return Optional.of(new AssertionError(String.format(msg, args)));
 	}
 
+	static String formatFusionMode(int m) {
+		switch (m) {
+			case Fuseable.ANY:
+				return "(any)";
+			case Fuseable.SYNC:
+				return "(sync)";
+			case Fuseable.ASYNC:
+				return "(async)";
+			case Fuseable.NONE:
+				return "none";
+			case Fuseable.THREAD_BARRIER:
+				return "(thread-barrier)";
+		}
+		return "" + m;
+	}
+
 	static final SignalEvent DEFAULT_ONSUBSCRIBE_STEP = new SignalEvent<>(signal -> {
 		if (!signal.isOnSubscribe()) {
 			return fail("expected: onSubscribe(); actual: %s", signal);
@@ -1137,14 +1184,15 @@ final class DefaultScriptedSubscriberBuilder<T>
 
 	static final int NO_FUSION_SUPPORT = Integer.MIN_VALUE;
 
-	static final AtomicReferenceFieldUpdater<DefaultScriptedSubscriber, Throwable>
+	static final AtomicReferenceFieldUpdater<DefaultVerifySubscriber, Throwable>
 			ERRORS =
-			AtomicReferenceFieldUpdater.newUpdater(DefaultScriptedSubscriber.class,
+			AtomicReferenceFieldUpdater.newUpdater(DefaultVerifySubscriber.class,
 					Throwable.class,
 					"errors");
 
-	static final AtomicIntegerFieldUpdater<DefaultScriptedSubscriber> WIP =
-			AtomicIntegerFieldUpdater.newUpdater(DefaultScriptedSubscriber.class, "wip");
+	static final AtomicIntegerFieldUpdater<DefaultVerifySubscriber> WIP =
+			AtomicIntegerFieldUpdater.newUpdater(DefaultVerifySubscriber.class, "wip");
 
-	static final Optional<AssertionError> EXPECT_MORE = Optional.empty();
+	static final Optional<AssertionError> EXPECT_MORE = Optional.ofNullable(null);
+
 }

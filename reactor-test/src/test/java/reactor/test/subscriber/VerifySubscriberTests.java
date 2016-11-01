@@ -13,31 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package reactor.adapter.misc;
+package reactor.test.subscriber;
 
-import org.eclipse.swt.widgets.Display;
-import org.junit.Ignore;
+import java.time.Duration;
+
 import org.junit.Test;
 import reactor.core.publisher.Flux;
-import reactor.core.scheduler.TimedScheduler;
-import reactor.test.subscriber.Verifier;
 
 /**
  * @author Stephane Maldini
  */
-public class SwtAdapterTest {
+public class VerifySubscriberTests {
 
-	@Test
-	@Ignore("cannot test without display")
-	public void normal() {
-		TimedScheduler swtScheduler = SwtScheduler.from(new Display());
 
-		Flux<Integer> swtFlux = Flux.range(0, 1_000_000)
-		                              .publishOn(swtScheduler);
+	@Test(expected = IllegalStateException.class)
+	public void notSubscribed() {
+		VerifySubscriber.create()
+		                .expectNext("foo")
+		                .expectComplete()
+		                .verify(Duration.ofMillis(100));
+	}
 
-		Verifier.create(swtFlux)
-		        .expectNextCount(1_000_000)
-		        .expectComplete()
-		        .verify();
+
+
+	@Test(expected = AssertionError.class)
+	public void subscribedTwice() {
+		Flux<String> flux = Flux.just("foo", "bar");
+
+		VerifySubscriber<String> s =
+				VerifySubscriber.<String>create().expectNext("foo", "bar")
+				                                 .expectComplete();
+
+		flux.subscribe(s);
+		flux.subscribe(s);
+		s.verify();
 	}
 }
