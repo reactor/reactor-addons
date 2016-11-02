@@ -20,7 +20,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.TimedScheduler;
-import reactor.test.subscriber.Verifier;
+import reactor.test.StepVerifier;
 
 /**
  * @author Stephane Maldini
@@ -35,9 +35,9 @@ public class SwtAdapterTest {
 		Flux<Integer> swtFlux = Flux.range(0, 1_000_000)
 		                              .publishOn(swtScheduler);
 
-		Verifier.create(swtFlux)
-		        .expectNextCount(1_000_000)
-		        .expectComplete()
-		        .verify();
+		StepVerifier.create(swtFlux)
+		            .expectNextCount(1_000_000)
+		            .expectComplete()
+		            .verify();
 	}
 }
