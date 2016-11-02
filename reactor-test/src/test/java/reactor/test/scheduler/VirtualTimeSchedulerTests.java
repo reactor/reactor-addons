@@ -16,9 +16,12 @@
 
 package reactor.test.scheduler;
 
+import java.util.function.Supplier;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 /**
@@ -68,6 +71,53 @@ public class VirtualTimeSchedulerTests {
 		Assert.assertNotEquals(Schedulers.newElastic(""), t);
 		Assert.assertNotEquals(Schedulers.newSingle(""), t);
 		Assert.assertEquals(Schedulers.newTimer(""), t);
+	}
+
+	@Test
+	public void enableProvidedSchedulerIdempotent() {
+		VirtualTimeScheduler vts = VirtualTimeScheduler.create();
+
+		VirtualTimeScheduler.enable(vts);
+
+		Assert.assertSame(vts, uncache(Schedulers.timer()));
+		Assert.assertNotSame(vts, uncache(Schedulers.single()));
+		Assert.assertFalse(vts.isEnabledOnAllSchedulers());
+		Assert.assertFalse(vts.shutdown);
+
+
+		VirtualTimeScheduler.enable(vts);
+
+		Assert.assertSame(vts, uncache(Schedulers.timer()));
+		Assert.assertNotSame(vts, uncache(Schedulers.single()));
+		Assert.assertFalse(vts.isEnabledOnAllSchedulers());
+		Assert.assertFalse(vts.shutdown);
+	}
+
+	@Test
+	public void enableProvidedAllSchedulerIdempotent() {
+		VirtualTimeScheduler vts = VirtualTimeScheduler.createForAll();
+
+		VirtualTimeScheduler.enable(vts);
+
+		Assert.assertSame(vts, uncache(Schedulers.timer()));
+		Assert.assertSame(vts, uncache(Schedulers.single()));
+		Assert.assertTrue(vts.isEnabledOnAllSchedulers());
+		Assert.assertFalse(vts.shutdown);
+
+
+		VirtualTimeScheduler.enable(vts);
+
+		Assert.assertSame(vts, uncache(Schedulers.timer()));
+		Assert.assertSame(vts, uncache(Schedulers.single()));
+		Assert.assertTrue(vts.isEnabledOnAllSchedulers());
+		Assert.assertFalse(vts.shutdown);
+	}
+
+	private static Scheduler uncache(Scheduler potentialCached) {
+		if (potentialCached instanceof Supplier) {
+			return ((Supplier<Scheduler>) potentialCached).get();
+		}
+	return potentialCached;
 	}
 
 	@After

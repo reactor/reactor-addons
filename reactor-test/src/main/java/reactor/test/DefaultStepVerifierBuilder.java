@@ -443,6 +443,7 @@ final class DefaultStepVerifierBuilder<T>
 		final int                           expectedFusionMode;
 		final DefaultStepVerifierBuilder<T> parent;
 		final boolean                       supplyOnVerify;
+		final VirtualTimeScheduler          virtualTimeScheduler;
 
 		int                           establishedFusionMode;
 		Fuseable.QueueSubscription<T> qs;
@@ -458,14 +459,20 @@ final class DefaultStepVerifierBuilder<T>
 
 		volatile boolean monitorSignal;
 
+		/** The constructor used for initial building after steps configuration, but
+		 * not actual verification */
 		DefaultVerifySubscriber(DefaultStepVerifierBuilder<T> parent) {
-			this(parent, parent.sourceSupplier != null);
+			this(parent, null, parent.sourceSupplier != null);
 		}
 
+		/** The constructor used for verification, where a VirtualTimeScheduler can be
+		 * passed */
 		@SuppressWarnings("unchecked")
 		DefaultVerifySubscriber(DefaultStepVerifierBuilder<T> parent,
+				VirtualTimeScheduler vts,
 				boolean supplyOnVerify) {
 			this.parent = parent;
+			this.virtualTimeScheduler = vts;
 			this.script = new ConcurrentLinkedQueue<>(parent.script);
 			this.taskEvents = new ConcurrentLinkedQueue<>();
 			Event<T> event;
@@ -604,6 +611,7 @@ final class DefaultStepVerifierBuilder<T>
 				VirtualTimeScheduler vts = null;
 				if (parent.vtsLookup != null) {
 					vts = parent.vtsLookup.get();
+					VirtualTimeScheduler.enable(vts);
 				}
 				try {
 					Publisher<? extends T> publisher = parent.sourceSupplier.get();
@@ -611,7 +619,7 @@ final class DefaultStepVerifierBuilder<T>
 					Instant now = Instant.now();
 
 					DefaultVerifySubscriber<T> newVerifier =
-							new DefaultVerifySubscriber<>(parent, false);
+							new DefaultVerifySubscriber<>(parent, vts, false);
 
 					publisher.subscribe(newVerifier);
 					newVerifier.verify(duration);
@@ -1123,12 +1131,11 @@ final class DefaultStepVerifierBuilder<T>
 
 	static void virtualOrRealWait(Duration duration, DefaultVerifySubscriber<?> s)
 			throws Exception {
-		if (s.parent.vtsLookup == null) {
+		if (s.virtualTimeScheduler == null) {
 			s.completeLatch.await(duration.toMillis(), TimeUnit.MILLISECONDS);
 		}
 		else {
-			s.parent.vtsLookup.get()
-			                  .advanceTimeBy(duration);
+			s.virtualTimeScheduler.advanceTimeBy(duration);
 		}
 	}
 

@@ -24,6 +24,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import reactor.core.Cancellation;
 import reactor.core.Exceptions;
@@ -49,6 +50,14 @@ public class VirtualTimeScheduler implements TimedScheduler {
 	}
 
 	/**
+	 * @return a new {@link VirtualTimeScheduler} that is expected to be used for all
+	 * {@link Schedulers}.
+	 */
+	public static VirtualTimeScheduler createForAll() {
+		return new VirtualTimeScheduler(true);
+	}
+
+	/**
 	 * Assign a single newly created {@link VirtualTimeScheduler} to all or timed-only
 	 * {@link Schedulers.Factory} factories. While the method is thread safe, its usually
 	 * advised to execute such wide-impact BEFORE all tested code runs (setup etc).
@@ -58,13 +67,36 @@ public class VirtualTimeScheduler implements TimedScheduler {
 	 * @return the VirtualTimeScheduler that was created and set through the factory
 	 */
 	public static VirtualTimeScheduler enable(boolean allSchedulers) {
+		return enable(() -> new VirtualTimeScheduler(allSchedulers), allSchedulers);
+	}
 
+
+	/**
+	 * Assign a previously created {@link VirtualTimeScheduler} to the relevant
+	 * {@link Schedulers.Factory} factories, depending on how it was created (see
+	 * {@link #createForAll()} and {@link #create()}). While the method is thread
+	 * safe, it's usually advised to execute such wide-impact BEFORE all tested code
+	 * runs (setup etc). The enabled Scheduler is returned.
+	 *
+	 * @param scheduler the {@link VirtualTimeScheduler} to use in factories.
+	 * @return the used VirtualTimeScheduler
+	 */
+	public static VirtualTimeScheduler enable(VirtualTimeScheduler scheduler) {
+		return enable(() -> scheduler, scheduler.isEnabledOnAllSchedulers());
+	}
+
+	static VirtualTimeScheduler enable(Supplier<VirtualTimeScheduler>
+			schedulerSupplier, boolean allSchedulers) {
 		for (; ; ) {
 			VirtualTimeScheduler s = CURRENT.get();
 			if (s != null && s.allScheduler == allSchedulers) {
 				return s;
 			}
-			VirtualTimeScheduler newS = new VirtualTimeScheduler(allSchedulers);
+			VirtualTimeScheduler newS = schedulerSupplier.get();
+			if (newS == CURRENT.get()) {
+				return newS; //nothing to do, it has already been set in the past
+			}
+
 			if (CURRENT.compareAndSet(s, newS)) {
 				if (!allSchedulers) {
 					Schedulers.setFactory(new TimedOnlyFactory(newS));
