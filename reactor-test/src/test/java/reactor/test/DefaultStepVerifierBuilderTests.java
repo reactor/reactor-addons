@@ -32,7 +32,8 @@ public class DefaultStepVerifierBuilderTests {
 				new DefaultStepVerifierBuilder<String>(Long.MAX_VALUE,
 						null,
 						null).expectNext("foo", "bar")
-				             .expectComplete();
+				             .expectComplete()
+				.toSubscriber();
 
 		flux.subscribe(s);
 		flux.subscribe(s);
