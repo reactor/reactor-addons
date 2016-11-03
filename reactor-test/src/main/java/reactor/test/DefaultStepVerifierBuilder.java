@@ -385,6 +385,13 @@ final class DefaultStepVerifierBuilder<T>
 	}
 
 	@Override
+	public DefaultStepVerifier<T> expectNeverTerminates(Duration duration) {
+		expectNoEvent(duration);
+		this.script.add(new CancelAfterTasksEvent<>());
+		return this.build();
+	}
+
+	@Override
 	public DefaultStepVerifierBuilder<T> recordWith(Supplier<? extends Collection<T>> supplier) {
 		Objects.requireNonNull(supplier, "supplier");
 		this.script.add(new CollectEvent<>(supplier));
@@ -935,8 +942,7 @@ final class DefaultStepVerifierBuilder<T>
 				if (this.script.peek() instanceof SubscriptionEvent) {
 					subscriptionEvent = (SubscriptionEvent<T>) this.script.poll();
 					if (subscriptionEvent.isTerminal()) {
-						cancel();
-						this.completeLatch.countDown();
+						doCancel();
 						return true;
 					}
 					subscriptionEvent.consume(upstream());
@@ -947,6 +953,11 @@ final class DefaultStepVerifierBuilder<T>
 				}
 			}
 			return false;
+		}
+
+		void doCancel() {
+			cancel();
+			this.completeLatch.countDown();
 		}
 
 		@SuppressWarnings("unchecked")
@@ -1239,6 +1250,22 @@ final class DefaultStepVerifierBuilder<T>
 			virtualOrRealWait(duration, s);
 		}
 
+	}
+
+	/**
+	 * A lazy cancellation task that will only trigger cancellation after all previous
+	 * tasks have been processed (avoiding short-circuiting of time manipulating tasks).
+	 */
+	static final class CancelAfterTasksEvent<T> extends TaskEvent<T> {
+
+		CancelAfterTasksEvent() {
+			super(null);
+		}
+
+		@Override
+		void run(DefaultVerifySubscriber<T> parent) throws Exception {
+			parent.doCancel();
+		}
 	}
 
 	static final class SignalSequenceEvent<T> implements Event<T> {

@@ -269,6 +269,18 @@ public interface StepVerifier {
 		TARGET expectComplete();
 
 		/**
+		 * Expect that the stream stops emitting but never terminates.
+		 * <p>
+		 * Wait at most {@code duration} for this verification. The subscription is lazily
+		 * but forcibly cancelled after this duration.
+		 *
+		 * @param duration the maximum duration to wait for to check if a terminal event occurs
+		 * @return the built verification
+		 */
+		TARGET expectNeverTerminates(Duration duration);
+
+
+		/**
 		 * Cancel the underlying subscription.
 		 *
 		 * @return the built verification
@@ -531,7 +543,7 @@ public interface StepVerifier {
 		 * @return this builder
 		 */
 		@Override
-		FirstStep<T, TARGET> expectNoEvent(Duration duration);
+		Step<T, TARGET> expectNoEvent(Duration duration);
 
 		/**
 		 * Expect a {@link Subscription}.

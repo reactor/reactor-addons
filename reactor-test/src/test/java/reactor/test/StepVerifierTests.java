@@ -28,7 +28,6 @@ import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.test.StepVerifier;
 import reactor.test.scheduler.VirtualTimeScheduler;
 
 import static org.junit.Assert.assertEquals;
@@ -905,5 +904,51 @@ public class StepVerifierTests {
 		        .expectNext("t0")
 		        .thenCancel()
 		        .verify();
+	}
+
+	@Test(timeout = 1500)
+	public void noSignalRealTime() {
+		StepVerifier
+				.create(Mono.never())
+				.expectSubscription()
+				.expectNeverTerminates(Duration.ofSeconds(1))
+				.verify();
+	}
+
+	@Test(timeout = 500)
+	public void noSignalVirtualTime() {
+		StepVerifier
+				.with(1, Mono::never)
+				.expectSubscription()
+				.expectNeverTerminates(Duration.ofSeconds(100))
+				.verify();
+	}
+
+	@Test
+	public void longDelayAndNoTermination() {
+		StepVerifier
+				.with(Long.MAX_VALUE,
+						() -> Flux.just("foo", "bar")
+						          .delay(Duration.ofSeconds(5))
+						          .concatWith(Mono.never())
+				)
+				.expectSubscription()
+				.expectNoEvent(Duration.ofSeconds(5))
+				.expectNext("foo")
+				.expectNoEvent(Duration.ofSeconds(5))
+				.expectNextCount(1)
+				.expectNeverTerminates(Duration.ofMillis(10))
+				.verify();
+	}
+
+	@Test(timeout = 500)
+	public void thenAwaitThenCancelEagerlyCancels() {
+		StepVerifier
+				.create(Flux.just("foo")
+				            .delay(Duration.ofSeconds(5)))
+				.expectSubscription()
+				.thenAwait(Duration.ofSeconds(5))
+				.thenCancel()
+				.verify();
 	}
 }
