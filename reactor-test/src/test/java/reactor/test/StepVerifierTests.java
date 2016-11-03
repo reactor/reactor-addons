@@ -827,17 +827,17 @@ public class StepVerifierTests {
 		Duration r;
 
 		r = StepVerifier.with(3,
-				() -> Flux.interval(Duration.ofSeconds(2))
+				() -> Flux.interval(Duration.ofMillis(200))
 				          .map(d -> "t" + d),
 				null)
-		                .thenAwait(Duration.ofSeconds(2))
+		                .thenAwait(Duration.ofMillis(200))
 		                .expectNext("t0")
-		                .thenAwait(Duration.ofSeconds(2))
+		                .thenAwait(Duration.ofMillis(200))
 		                .expectNext("t1")
 		                .thenCancel()
 		                .verify();
 
-		Assert.assertFalse(r.minus(Duration.ofSeconds(4))
+		Assert.assertFalse(r.minus(Duration.ofMillis(400))
 		                    .isNegative());
 	}
 
