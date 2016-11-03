@@ -955,7 +955,7 @@ public class StepVerifierTests {
 				StepVerifier.create(Flux.just("foo")
 				            .delay(Duration.ofSeconds(1)))
 				.expectSubscription()
-				.thenAwait(Duration.ofSeconds(5))
+				.thenAwait(Duration.ofSeconds(1))
 				.thenCancel()
 				.verify(Duration.ofMillis(1100));
 
