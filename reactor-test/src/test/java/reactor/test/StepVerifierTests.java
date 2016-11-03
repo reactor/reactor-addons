@@ -928,7 +928,8 @@ public class StepVerifierTests {
 		StepVerifier
 				.with(1, Mono::never)
 				.expectSubscription()
-				.expectNeverTerminates(Duration.ofSeconds(100))
+				.expectNoEvent(Duration.ofSeconds(100))
+				.thenCancel()
 				.verify();
 	}
 
@@ -945,7 +946,8 @@ public class StepVerifierTests {
 				.expectNext("foo")
 				.expectNoEvent(Duration.ofSeconds(5))
 				.expectNextCount(1)
-				.expectNeverTerminates(Duration.ofMillis(10))
+				.expectNoEvent(Duration.ofMillis(10))
+				.thenCancel()
 				.verify();
 	}
 

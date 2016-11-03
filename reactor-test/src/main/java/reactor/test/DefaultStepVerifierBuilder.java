@@ -385,12 +385,6 @@ final class DefaultStepVerifierBuilder<T>
 	}
 
 	@Override
-	public DefaultStepVerifier<T> expectNeverTerminates(Duration duration) {
-		expectNoEvent(duration);
-		return this.thenCancel();
-	}
-
-	@Override
 	public DefaultStepVerifierBuilder<T> recordWith(Supplier<? extends Collection<T>> supplier) {
 		Objects.requireNonNull(supplier, "supplier");
 		this.script.add(new CollectEvent<>(supplier));
