@@ -387,8 +387,7 @@ final class DefaultStepVerifierBuilder<T>
 	@Override
 	public DefaultStepVerifier<T> expectNeverTerminates(Duration duration) {
 		expectNoEvent(duration);
-		this.script.add(new CancelAfterTasksEvent<>());
-		return this.build();
+		return this.thenCancel();
 	}
 
 	@Override
@@ -569,7 +568,7 @@ final class DefaultStepVerifierBuilder<T>
 			this.requestedFusionMode = requestedFusionMode;
 			this.expectedFusionMode = expectedFusionMode;
 			this.initialRequest = initialRequest;
-			this.script = new ConcurrentLinkedQueue<>(script);
+			this.script = conflateScript(script);
 			this.taskEvents = new ConcurrentLinkedQueue<>();
 			Event<T> event;
 			for (; ; ) {
@@ -585,6 +584,24 @@ final class DefaultStepVerifierBuilder<T>
 			this.produced = 0L;
 			this.completeLatch = new CountDownLatch(1);
 			this.subscription = new AtomicReference<>();
+		}
+
+		static <R> Queue<Event<R>> conflateScript(List<Event<R>> script) {
+			ConcurrentLinkedQueue<Event<R>> queue = new ConcurrentLinkedQueue<>(script);
+			ConcurrentLinkedQueue<Event<R>> conflated = new ConcurrentLinkedQueue<>();
+
+			Event event;
+			while ((event = queue.peek()) != null) {
+				if (event instanceof TaskEvent) {
+					conflated.add(queue.poll());
+					while (queue.peek() instanceof SubscriptionEvent) {
+						conflated.add(new SubscriptionTaskEvent<>((SubscriptionEvent<R>) queue.poll()));
+					}
+				} else {
+					conflated.add(queue.poll());
+				}
+			}
+			return conflated;
 		}
 
 		/**
@@ -1256,15 +1273,23 @@ final class DefaultStepVerifierBuilder<T>
 	 * A lazy cancellation task that will only trigger cancellation after all previous
 	 * tasks have been processed (avoiding short-circuiting of time manipulating tasks).
 	 */
-	static final class CancelAfterTasksEvent<T> extends TaskEvent<T> {
+	static final class SubscriptionTaskEvent<T> extends TaskEvent<T> {
 
-		CancelAfterTasksEvent() {
+		final SubscriptionEvent<T> delegate;
+
+		SubscriptionTaskEvent(SubscriptionEvent<T> subscriptionEvent) {
 			super(null);
+			this.delegate = subscriptionEvent;
 		}
 
 		@Override
 		void run(DefaultVerifySubscriber<T> parent) throws Exception {
-			parent.doCancel();
+			if (delegate.isTerminal()) {
+				parent.doCancel();
+			} else {
+				delegate.consume(parent.upstream());
+				parent.doCancel();
+			}
 		}
 	}
 

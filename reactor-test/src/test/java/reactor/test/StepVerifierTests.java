@@ -16,11 +16,13 @@
 package reactor.test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import reactor.core.Fuseable;
@@ -30,7 +32,10 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.scheduler.VirtualTimeScheduler;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Arjen Poutsma
@@ -906,13 +911,16 @@ public class StepVerifierTests {
 		        .verify();
 	}
 
-	@Test(timeout = 1500)
+	@Test
 	public void noSignalRealTime() {
-		StepVerifier
+		Duration verifyDuration = StepVerifier
 				.create(Mono.never())
 				.expectSubscription()
-				.expectNeverTerminates(Duration.ofSeconds(1))
-				.verify();
+				.expectNoEvent(Duration.ofSeconds(1))
+				.thenCancel()
+				.verify(Duration.ofMillis(1100));
+
+		assertThat(verifyDuration.toMillis(), is(greaterThanOrEqualTo(1000L)));
 	}
 
 	@Test(timeout = 500)
@@ -941,14 +949,16 @@ public class StepVerifierTests {
 				.verify();
 	}
 
-	@Test(timeout = 500)
-	public void thenAwaitThenCancelEagerlyCancels() {
-		StepVerifier
-				.create(Flux.just("foo")
-				            .delay(Duration.ofSeconds(5)))
+	@Test
+	public void thenAwaitThenCancelWaitsForDuration() {
+		Duration verifyDuration =
+				StepVerifier.create(Flux.just("foo")
+				            .delay(Duration.ofSeconds(1)))
 				.expectSubscription()
 				.thenAwait(Duration.ofSeconds(5))
 				.thenCancel()
-				.verify();
+				.verify(Duration.ofMillis(1100));
+
+		assertThat(verifyDuration.toMillis(), is(greaterThanOrEqualTo(1000L)));
 	}
 }
