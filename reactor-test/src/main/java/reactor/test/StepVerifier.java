@@ -531,7 +531,7 @@ public interface StepVerifier {
 		 * @return this builder
 		 */
 		@Override
-		Step<T, TARGET> expectNoEvent(Duration duration);
+		FirstStep<T, TARGET> expectNoEvent(Duration duration);
 
 		/**
 		 * Expect a {@link Subscription}.
