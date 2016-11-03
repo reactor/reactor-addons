@@ -373,7 +373,7 @@ final class DefaultStepVerifierBuilder<T>
 	}
 
 	@Override
-	public StepVerifier.FirstStep<T, StepVerifier> expectNoEvent(Duration duration) {
+	public DefaultStepVerifierBuilder<T> expectNoEvent(Duration duration) {
 		Objects.requireNonNull(duration, "duration");
 		if(this.script.size() == 1 && this.script.get(0) == defaultFirstStep()){
 			this.script.set(0, new NoEvent<>(duration));
@@ -485,17 +485,31 @@ final class DefaultStepVerifierBuilder<T>
 			}
 		}
 
-		/** Converts the {@link StepVerifier} to a {@link Subscriber}, leaving all the
-		 * lifecycle management to the user (no virtual time activation nor subscription
-		 * is performed).
+		/**
+		 * Converts the {@link StepVerifier} to a {@link Subscriber}, leaving all the
+		 * lifecycle management to the user. Most notably:
+		 * <ul>
+		 *     <li>no subscription is performed
+		 *     <li>no {@link VirtualTimeScheduler} is registered in the Schedulers factories
+		 * </ul>
+		 * <p>
+		 * However if a {@link VirtualTimeScheduler} supplier was passed in originally
+		 * it will be invoked and the resulting scheduler will be affected by time
+		 * manipulation methods. That scheduler can be retrieved from the subscriber's
+		 * {@link DefaultVerifySubscriber#virtualTimeScheduler() virtualTimeScheduler()}
+		 * method.
 		 */
-		public DefaultVerifySubscriber<T> toSubscriber() {
+		DefaultVerifySubscriber<T> toSubscriber() {
+			VirtualTimeScheduler vts = null;
+			if (parent.vtsLookup != null) {
+				vts = parent.vtsLookup.get();
+			}
 			return new DefaultVerifySubscriber<>(
 					this.parent.script,
 					this.parent.initialRequest,
 					this.requestedFusionMode,
 					this.expectedFusionMode,
-					null);
+					vts);
 		}
 
 		void precheckVerify(Publisher<? extends T> publisher) {
@@ -564,6 +578,14 @@ final class DefaultStepVerifierBuilder<T>
 			this.produced = 0L;
 			this.completeLatch = new CountDownLatch(1);
 			this.subscription = new AtomicReference<>();
+		}
+
+		/**
+		 * @return the {@link VirtualTimeScheduler} this verifier will manipulate when
+		 * using {@link #thenAwait(Duration)} methods, or null if real time is used
+		 */
+		public VirtualTimeScheduler virtualTimeScheduler() {
+			return this.virtualTimeScheduler;
 		}
 
 		@Override
