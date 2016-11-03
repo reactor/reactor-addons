@@ -113,11 +113,28 @@ public class VirtualTimeSchedulerTests {
 		Assert.assertFalse(vts.shutdown);
 	}
 
+	@Test
+	public void enableTwoSimilarSchedulersUsesFirst() {
+		VirtualTimeScheduler vts1 = VirtualTimeScheduler.createForAll();
+		VirtualTimeScheduler vts2 = VirtualTimeScheduler.createForAll();
+
+		VirtualTimeScheduler firstEnableResult = VirtualTimeScheduler.enable(vts1);
+		VirtualTimeScheduler secondEnableResult = VirtualTimeScheduler.enable(vts2);
+
+		Assert.assertSame(vts1, firstEnableResult);
+		Assert.assertSame(vts1, secondEnableResult);
+		Assert.assertSame(vts1, uncache(Schedulers.timer()));
+		Assert.assertSame(vts1, uncache(Schedulers.single()));
+		Assert.assertFalse(vts1.shutdown);
+	}
+
+
+
 	private static Scheduler uncache(Scheduler potentialCached) {
 		if (potentialCached instanceof Supplier) {
 			return ((Supplier<Scheduler>) potentialCached).get();
 		}
-	return potentialCached;
+		return potentialCached;
 	}
 
 	@After
