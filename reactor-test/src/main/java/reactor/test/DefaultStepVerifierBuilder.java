@@ -1288,7 +1288,6 @@ final class DefaultStepVerifierBuilder<T>
 				parent.doCancel();
 			} else {
 				delegate.consume(parent.upstream());
-				parent.doCancel();
 			}
 		}
 	}

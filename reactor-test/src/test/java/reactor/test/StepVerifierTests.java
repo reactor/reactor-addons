@@ -877,8 +877,8 @@ public class StepVerifierTests {
 				() -> Flux.just(123)
 				          .subscribeOn(vts),
 				() -> vts)
-		            .thenAwait()
 		            .thenRequest(1)
+		            .thenAwait()
 		            .expectNext(123)
 		            .expectComplete()
 		            .verify();
@@ -952,13 +952,15 @@ public class StepVerifierTests {
 	@Test
 	public void thenAwaitThenCancelWaitsForDuration() {
 		Duration verifyDuration =
-				StepVerifier.create(Flux.just("foo")
-				            .delay(Duration.ofSeconds(1)))
-				.expectSubscription()
-				.thenAwait(Duration.ofSeconds(1))
-				.thenCancel()
-				.verify(Duration.ofMillis(1100));
+				StepVerifier.create(Flux.just("foo", "bar")
+				            .delay(Duration.ofMillis(500)))
+				            .expectSubscription()
+				            .thenAwait(Duration.ofMillis(500))
+				            .expectNext("foo")
+				            .thenAwait(Duration.ofMillis(200))
+				            .thenCancel()
+				            .verify(Duration.ofMillis(1000));
 
-		assertThat(verifyDuration.toMillis(), is(greaterThanOrEqualTo(1000L)));
+		assertThat(verifyDuration.toMillis(), is(greaterThanOrEqualTo(700L)));
 	}
 }
