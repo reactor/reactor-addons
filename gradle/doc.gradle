@@ -17,7 +17,7 @@ project('docs') {
 	apply plugin: "java"
 	apply plugin: 'org.asciidoctor.convert'
 
-	task api(type: Javadoc) {
+	javadoc {
 		group = "Reactor Framework Javadoc"
 
 		description = "Generates aggregated Javadoc API documentation."
@@ -47,7 +47,7 @@ project('docs') {
 		}
 
 		maxMemory = "1024m"
-		destinationDir = new File(buildDir, "api")
+	  destinationDir = new File(buildDir, "docs/javadoc")
 
 		doFirst {
 			classpath = files(rootProject.subprojects.collect { it.sourceSets.main.compileClasspath })
