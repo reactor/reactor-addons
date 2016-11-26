@@ -232,7 +232,7 @@ project('reactor-test') {
 
 task release {
   subprojects.each{
-	if(it.name == 'docs' || it.version.endsWith('SNAPSHOT')) return
+	if(it.version.endsWith('SNAPSHOT')) return
 	dependsOn it.assemble
   }
 }

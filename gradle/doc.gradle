@@ -13,46 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-project('docs') {
+configure(subprojects) { project ->
 	apply plugin: "java"
 	apply plugin: 'org.asciidoctor.convert'
 
-	javadoc {
-		group = "Reactor Framework Javadoc"
+  javadoc {
+	dependsOn jar
+	group = "Reactor Addons Javadoc"
 
-		description = "Generates aggregated Javadoc API documentation."
-		title = "All Reactor Addons API"
+	description = "Generates Javadoc API documentation."
+	title = "$project.name $project.version"
 
-		if (JavaVersion.current().isJava8Compatible()) {
-			compileTestJava.options.compilerArgs += "-parameters"
-			tasks.withType(Javadoc) {
-				options.addStringOption('Xdoclint:none', '-quiet')
-			}
-		}
-
-		dependsOn {
-			rootProject.subprojects.collect {
-				it.tasks.getByName("jar")
-			}
-		}
-		options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
-		options.author = true
-		options.header = rootProject.description
-		options.overview = "src/api/overview.html"
-		//options.stylesheetFile = file("src/api/stylesheet.css")
-		options.links(rootProject.ext.javadocLinks)
-
-		source rootProject.subprojects.collect { project ->
-			project.sourceSets.main.allJava
-		}
-
-		maxMemory = "1024m"
-	  destinationDir = new File(buildDir, "docs/javadoc")
-
-		doFirst {
-			classpath = files(rootProject.subprojects.collect { it.sourceSets.main.compileClasspath })
-		}
+	if (JavaVersion.current().isJava8Compatible()) {
+	  compileTestJava.options.compilerArgs += "-parameters"
+	  tasks.withType(Javadoc) {
+		options.addStringOption('Xdoclint:none', '-quiet')
+	  }
 	}
+
+	options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+	options.author = true
+	options.header = "Reactor Addons: $it.name"
+	options.overview = "$rootDir/docs/src/api/overview.html"
+	options.stylesheetFile = rootProject.file("docs/src/api/stylesheet.css")
+	options.links(rootProject.ext.javadocLinks)
+
+	maxMemory = "1024m"
+	destinationDir = new File(buildDir, "docs/javadoc")
+	source project.sourceSets.main.allJava
+	doFirst {
+	  classpath = files(project.sourceSets.main.compileClasspath)
+	}
+  }
 
 
 
