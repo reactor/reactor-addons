@@ -29,11 +29,12 @@ import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.test.publisher.AssertPublisher;
 import reactor.test.scheduler.VirtualTimeScheduler;
-import reactor.test.utils.RequestIgnoringProcessor;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static reactor.test.publisher.AssertPublisher.Misbehavior.REQUEST_OVERFLOW;
 
 /**
  * @author Arjen Poutsma
@@ -1166,15 +1167,12 @@ public class StepVerifierTests {
 
 	@Test
 	public void boundedInitialOverflowIsDetected() {
-		RequestIgnoringProcessor<String> processor = RequestIgnoringProcessor.create();
+		AssertPublisher<String> publisher = AssertPublisher.createMisbehaving(
+				REQUEST_OVERFLOW);
 
 		try {
-			StepVerifier.create(processor, 1)
-			            .then(() -> {
-				            processor.onNext("foo");
-				            processor.onNext("bar");
-				            processor.onComplete();
-			            })
+			StepVerifier.create(publisher, 1)
+			            .then(() -> publisher.emit("foo", "bar"))
 			            .expectNext("foo")
 			            .expectComplete()
 			            .verify();
@@ -1188,17 +1186,13 @@ public class StepVerifierTests {
 
 	@Test
 	public void boundedRequestOverflowIsDetected() {
-		RequestIgnoringProcessor<String> processor = RequestIgnoringProcessor.create();
+		AssertPublisher<String> publisher = AssertPublisher.createMisbehaving(
+				REQUEST_OVERFLOW);
 
 		try {
-			StepVerifier.create(processor, 0)
+			StepVerifier.create(publisher, 0)
 			            .thenRequest(2)
-			            .then(() -> {
-				            processor.onNext("foo");
-				            processor.onNext("bar");
-				            processor.onNext("baz");
-				            processor.onComplete();
-			            })
+			            .then(() -> publisher.emit("foo", "bar", "baz"))
 			            .expectNext("foo", "bar")
 			            .expectComplete()
 			            .verify();
@@ -1212,16 +1206,12 @@ public class StepVerifierTests {
 
 	@Test
 	public void initialBoundedThenUnboundedRequestDoesntOverflow() {
-		RequestIgnoringProcessor<String> processor = RequestIgnoringProcessor.create();
+		AssertPublisher<String> publisher = AssertPublisher.createMisbehaving(
+				REQUEST_OVERFLOW);
 
-		StepVerifier.create(processor, 2)
+		StepVerifier.create(publisher, 2)
 		            .thenRequest(Long.MAX_VALUE - 2)
-		            .then(() -> {
-			            processor.onNext("foo");
-			            processor.onNext("bar");
-			            processor.onNext("baz");
-			            processor.onComplete();
-		            })
+		            .then(() -> publisher.emit("foo", "bar", "baz"))
 	                .expectNext("foo", "bar", "baz")
 	                .expectComplete()
 	                .verify();
