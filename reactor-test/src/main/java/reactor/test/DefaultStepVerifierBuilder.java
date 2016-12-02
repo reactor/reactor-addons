@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.BiFunction;
@@ -580,6 +581,9 @@ final class DefaultStepVerifierBuilder<T>
 		Iterator<? extends T>         currentNextAs;
 		Collection<T>                 currentCollector;
 
+		static final AtomicLongFieldUpdater<DefaultVerifySubscriber> REQUESTED =
+			AtomicLongFieldUpdater.newUpdater(DefaultVerifySubscriber.class, "requested");
+
 		@SuppressWarnings("unused")
 		volatile int wip;
 
@@ -873,14 +877,15 @@ final class DefaultStepVerifierBuilder<T>
 
 		/** Returns true if the requested amount was overflown by the given signal */
 		final boolean checkRequestOverflow(Signal<T> s) {
+			long r = requested;
 			if (!s.isOnNext()
-					|| requested < 0 || requested == Long.MAX_VALUE //was Long.MAX from beginning or switched to unbounded
-					|| requested >= produced) {
+					|| r < 0 || r == Long.MAX_VALUE //was Long.MAX from beginning or switched to unbounded
+					|| r >= produced) {
 				return false;
 			}
 			else {
 				setFailure(null, s, "expected production of at most %s; produced: %s; request overflown by signal: %s",
-						requested, produced, s);
+						r, produced, s);
 				return true;
 			}
 		}
@@ -1110,10 +1115,10 @@ final class DefaultStepVerifierBuilder<T>
 					if (subscriptionEvent instanceof RequestEvent) {
 						RequestEvent<T> requestEvent = (RequestEvent<T>) subscriptionEvent;
 						if (requestEvent.isBounded()) {
-							requested = Operators.addCap(requested, requestEvent.getRequestAmount());
+							Operators.addAndGet(REQUESTED, this, requestEvent.getRequestAmount());
 						}
 						else {
-							requested = Long.MAX_VALUE;
+							REQUESTED.set(this, Long.MAX_VALUE);
 						}
 					}
 					if (subscriptionEvent.isTerminal()) {
