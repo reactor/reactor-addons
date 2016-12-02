@@ -417,8 +417,7 @@ final class DefaultStepVerifierBuilder<T>
 	@Override
 	public DefaultStepVerifierBuilder<T> thenRequest(long n) {
 		checkStrictlyPositive(n);
-		this.script.add(new SubscriptionEvent<>(subscription -> subscription.request(n),
-				"thenRequest"));
+		this.script.add(new RequestEvent<T>(n, "thenRequest"));
 		return this;
 	}
 
@@ -577,6 +576,7 @@ final class DefaultStepVerifierBuilder<T>
 		int                           establishedFusionMode;
 		Fuseable.QueueSubscription<T> qs;
 		long                          produced;
+		volatile long                 requested;
 		Iterator<? extends T>         currentNextAs;
 		Collection<T>                 currentCollector;
 
@@ -618,6 +618,7 @@ final class DefaultStepVerifierBuilder<T>
 			this.produced = 0L;
 			this.completeLatch = new CountDownLatch(1);
 			this.subscription = new AtomicReference<>();
+			this.requested = initialRequest;
 		}
 
 		static <R> Queue<Event<R>> conflateScript(List<Event<R>> script, Logger logger) {
@@ -738,7 +739,10 @@ final class DefaultStepVerifierBuilder<T>
 				if (currentCollector != null) {
 					currentCollector.add(t);
 				}
-				onExpectation(Signal.next(t));
+				Signal<T> signal = Signal.next(t);
+				if (!checkRequestOverflow(signal)) {
+					onExpectation(signal);
+				}
 			}
 		}
 
@@ -864,6 +868,20 @@ final class DefaultStepVerifierBuilder<T>
 			}
 			else {
 				return Optional.empty();
+			}
+		}
+
+		/** Returns true if the requested amount was overflown by the given signal */
+		final boolean checkRequestOverflow(Signal<T> s) {
+			if (!s.isOnNext()
+					|| requested < 0 || requested == Long.MAX_VALUE //was Long.MAX from beginning or switched to unbounded
+					|| requested >= produced) {
+				return false;
+			}
+			else {
+				setFailure(null, s, "expected production of at most %s; produced: %s; request overflown by signal: %s",
+						requested, produced, s);
+				return true;
 			}
 		}
 
@@ -1089,6 +1107,15 @@ final class DefaultStepVerifierBuilder<T>
 			for (; ; ) {
 				if (this.script.peek() instanceof SubscriptionEvent) {
 					subscriptionEvent = (SubscriptionEvent<T>) this.script.poll();
+					if (subscriptionEvent instanceof RequestEvent) {
+						RequestEvent<T> requestEvent = (RequestEvent<T>) subscriptionEvent;
+						if (requestEvent.isBounded()) {
+							requested = Operators.addCap(requested, requestEvent.getRequestAmount());
+						}
+						else {
+							requested = Long.MAX_VALUE;
+						}
+					}
 					if (subscriptionEvent.isTerminal()) {
 						doCancel();
 						return true;
@@ -1255,7 +1282,7 @@ final class DefaultStepVerifierBuilder<T>
 		}
 	}
 
-	static final class SubscriptionEvent<T> extends AbstractEagerEvent<T> {
+	static class SubscriptionEvent<T> extends AbstractEagerEvent<T> {
 
 		final Consumer<Subscription> consumer;
 		
@@ -1276,6 +1303,24 @@ final class DefaultStepVerifierBuilder<T>
 
 		boolean isTerminal() {
 			return consumer == null;
+		}
+	}
+
+	static final class RequestEvent<T> extends SubscriptionEvent<T> {
+
+		final long requestAmount;
+
+		RequestEvent(long n, String desc) {
+			super(s -> s.request(n), desc);
+			this.requestAmount = n;
+		}
+
+		public long getRequestAmount() {
+			return requestAmount;
+		}
+
+		public boolean isBounded() {
+			return requestAmount >= 0 && requestAmount < Long.MAX_VALUE;
 		}
 	}
 
