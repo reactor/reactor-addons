@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.stream.Stream;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -12,20 +13,56 @@ import org.reactivestreams.Subscription;
 import reactor.core.publisher.Operators;
 
 /**
+ * A {@link Publisher} that you can directly manipulate, triggering
+ * {@link #next(Object, Object[]) onNext}, {@link #complete() onComplete} and
+ * {@link #error(Throwable) onError} events, for testing purposes.
+ * You can assert the state of the publisher using its {@code expectXXX} methods,
+ * usually inside a {@link reactor.test.StepVerifier}'s
+ * {@link reactor.test.StepVerifier.Step#then(Runnable) then} callback.
+ * <p>
+ * The ValidatingPublisher can also be made more lenient towards the RS spec
+ * and allow "bad behavior" to be performed, as enumerated in {@link Misbehavior}.
+ *
  * @author Simon Baslé
  */
-public class AssertPublisher<T> implements Publisher<T> {
+public class ValidatingPublisher<T> implements Publisher<T> {
 
-	public static <T> AssertPublisher<T> createMisbehaving(Misbehavior first, Misbehavior... rest) {
-		return new AssertPublisher<T>(first, rest);
+	/**
+	 * Create a {@link Misbehavior misbehaving} {@link ValidatingPublisher}.
+	 *
+	 * @param first the first allowed {@link Misbehavior}
+	 * @param rest additional optional misbehaviors
+	 * @param <T> the type of the publisher
+	 * @return the new misbehaving {@link ValidatingPublisher}
+	 */
+	public static <T> ValidatingPublisher<T> createMisbehaving(Misbehavior first, Misbehavior... rest) {
+		return new ValidatingPublisher<>(first, rest);
 	}
 
-	public static <T> AssertPublisher<T> create() {
-		return new AssertPublisher<T>();
+	/**
+	 * Create a standard {@link ValidatingPublisher}.
+	 *
+	 * @param <T> the type of the publisher
+	 * @return the new {@link ValidatingPublisher}
+	 */
+	public static <T> ValidatingPublisher<T> create() {
+		return new ValidatingPublisher<T>();
 	}
 
+	/**
+	 * Possible misbehavior for a {@link ValidatingPublisher}.
+	 */
 	public enum Misbehavior {
-		REQUEST_OVERFLOW, ALLOW_NULL;
+		/**
+		 * Allow {@link ValidatingPublisher#next(Object, Object[]) next} calls to be made
+		 * despite insufficient request, without triggering an {@link IllegalStateException}.
+		 */
+		REQUEST_OVERFLOW,
+		/**
+		 * Allow {@link ValidatingPublisher#next(Object, Object[]) next} calls to be made
+		 * with a {@code null} value without triggering a {@link NullPointerException}
+		 */
+		ALLOW_NULL
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -36,8 +73,8 @@ public class AssertPublisher<T> implements Publisher<T> {
 
 	volatile int cancelCount;
 
-	static final AtomicIntegerFieldUpdater<AssertPublisher> CANCEL_COUNT =
-		AtomicIntegerFieldUpdater.newUpdater(AssertPublisher.class, "cancelCount");
+	static final AtomicIntegerFieldUpdater<ValidatingPublisher> CANCEL_COUNT =
+		AtomicIntegerFieldUpdater.newUpdater(ValidatingPublisher.class, "cancelCount");
 
 	Throwable error;
 
@@ -49,14 +86,14 @@ public class AssertPublisher<T> implements Publisher<T> {
 	volatile AssertPublisherSubcription<T>[] subscribers = EMPTY;
 
 	@SuppressWarnings("rawtypes")
-	static final AtomicReferenceFieldUpdater<AssertPublisher, AssertPublisherSubcription[]> SUBSCRIBERS =
-			AtomicReferenceFieldUpdater.newUpdater(AssertPublisher.class, AssertPublisherSubcription[].class, "subscribers");
+	static final AtomicReferenceFieldUpdater<ValidatingPublisher, AssertPublisherSubcription[]> SUBSCRIBERS =
+			AtomicReferenceFieldUpdater.newUpdater(ValidatingPublisher.class, AssertPublisherSubcription[].class, "subscribers");
 
-	AssertPublisher(Misbehavior first, Misbehavior... rest) {
+	ValidatingPublisher(Misbehavior first, Misbehavior... rest) {
 		this.misbehaviors = EnumSet.of(first, rest);
 	}
 
-	AssertPublisher() {
+	ValidatingPublisher() {
 		this.misbehaviors = EnumSet.noneOf(Misbehavior.class);
 	}
 
@@ -143,20 +180,11 @@ public class AssertPublisher<T> implements Publisher<T> {
 		}
 	}
 
-	public long downstreamCount() {
-		return subscribers.length;
-	}
-
-	public boolean hasDownstreams() {
-		AssertPublisherSubcription<T>[] s = subscribers;
-		return s != EMPTY && s != TERMINATED;
-	}
-
 	static final class AssertPublisherSubcription<T> implements Subscription {
 
 		final Subscriber<? super T> actual;
 
-		final AssertPublisher<T> parent;
+		final ValidatingPublisher<T> parent;
 
 		volatile boolean cancelled;
 
@@ -167,7 +195,7 @@ public class AssertPublisher<T> implements Publisher<T> {
 				REQUESTED =
 				AtomicLongFieldUpdater.newUpdater(AssertPublisherSubcription.class, "requested");
 
-		public AssertPublisherSubcription(Subscriber<? super T> actual, AssertPublisher<T> parent) {
+		public AssertPublisherSubcription(Subscriber<? super T> actual, ValidatingPublisher<T> parent) {
 			this.actual = actual;
 			this.parent = parent;
 		}
@@ -183,7 +211,7 @@ public class AssertPublisher<T> implements Publisher<T> {
 		public void cancel() {
 			if (!cancelled) {
 				cancelled = true;
-				AssertPublisher.CANCEL_COUNT.incrementAndGet(parent);
+				ValidatingPublisher.CANCEL_COUNT.incrementAndGet(parent);
 				parent.remove(this);
 			}
 		}
@@ -213,15 +241,31 @@ public class AssertPublisher<T> implements Publisher<T> {
 		}
 	}
 
-
-	//TODO should we offer to assert total request? how to do it?
+	/**
+	 * Assert that the current minimum request of all this publisher's subscribers
+	 * is &gt;= {@code n}.
+	 *
+	 * @param n the expected minimum request
+	 * @return this {@link ValidatingPublisher} for chaining.
+	 */
+	public ValidatingPublisher<T> expectMinRequested(long n) {
+		AssertPublisherSubcription<T>[] subs = subscribers;
+		long minRequest = Stream.of(subs)
+		                        .mapToLong(s -> s.requested)
+		                        .min()
+		                        .orElse(0);
+		if (minRequest < n) {
+			throw new AssertionError("Expected minimum request of " + n + "; got " + minRequest);
+		}
+		return this;
+	}
 
 	/**
 	 * Asserts that this publisher has subscribers.
 	 *
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> assertSubscribers() {
+	public ValidatingPublisher<T> expectSubscribers() {
 		AssertPublisherSubcription<T>[] s = subscribers;
 		if (s == EMPTY || s == TERMINATED) {
 			throw new AssertionError("Expected subscribers");
@@ -233,9 +277,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	 * Asserts that this publisher has exactly n subscribers.
 	 *
 	 * @param n the expected number of subscribers
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> assertSubscribers(int n) {
+	public ValidatingPublisher<T> expectSubscribers(int n) {
 		int sl = subscribers.length;
 		if (sl != n) {
 			throw new AssertionError("Expected " + n + " subscribers, got " + sl);
@@ -246,9 +290,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	/**
 	 * Asserts that this publisher has no subscribers.
 	 *
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> assertNoSubscribers() {
+	public ValidatingPublisher<T> expectNoSubscribers() {
 		int sl = subscribers.length;
 		if (sl != 0) {
 			throw new AssertionError("Expected no subscribers, got " + sl);
@@ -259,9 +303,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	/**
 	 * Asserts that this publisher has had at least one subscriber that has been cancelled.
 	 *
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> assertCancelled() {
+	public ValidatingPublisher<T> expectCancelled() {
 		if (cancelCount == 0) {
 			throw new AssertionError("Expected at least 1 cancellation");
 		}
@@ -272,9 +316,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	 * Asserts that this publisher has had at least n subscribers that have been cancelled.
 	 *
 	 * @param n the expected number of subscribers to have been cancelled.
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> assertCancelled(int n) {
+	public ValidatingPublisher<T> expectCancelled(int n) {
 		int cc = cancelCount;
 		if (cc != n) {
 			throw new AssertionError("Expected " + n + " cancellations, got " + cc);
@@ -285,9 +329,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	/**
 	 * Asserts that this publisher has had no cancelled subscribers.
 	 *
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> assertNotCancelled() {
+	public ValidatingPublisher<T> expectNotCancelled() {
 		if (cancelCount != 0) {
 			throw new AssertionError("Expected no cancellation");
 		}
@@ -299,9 +343,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	 * that is received an onNext event despite having a requested amount of 0 at
 	 * the time.
 	 *
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> assertRequestOverflow() {
+	public ValidatingPublisher<T> expectRequestOverflow() {
 		if (!hasOverflown) {
 			throw new AssertionError("Expected some request overflow");
 		}
@@ -313,9 +357,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	 * Request overflow is receiving an onNext event despite having a requested amount
 	 * of 0 at that time.
 	 *
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> assertNoRequestOverflow() {
+	public ValidatingPublisher<T> expectNoRequestOverflow() {
 		if (hasOverflown) {
 			throw new AssertionError("Unexpected request overflow");
 		}
@@ -337,9 +381,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	 *
 	 * @param first the first item to emit
 	 * @param rest the rest of the items to emit
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> next(T first, T... rest) {
+	public ValidatingPublisher<T> next(T first, T... rest) {
 		internalNext(first);
 		for (T t : rest) {
 			internalNext(t);
@@ -351,9 +395,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	 * Triggers an {@link Subscriber#onError(Throwable) error} signal to the subscribers.
 	 *
 	 * @param t the {@link Throwable} to trigger
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> error(Throwable t) {
+	public ValidatingPublisher<T> error(Throwable t) {
 		Objects.requireNonNull(t, "t");
 
 		error = t;
@@ -366,9 +410,9 @@ public class AssertPublisher<T> implements Publisher<T> {
 	/**
 	 * Triggers {@link Subscriber#onComplete() completion} of this publisher.
 	 *
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 */
-	public AssertPublisher<T> complete() {
+	public ValidatingPublisher<T> complete() {
 		for (AssertPublisherSubcription<?> s : SUBSCRIBERS.getAndSet(this, TERMINATED)) {
 			s.onComplete();
 		}
@@ -379,11 +423,11 @@ public class AssertPublisher<T> implements Publisher<T> {
 	 * Combine emitting items and completing this publisher.
 	 *
 	 * @param values the values to emit to subscribers
-	 * @return this {@link AssertPublisher} for chaining.
+	 * @return this {@link ValidatingPublisher} for chaining.
 	 * @see #next(Object, Object[]) next
 	 * @see #complete() complete
 	 */
-	public AssertPublisher<T> emit(T... values) {
+	public ValidatingPublisher<T> emit(T... values) {
 		for (T t : values) {
 			internalNext(t);
 		}
