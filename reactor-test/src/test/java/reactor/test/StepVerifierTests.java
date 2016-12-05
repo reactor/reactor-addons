@@ -1227,4 +1227,84 @@ public class StepVerifierTests {
 	                .verify();
 	}
 
+	@Test
+	public void verifyErrorTriggersVerification() {
+		try {
+			StepVerifier.create(Flux.empty())
+			            .verifyError();
+			fail("expected verifyError to fail");
+		}
+		catch (AssertionError e) {
+			assertEquals("expectation \"expectError()\" failed (expected: onError(); actual: onComplete())",
+					e.getMessage());
+		}
+
+		StepVerifier.create(Flux.error(new IllegalArgumentException()))
+		            .verifyError();
+	}
+
+	@Test
+	public void verifyErrorClassTriggersVerification() {
+		try {
+			StepVerifier.create(Flux.empty())
+			            .verifyError(IllegalArgumentException.class);
+			fail("expected verifyError to fail");
+		}
+		catch (AssertionError e) {
+			assertEquals("expectation \"expectError(Class)\" failed (expected: onError(IllegalArgumentException); actual: onComplete())",
+					e.getMessage());
+		}
+
+		StepVerifier.create(Flux.error(new IllegalArgumentException()))
+		            .verifyError(IllegalArgumentException.class);
+	}
+
+	@Test
+	public void verifyErrorMessageTriggersVerification() {
+		try {
+			StepVerifier.create(Flux.empty())
+			            .verifyErrorMessage("boom");
+			fail("expected verifyError to fail");
+		}
+		catch (AssertionError e) {
+			assertEquals("expectation \"expectErrorMessage\" failed (expected: onError(\"boom\"); actual: onComplete())",
+					e.getMessage());
+		}
+
+		StepVerifier.create(Flux.error(new IllegalArgumentException("boom")))
+		            .verifyErrorMessage("boom");
+	}
+
+	@Test
+	public void verifyErrorPredicateTriggersVerification() {
+		try {
+			StepVerifier.create(Flux.empty())
+			            .verifyErrorMatches(e -> e instanceof IllegalArgumentException);
+			fail("expected verifyError to fail");
+		}
+		catch (AssertionError e) {
+			assertEquals("expectation \"expectErrorMatches\" failed (expected: onError(); actual: onComplete())",
+					e.getMessage());
+		}
+
+		StepVerifier.create(Flux.error(new IllegalArgumentException("boom")))
+		            .verifyErrorMatches(e -> e instanceof IllegalArgumentException);
+	}
+
+	@Test
+	public void verifyCompleteTriggersVerification() {
+		try {
+			StepVerifier.create(Flux.error(new IllegalArgumentException()))
+		                .verifyComplete();
+			fail("expected verifyComplete to fail");
+		}
+		catch (AssertionError e) {
+			assertEquals("expectation \"expectComplete\" failed (expected: onComplete(); actual: onError(java.lang.IllegalArgumentException))", e.getMessage());
+		}
+
+			StepVerifier.create(Flux.just(1, 2))
+			            .expectNext(1, 2)
+		                .verifyComplete();
+	}
+
 }
