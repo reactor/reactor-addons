@@ -2,29 +2,25 @@ package reactor.test.publisher;
 
 import org.junit.Test;
 import reactor.core.publisher.Flux;
-import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
-import reactor.test.publisher.ValidatingPublisher.Misbehavior;
+import reactor.test.publisher.TestPublisher.Misbehavior;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-/**
- * @author Simon Baslé
- */
-public class ValidatingPublisherTest {
+public class DefaultTestPublisherTest {
 
 	@Test(expected = NullPointerException.class)
 	public void normalDisallowsNull() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 
 		publisher.next(null);
 	}
 
 	@Test
 	public void misbehavingAllowsNull() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.createMisbehaving(Misbehavior.ALLOW_NULL);
+		TestPublisher<String> publisher = TestPublisher.createMisbehaving(Misbehavior.ALLOW_NULL);
 
 		StepVerifier.create(publisher)
 		            .then(() -> publisher.emit("foo", null))
@@ -35,7 +31,7 @@ public class ValidatingPublisherTest {
 
 	@Test
 	public void normalDisallowsOverflow() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 
 		StepVerifier.create(publisher, 1)
 		            .then(() -> publisher.next("foo")).as("should pass")
@@ -45,12 +41,12 @@ public class ValidatingPublisherTest {
 		                "Can't deliver value due to lack of requests".equals(e.getMessage()))
 		            .verify();
 
-		publisher.expectNoRequestOverflow();
+		publisher.assertNoRequestOverflow();
 	}
 
 	@Test
 	public void misbehavingAllowsOverflow() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.createMisbehaving(Misbehavior.REQUEST_OVERFLOW);
+		TestPublisher<String> publisher = TestPublisher.createMisbehaving(Misbehavior.REQUEST_OVERFLOW);
 
 		try {
 			StepVerifier.create(publisher, 1)
@@ -64,20 +60,20 @@ public class ValidatingPublisherTest {
 			assertThat(e.getMessage(), containsString("expected production of at most 1;"));
 		}
 
-		publisher.expectRequestOverflow();
+		publisher.assertRequestOverflow();
 	}
 
 	@Test
 	public void expectSubscribers() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 
 		try {
-			publisher.expectSubscribers();
+			publisher.assertSubscribers();
 			fail("expected expectSubscribers to fail");
 		} catch (AssertionError e) { }
 
 		StepVerifier.create(publisher)
-		            .then(() -> publisher.expectSubscribers()
+		            .then(() -> publisher.assertSubscribers()
 		                                 .complete())
 	                .expectComplete()
 	                .verify();
@@ -85,61 +81,61 @@ public class ValidatingPublisherTest {
 
 	@Test
 	public void expectSubscribersN() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 
 		try {
-			publisher.expectSubscribers(1);
+			publisher.assertSubscribers(1);
 			fail("expected expectSubscribers(1) to fail");
 		} catch (AssertionError e) { }
 
-		publisher.expectNoSubscribers();
+		publisher.assertNoSubscribers();
 		Flux.from(publisher).subscribe();
-		publisher.expectSubscribers(1);
+		publisher.assertSubscribers(1);
 		Flux.from(publisher).subscribe();
-		publisher.expectSubscribers(2);
+		publisher.assertSubscribers(2);
 
 		publisher.complete()
-	             .expectNoSubscribers();
+	             .assertNoSubscribers();
 	}
 
 	@Test
 	public void expectCancelled() {
-		ValidatingPublisher<Object> publisher = ValidatingPublisher.create();
+		TestPublisher<Object> publisher = TestPublisher.create();
 		StepVerifier.create(publisher)
-	                .then(publisher::expectNotCancelled)
+	                .then(publisher::assertNotCancelled)
 	                .thenCancel()
 	                .verify();
-		publisher.expectCancelled();
+		publisher.assertCancelled();
 
 		StepVerifier.create(publisher)
-	                .then(() -> publisher.expectCancelled(1))
+	                .then(() -> publisher.assertCancelled(1))
 	                .thenCancel()
 	                .verify();
-		publisher.expectCancelled(2);
+		publisher.assertCancelled(2);
 	}
 
 	@Test
 	public void expectMinRequestedNormal() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 
 		StepVerifier.create(Flux.from(publisher).limitRate(5))
-	                .then(publisher::expectNotCancelled)
-	                .then(() -> publisher.expectMinRequested(5))
+	                .then(publisher::assertNotCancelled)
+	                .then(() -> publisher.assertMinRequested(5))
 	                .thenCancel()
 	                .verify();
-		publisher.expectCancelled();
-		publisher.expectNoSubscribers();
-		publisher.expectMinRequested(0);
+		publisher.assertCancelled();
+		publisher.assertNoSubscribers();
+		publisher.assertMinRequested(0);
 	}
 
 	@Test
 	public void expectMinRequestedFailure() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 
 		try {
 
 		StepVerifier.create(Flux.from(publisher).limitRate(5))
-		            .then(() -> publisher.expectMinRequested(6)
+		            .then(() -> publisher.assertMinRequested(6)
 		                                 .emit("foo"))
 		            .expectNext("foo").expectComplete() // N/A
 		            .verify();
@@ -149,9 +145,9 @@ public class ValidatingPublisherTest {
 			assertThat(e.getMessage(), containsString("Expected minimum request of 6; got 5"));
 		}
 
-		publisher.expectCancelled();
-		publisher.expectNoSubscribers();
-		publisher.expectMinRequested(0);
+		publisher.assertCancelled();
+		publisher.assertNoSubscribers();
+		publisher.assertMinRequested(0);
 	}
 
 }

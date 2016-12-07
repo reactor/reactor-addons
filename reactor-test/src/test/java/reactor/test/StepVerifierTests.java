@@ -29,12 +29,12 @@ import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.test.publisher.ValidatingPublisher;
+import reactor.test.publisher.TestPublisher;
 import reactor.test.scheduler.VirtualTimeScheduler;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import static reactor.test.publisher.ValidatingPublisher.Misbehavior.REQUEST_OVERFLOW;
+import static reactor.test.publisher.TestPublisher.Misbehavior.REQUEST_OVERFLOW;
 
 /**
  * @author Arjen Poutsma
@@ -1167,7 +1167,7 @@ public class StepVerifierTests {
 
 	@Test
 	public void boundedInitialOverflowIsDetected() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.createMisbehaving(
+		TestPublisher<String> publisher = TestPublisher.createMisbehaving(
 				REQUEST_OVERFLOW);
 
 		try {
@@ -1186,7 +1186,7 @@ public class StepVerifierTests {
 
 	@Test
 	public void boundedRequestOverflowIsDetected() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.createMisbehaving(
+		TestPublisher<String> publisher = TestPublisher.createMisbehaving(
 				REQUEST_OVERFLOW);
 
 		try {
@@ -1206,7 +1206,7 @@ public class StepVerifierTests {
 
 	@Test
 	public void initialBoundedThenUnboundedRequestDoesntOverflow() {
-		ValidatingPublisher<String> publisher = ValidatingPublisher.createMisbehaving(
+		TestPublisher<String> publisher = TestPublisher.createMisbehaving(
 				REQUEST_OVERFLOW);
 
 		StepVerifier.create(publisher, 2)
