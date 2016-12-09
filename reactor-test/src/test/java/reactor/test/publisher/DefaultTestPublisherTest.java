@@ -3,7 +3,7 @@ package reactor.test.publisher;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
-import reactor.test.publisher.TestPublisher.Misbehavior;
+import reactor.test.publisher.TestPublisher.Violation;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertThat;
@@ -20,7 +20,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void misbehavingAllowsNull() {
-		TestPublisher<String> publisher = TestPublisher.createMisbehaving(Misbehavior.ALLOW_NULL);
+		DefaultTestPublisher<String> publisher = TestPublisher.createNoncompliant(Violation.ALLOW_NULL);
 
 		StepVerifier.create(publisher)
 		            .then(() -> publisher.emit("foo", null))
@@ -31,7 +31,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void normalDisallowsOverflow() {
-		TestPublisher<String> publisher = TestPublisher.create();
+		DefaultTestPublisher<String> publisher = TestPublisher.create();
 
 		StepVerifier.create(publisher, 1)
 		            .then(() -> publisher.next("foo")).as("should pass")
@@ -46,7 +46,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void misbehavingAllowsOverflow() {
-		TestPublisher<String> publisher = TestPublisher.createMisbehaving(Misbehavior.REQUEST_OVERFLOW);
+		DefaultTestPublisher<String> publisher = TestPublisher.createNoncompliant(Violation.REQUEST_OVERFLOW);
 
 		try {
 			StepVerifier.create(publisher, 1)
@@ -130,7 +130,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void expectMinRequestedFailure() {
-		TestPublisher<String> publisher = TestPublisher.create();
+		DefaultTestPublisher<String> publisher = TestPublisher.create();
 
 		try {
 
@@ -148,6 +148,27 @@ public class DefaultTestPublisherTest {
 		publisher.assertCancelled();
 		publisher.assertNoSubscribers();
 		publisher.assertMinRequested(0);
+	}
+
+	@Test
+	public void emitCompletes() {
+		DefaultTestPublisher<String> publisher = TestPublisher.create();
+		StepVerifier.create(publisher)
+	                .then(() -> publisher.emit("foo", "bar"))
+	                .expectNextCount(2)
+	                .expectComplete()
+	                .verify();
+	}
+
+
+	@Test
+	public void testError() {
+		DefaultTestPublisher<String> publisher = TestPublisher.create();
+		StepVerifier.create(publisher)
+	                .then(() -> publisher.next("foo", "bar").error(new IllegalArgumentException("boom")))
+	                .expectNextCount(2)
+	                .expectErrorMessage("boom")
+	                .verify();
 	}
 
 }

@@ -14,7 +14,9 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 
 /**
- * A default implementation of a {@link TestPublisher}.
+ * A default implementation of a {@link TestPublisher}, with a convenience vararg-based
+ * implementation of {@link TestPublisher#emit(Iterable)}
+ * and {@link TestPublisher#next(Iterable)}
  *
  * @author Simon Baslé
  */
@@ -35,7 +37,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 
 	volatile boolean hasOverflown;
 
-	final EnumSet<Misbehavior> misbehaviors;
+	final EnumSet<Violation> violations;
 
 	@SuppressWarnings("unchecked")
 	volatile TestPublisherSubscription<T>[] subscribers = EMPTY;
@@ -44,12 +46,12 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	static final AtomicReferenceFieldUpdater<DefaultTestPublisher, TestPublisherSubscription[]> SUBSCRIBERS =
 			AtomicReferenceFieldUpdater.newUpdater(DefaultTestPublisher.class, TestPublisherSubscription[].class, "subscribers");
 
-	DefaultTestPublisher(Misbehavior first, Misbehavior... rest) {
-		this.misbehaviors = EnumSet.of(first, rest);
+	DefaultTestPublisher(Violation first, Violation... rest) {
+		this.violations = EnumSet.of(first, rest);
 	}
 
 	DefaultTestPublisher() {
-		this.misbehaviors = EnumSet.noneOf(Misbehavior.class);
+		this.violations = EnumSet.noneOf(Violation.class);
 	}
 
 	@Override
@@ -173,7 +175,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 
 		void onNext(T value) {
 			long r = requested;
-			if (r != 0L || parent.misbehaviors.contains(Misbehavior.REQUEST_OVERFLOW)) {
+			if (r != 0L || parent.violations.contains(Violation.REQUEST_OVERFLOW)) {
 				if (r == 0) {
 					parent.hasOverflown = true;
 				}
@@ -207,7 +209,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertMinRequested(long n) {
+	public DefaultTestPublisher<T> assertMinRequested(long n) {
 		TestPublisherSubscription<T>[] subs = subscribers;
 		long minRequest = Stream.of(subs)
 		                        .mapToLong(s -> s.requested)
@@ -220,7 +222,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertSubscribers() {
+	public DefaultTestPublisher<T> assertSubscribers() {
 		TestPublisherSubscription<T>[] s = subscribers;
 		if (s == EMPTY || s == TERMINATED) {
 			throw new AssertionError("Expected subscribers");
@@ -229,7 +231,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertSubscribers(int n) {
+	public DefaultTestPublisher<T> assertSubscribers(int n) {
 		int sl = subscribers.length;
 		if (sl != n) {
 			throw new AssertionError("Expected " + n + " subscribers, got " + sl);
@@ -238,7 +240,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertNoSubscribers() {
+	public DefaultTestPublisher<T> assertNoSubscribers() {
 		int sl = subscribers.length;
 		if (sl != 0) {
 			throw new AssertionError("Expected no subscribers, got " + sl);
@@ -247,7 +249,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertCancelled() {
+	public DefaultTestPublisher<T> assertCancelled() {
 		if (cancelCount == 0) {
 			throw new AssertionError("Expected at least 1 cancellation");
 		}
@@ -255,7 +257,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertCancelled(int n) {
+	public DefaultTestPublisher<T> assertCancelled(int n) {
 		int cc = cancelCount;
 		if (cc != n) {
 			throw new AssertionError("Expected " + n + " cancellations, got " + cc);
@@ -264,7 +266,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertNotCancelled() {
+	public DefaultTestPublisher<T> assertNotCancelled() {
 		if (cancelCount != 0) {
 			throw new AssertionError("Expected no cancellation");
 		}
@@ -272,7 +274,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertRequestOverflow() {
+	public DefaultTestPublisher<T> assertRequestOverflow() {
 		if (!hasOverflown) {
 			throw new AssertionError("Expected some request overflow");
 		}
@@ -280,7 +282,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> assertNoRequestOverflow() {
+	public DefaultTestPublisher<T> assertNoRequestOverflow() {
 		if (hasOverflown) {
 			throw new AssertionError("Unexpected request overflow");
 		}
@@ -288,7 +290,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	void internalNext(T t) {
-		if (!misbehaviors.contains(Misbehavior.ALLOW_NULL)) {
+		if (!violations.contains(Violation.ALLOW_NULL)) {
 			Objects.requireNonNull(t, "emitted values must be non-null");
 		}
 
@@ -298,7 +300,22 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> next(T first, T... rest) {
+	public final DefaultTestPublisher<T> next(Iterable<T> values) {
+		for (T t : values) {
+			internalNext(t);
+		}
+		return this;
+	}
+
+	/**
+	 * Send 1-n {@link Subscriber#onNext(Object) onNext} signals to the subscribers.
+	 *
+	 * @param first the first item to emit
+	 * @param rest the optional remaining items to emit
+	 * @return this {@link TestPublisher} for chaining.
+	 */
+	@SafeVarargs
+	public final DefaultTestPublisher<T> next(T first, T... rest) {
 		internalNext(first);
 		for (T t : rest) {
 			internalNext(t);
@@ -307,7 +324,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> error(Throwable t) {
+	public DefaultTestPublisher<T> error(Throwable t) {
 		Objects.requireNonNull(t, "t");
 
 		error = t;
@@ -318,15 +335,31 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 	}
 
 	@Override
-	public TestPublisher<T> complete() {
+	public DefaultTestPublisher<T> complete() {
 		for (TestPublisherSubscription<?> s : SUBSCRIBERS.getAndSet(this, TERMINATED)) {
 			s.onComplete();
 		}
 		return this;
 	}
 
+	/**
+	 * Combine emitting items and completing this publisher.
+	 *
+	 * @param values the values to emit to subscribers
+	 * @return this {@link TestPublisher} for chaining.
+	 * @see #next(Iterable) next
+	 * @see #complete() complete
+	 */
+	@SafeVarargs
+	public final DefaultTestPublisher<T> emit(T... values) {
+		for (T t : values) {
+			internalNext(t);
+		}
+		return complete();
+	}
+
 	@Override
-	public TestPublisher<T> emit(T... values) {
+	public DefaultTestPublisher<T> emit(Iterable<T> values) {
 		for (T t : values) {
 			internalNext(t);
 		}
