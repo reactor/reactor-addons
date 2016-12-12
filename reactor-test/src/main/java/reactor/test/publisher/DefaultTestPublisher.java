@@ -14,13 +14,11 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
 
 /**
- * A default implementation of a {@link TestPublisher}, with a convenience vararg-based
- * implementation of {@link TestPublisher#emit(Iterable)}
- * and {@link TestPublisher#next(Iterable)}
+ * A default implementation of a {@link TestPublisher}.
  *
  * @author Simon Baslé
  */
-public class DefaultTestPublisher<T> implements TestPublisher<T> {
+class DefaultTestPublisher<T> extends TestPublisher<T> {
 
 	@SuppressWarnings("rawtypes")
 	private static final TestPublisherSubscription[] EMPTY = new TestPublisherSubscription[0];
@@ -289,7 +287,8 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 		return this;
 	}
 
-	void internalNext(T t) {
+	@Override
+	public DefaultTestPublisher<T> next(T t) {
 		if (!violations.contains(Violation.ALLOW_NULL)) {
 			Objects.requireNonNull(t, "emitted values must be non-null");
 		}
@@ -297,29 +296,7 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 		for (TestPublisherSubscription<T> s : subscribers) {
 			s.onNext(t);
 		}
-	}
 
-	@Override
-	public final DefaultTestPublisher<T> next(Iterable<T> values) {
-		for (T t : values) {
-			internalNext(t);
-		}
-		return this;
-	}
-
-	/**
-	 * Send 1-n {@link Subscriber#onNext(Object) onNext} signals to the subscribers.
-	 *
-	 * @param first the first item to emit
-	 * @param rest the optional remaining items to emit
-	 * @return this {@link TestPublisher} for chaining.
-	 */
-	@SafeVarargs
-	public final DefaultTestPublisher<T> next(T first, T... rest) {
-		internalNext(first);
-		for (T t : rest) {
-			internalNext(t);
-		}
 		return this;
 	}
 
@@ -340,30 +317,6 @@ public class DefaultTestPublisher<T> implements TestPublisher<T> {
 			s.onComplete();
 		}
 		return this;
-	}
-
-	/**
-	 * Combine emitting items and completing this publisher.
-	 *
-	 * @param values the values to emit to subscribers
-	 * @return this {@link TestPublisher} for chaining.
-	 * @see #next(Iterable) next
-	 * @see #complete() complete
-	 */
-	@SafeVarargs
-	public final DefaultTestPublisher<T> emit(T... values) {
-		for (T t : values) {
-			internalNext(t);
-		}
-		return complete();
-	}
-
-	@Override
-	public DefaultTestPublisher<T> emit(Iterable<T> values) {
-		for (T t : values) {
-			internalNext(t);
-		}
-		return complete();
 	}
 
 }

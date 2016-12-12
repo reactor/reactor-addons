@@ -29,7 +29,6 @@ import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.test.publisher.DefaultTestPublisher;
 import reactor.test.publisher.TestPublisher;
 import reactor.test.scheduler.VirtualTimeScheduler;
 
@@ -1168,7 +1167,7 @@ public class StepVerifierTests {
 
 	@Test
 	public void boundedInitialOverflowIsDetected() {
-		DefaultTestPublisher<String> publisher = TestPublisher.createNoncompliant(
+		TestPublisher<String> publisher = TestPublisher.createNoncompliant(
 				REQUEST_OVERFLOW);
 
 		try {
@@ -1187,7 +1186,7 @@ public class StepVerifierTests {
 
 	@Test
 	public void boundedRequestOverflowIsDetected() {
-		DefaultTestPublisher<String> publisher = TestPublisher.createNoncompliant(
+		TestPublisher<String> publisher = TestPublisher.createNoncompliant(
 				REQUEST_OVERFLOW);
 
 		try {
@@ -1207,7 +1206,7 @@ public class StepVerifierTests {
 
 	@Test
 	public void initialBoundedThenUnboundedRequestDoesntOverflow() {
-		DefaultTestPublisher<String> publisher = TestPublisher.createNoncompliant(
+		TestPublisher<String> publisher = TestPublisher.createNoncompliant(
 				REQUEST_OVERFLOW);
 
 		StepVerifier.create(publisher, 2)

@@ -1,5 +1,7 @@
 package reactor.test.publisher;
 
+import java.util.Objects;
+
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Flux;
@@ -7,7 +9,7 @@ import reactor.core.publisher.Mono;
 
 /**
  * A {@link Publisher} that you can directly manipulate, triggering
- * {@link #next(Iterable) onNext}, {@link #complete() onComplete} and
+ * {@link #next(Object) onNext}, {@link #complete() onComplete} and
  * {@link #error(Throwable) onError} events, for testing purposes.
  * You can assert the state of the publisher using its {@code assertXXX} methods,
  * usually inside a {@link reactor.test.StepVerifier}'s
@@ -20,20 +22,20 @@ import reactor.core.publisher.Mono;
  *
  * @author Simon Baslé
  */
-public interface TestPublisher<T> extends Publisher<T> {
+public abstract class TestPublisher<T> implements Publisher<T> {
 
 	/**
-	 * Create a standard {@link DefaultTestPublisher}.
+	 * Create a standard {@link TestPublisher}.
 	 *
 	 * @param <T> the type of the publisher
 	 * @return the new {@link TestPublisher}
 	 */
-	static <T> DefaultTestPublisher<T> create() {
+	public static <T> TestPublisher<T> create() {
 		return new DefaultTestPublisher<>();
 	}
 
 	/**
-	 * Create a {@link Violation noncompliant} {@link DefaultTestPublisher}
+	 * Create a {@link Violation noncompliant} {@link TestPublisher}
 	 * with a given set of reactive streams spec violations that will be overlooked.
 	 *
 	 * @param first the first allowed {@link Violation}
@@ -41,19 +43,19 @@ public interface TestPublisher<T> extends Publisher<T> {
 	 * @param <T> the type of the publisher
 	 * @return the new noncompliant {@link TestPublisher}
 	 */
-	static <T> DefaultTestPublisher<T> createNoncompliant(Violation first, Violation... rest) {
+	public static <T> TestPublisher<T> createNoncompliant(Violation first, Violation... rest) {
 		return new DefaultTestPublisher<>(first, rest);
 	}
 
 	/**
 	 * Convenience method to wrap this {@link TestPublisher} to a {@link Flux}.
 	 */
-	Flux<T> flux();
+	public abstract Flux<T> flux();
 
 	/**
 	 * Convenience method to wrap this {@link TestPublisher} to a {@link Mono}.
 	 */
-	Mono<T> mono();
+	public abstract Mono<T> mono();
 
 	/**
 	 * Assert that the current minimum request of all this publisher's subscribers
@@ -62,14 +64,14 @@ public interface TestPublisher<T> extends Publisher<T> {
 	 * @param n the expected minimum request
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertMinRequested(long n);
+	public abstract TestPublisher<T> assertMinRequested(long n);
 
 	/**
 	 * Asserts that this publisher has subscribers.
 	 *
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertSubscribers();
+	public abstract TestPublisher<T> assertSubscribers();
 
 	/**
 	 * Asserts that this publisher has exactly n subscribers.
@@ -77,21 +79,21 @@ public interface TestPublisher<T> extends Publisher<T> {
 	 * @param n the expected number of subscribers
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertSubscribers(int n);
+	public abstract TestPublisher<T> assertSubscribers(int n);
 
 	/**
 	 * Asserts that this publisher has no subscribers.
 	 *
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertNoSubscribers();
+	public abstract TestPublisher<T> assertNoSubscribers();
 
 	/**
 	 * Asserts that this publisher has had at least one subscriber that has been cancelled.
 	 *
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertCancelled();
+	public abstract TestPublisher<T> assertCancelled();
 
 	/**
 	 * Asserts that this publisher has had at least n subscribers that have been cancelled.
@@ -99,14 +101,14 @@ public interface TestPublisher<T> extends Publisher<T> {
 	 * @param n the expected number of subscribers to have been cancelled.
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertCancelled(int n);
+	public abstract TestPublisher<T> assertCancelled(int n);
 
 	/**
 	 * Asserts that this publisher has had no cancelled subscribers.
 	 *
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertNotCancelled();
+	public abstract TestPublisher<T> assertNotCancelled();
 
 	/**
 	 * Asserts that this publisher has had subscriber that saw request overflow,
@@ -115,7 +117,7 @@ public interface TestPublisher<T> extends Publisher<T> {
 	 *
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertRequestOverflow();
+	public abstract TestPublisher<T> assertRequestOverflow();
 
 	/**
 	 * Asserts that this publisher has had no subscriber with request overflow.
@@ -124,15 +126,15 @@ public interface TestPublisher<T> extends Publisher<T> {
 	 *
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> assertNoRequestOverflow();
+	public abstract TestPublisher<T> assertNoRequestOverflow();
 
 	/**
-	 * Send 1-n {@link Subscriber#onNext(Object) onNext} signals to the subscribers.
+	 * Send 1 {@link Subscriber#onNext(Object) onNext} signal to the subscribers.
 	 *
-	 * @param values the items to emit
+	 * @param value the item to emit
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> next(Iterable<T> values);
+	public abstract TestPublisher<T> next(T value);
 
 	/**
 	 * Triggers an {@link Subscriber#onError(Throwable) error} signal to the subscribers.
@@ -140,36 +142,61 @@ public interface TestPublisher<T> extends Publisher<T> {
 	 * @param t the {@link Throwable} to trigger
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> error(Throwable t);
+	public abstract TestPublisher<T> error(Throwable t);
 
 	/**
 	 * Triggers {@link Subscriber#onComplete() completion} of this publisher.
 	 *
 	 * @return this {@link TestPublisher} for chaining.
 	 */
-	TestPublisher<T> complete();
+	public abstract TestPublisher<T> complete();
+
+	/**
+	 * Send 1-n {@link Subscriber#onNext(Object) onNext} signals to the subscribers.
+	 *
+	 * @param first the first item to emit
+	 * @param rest the optional remaining items to emit
+	 * @return this {@link TestPublisher} for chaining.
+	 * @see #next(T) next
+	 */
+	@SafeVarargs
+	public final TestPublisher<T> next(T first, T... rest) {
+		Objects.requireNonNull(rest, "rest array is null, please cast to T if null T required");
+		next(first);
+		for (T t : rest) {
+			next(t);
+		}
+		return this;
+	}
 
 	/**
 	 * Combine emitting items and completing this publisher.
 	 *
 	 * @param values the values to emit to subscribers
 	 * @return this {@link TestPublisher} for chaining.
-	 * @see #next(Iterable) next
+	 * @see #next(T) next
 	 * @see #complete() complete
 	 */
-	TestPublisher<T> emit(Iterable<T> values);
+	@SafeVarargs
+	public final TestPublisher<T> emit(T... values) {
+		Objects.requireNonNull(values, "values array is null, please cast to T if null T required");
+		for (T t : values) {
+			next(t);
+		}
+		return complete();
+	}
 
 	/**
 	 * Possible misbehavior for a {@link TestPublisher}.
 	 */
-	enum Violation {
+	public enum Violation {
 		/**
-		 * Allow {@link TestPublisher#next(Iterable) next} calls to be made
+		 * Allow {@link TestPublisher#next(Object, Object[]) next} calls to be made
 		 * despite insufficient request, without triggering an {@link IllegalStateException}.
 		 */
 		REQUEST_OVERFLOW,
 		/**
-		 * Allow {@link TestPublisher#next(Iterable) next} calls to be made
+		 * Allow {@link TestPublisher#next(Object, Object[]) next}  calls to be made
 		 * with a {@code null} value without triggering a {@link NullPointerException}
 		 */
 		ALLOW_NULL

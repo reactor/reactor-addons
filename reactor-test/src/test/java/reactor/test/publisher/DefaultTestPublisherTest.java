@@ -6,6 +6,7 @@ import reactor.test.StepVerifier;
 import reactor.test.publisher.TestPublisher.Violation;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -20,7 +21,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void misbehavingAllowsNull() {
-		DefaultTestPublisher<String> publisher = TestPublisher.createNoncompliant(Violation.ALLOW_NULL);
+		TestPublisher<String> publisher = TestPublisher.createNoncompliant(Violation.ALLOW_NULL);
 
 		StepVerifier.create(publisher)
 		            .then(() -> publisher.emit("foo", null))
@@ -31,7 +32,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void normalDisallowsOverflow() {
-		DefaultTestPublisher<String> publisher = TestPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 
 		StepVerifier.create(publisher, 1)
 		            .then(() -> publisher.next("foo")).as("should pass")
@@ -46,7 +47,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void misbehavingAllowsOverflow() {
-		DefaultTestPublisher<String> publisher = TestPublisher.createNoncompliant(Violation.REQUEST_OVERFLOW);
+		TestPublisher<String> publisher = TestPublisher.createNoncompliant(Violation.REQUEST_OVERFLOW);
 
 		try {
 			StepVerifier.create(publisher, 1)
@@ -130,7 +131,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void expectMinRequestedFailure() {
-		DefaultTestPublisher<String> publisher = TestPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 
 		try {
 
@@ -152,7 +153,7 @@ public class DefaultTestPublisherTest {
 
 	@Test
 	public void emitCompletes() {
-		DefaultTestPublisher<String> publisher = TestPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 		StepVerifier.create(publisher)
 	                .then(() -> publisher.emit("foo", "bar"))
 	                .expectNextCount(2)
@@ -160,10 +161,35 @@ public class DefaultTestPublisherTest {
 	                .verify();
 	}
 
+	@Test
+	public void nextVarargNull() {
+		TestPublisher<String> publisher = TestPublisher.create();
+
+		try {
+			publisher.next(null, null); //this causes a compiler warning, on purpose
+			fail("expected NPE");
+		}
+		catch (NullPointerException e) {
+			assertThat(e.getMessage(), is("rest array is null, please cast to T if null T required"));
+		}
+	}
+
+	@Test
+	public void emitVarargNull() {
+		TestPublisher<String> publisher = TestPublisher.create();
+
+		try {
+			publisher.emit(null); //this causes a compiler warning, on purpose
+			fail("expected NPE");
+		}
+		catch (NullPointerException e) {
+			assertThat(e.getMessage(), is("values array is null, please cast to T if null T required"));
+		}
+	}
 
 	@Test
 	public void testError() {
-		DefaultTestPublisher<String> publisher = TestPublisher.create();
+		TestPublisher<String> publisher = TestPublisher.create();
 		StepVerifier.create(publisher)
 	                .then(() -> publisher.next("foo", "bar").error(new IllegalArgumentException("boom")))
 	                .expectNextCount(2)
