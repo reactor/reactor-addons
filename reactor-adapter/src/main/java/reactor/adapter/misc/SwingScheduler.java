@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import reactor.core.Cancellation;
+import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
 import reactor.core.scheduler.TimedScheduler;
@@ -44,7 +44,7 @@ public final class SwingScheduler implements TimedScheduler {
 	}
 
 	@Override
-	public Cancellation schedule(Runnable task) {
+	public Disposable schedule(Runnable task) {
         SwingScheduledDirectAction a = new SwingScheduledDirectAction(task);
 
         SwingUtilities.invokeLater(a);
@@ -53,7 +53,7 @@ public final class SwingScheduler implements TimedScheduler {
 	}
 	
 	@Override
-	public Cancellation schedule(Runnable task, long delay, TimeUnit unit) {
+	public Disposable schedule(Runnable task, long delay, TimeUnit unit) {
 	    if (delay <= 0) {
 	        return schedule(task);
 	    }
@@ -73,7 +73,7 @@ public final class SwingScheduler implements TimedScheduler {
 	}
 	
 	@Override
-	public Cancellation schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
+	public Disposable schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
         Timer timer = new Timer((int)unit.toMillis(period), null);
         timer.setInitialDelay((int)unit.toMillis(initialDelay));
         
@@ -139,7 +139,7 @@ public final class SwingScheduler implements TimedScheduler {
 		}
 
 		@Override
-		public Cancellation schedule(Runnable action) {
+		public Disposable schedule(Runnable action) {
 		    
 		    if (!unsubscribed) {
     		    SwingScheduledDirectAction a = new SwingScheduledDirectAction(action);
@@ -152,7 +152,7 @@ public final class SwingScheduler implements TimedScheduler {
 		}
 
 		@Override
-		public Cancellation schedule(Runnable action, long delayTime, TimeUnit unit) {
+		public Disposable schedule(Runnable action, long delayTime, TimeUnit unit) {
             if (delayTime <= 0) {
                 return schedule(action);
             }
@@ -198,7 +198,7 @@ public final class SwingScheduler implements TimedScheduler {
 		}
 		
 		@Override
-		public Cancellation schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
+		public Disposable schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
 		    if (unsubscribed) {
                 return REJECTED;
             }
@@ -239,7 +239,7 @@ public final class SwingScheduler implements TimedScheduler {
 	}
 	
     static final class SwingScheduledDirectAction
-    extends AtomicBoolean implements Runnable, Cancellation {
+    extends AtomicBoolean implements Runnable, Disposable {
         /** */
         private static final long serialVersionUID = 2378266891882031635L;
         

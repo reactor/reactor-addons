@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.swt.widgets.Display;
-import reactor.core.Cancellation;
+import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
 import reactor.core.scheduler.TimedScheduler;
@@ -48,7 +48,7 @@ public final class SwtScheduler implements TimedScheduler {
 	}
 
 	@Override
-	public Cancellation schedule(Runnable task) {
+	public Disposable schedule(Runnable task) {
         SwtScheduledDirectAction a = new SwtScheduledDirectAction(task);
 
         if (!display.isDisposed()) {
@@ -61,7 +61,7 @@ public final class SwtScheduler implements TimedScheduler {
 	}
 	
 	@Override
-	public Cancellation schedule(Runnable task, long delay, TimeUnit unit) {
+	public Disposable schedule(Runnable task, long delay, TimeUnit unit) {
 	    if (delay <= 0) {
 	        return schedule(task);
 	    }
@@ -77,7 +77,7 @@ public final class SwtScheduler implements TimedScheduler {
 	}
 	
 	@Override
-	public Cancellation schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
+	public Disposable schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
 	    
         if (!display.isDisposed()) {
     	    long initialDelayMillis = unit.toMillis(initialDelay);
@@ -120,7 +120,7 @@ public final class SwtScheduler implements TimedScheduler {
 		}
 
 		@Override
-		public Cancellation schedule(Runnable action) {
+		public Disposable schedule(Runnable action) {
 	        if (!unsubscribed && !display.isDisposed()) {
 	            SwtScheduledAction a = new SwtScheduledAction(action, this);
 	            
@@ -133,7 +133,7 @@ public final class SwtScheduler implements TimedScheduler {
 		}
 
 		@Override
-		public Cancellation schedule(Runnable action, long delayTime, TimeUnit unit) {
+		public Disposable schedule(Runnable action, long delayTime, TimeUnit unit) {
             if (delayTime <= 0) {
                 return schedule(action);
             }
@@ -150,7 +150,7 @@ public final class SwtScheduler implements TimedScheduler {
 		}
 		
 		@Override
-		public Cancellation schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
+		public Disposable schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
 	        if (!display.isDisposed()) {
 	            long initialDelayMillis = unit.toMillis(initialDelay);
 	            
@@ -174,7 +174,7 @@ public final class SwtScheduler implements TimedScheduler {
 		 * and manages the associated Worker lifecycle.
 		 */
 		static final class SwtScheduledAction 
-		extends AtomicBoolean implements Runnable, Cancellation {
+		extends AtomicBoolean implements Runnable, Disposable {
 			/** */
             private static final long serialVersionUID = -2864452628218128444L;
 
@@ -207,7 +207,7 @@ public final class SwtScheduler implements TimedScheduler {
 	}
 	
     static final class SwtScheduledDirectAction
-    extends AtomicBoolean implements Runnable, Cancellation {
+    extends AtomicBoolean implements Runnable, Disposable {
         /** */
         private static final long serialVersionUID = 2378266891882031635L;
         
@@ -235,7 +235,7 @@ public final class SwtScheduler implements TimedScheduler {
         }
     }
     
-    static final class SwtPeriodicDirectAction extends AtomicBoolean implements Runnable, Cancellation {
+    static final class SwtPeriodicDirectAction extends AtomicBoolean implements Runnable, Disposable {
         /** */
         private static final long serialVersionUID = 1890399765810263705L;
 
@@ -291,7 +291,7 @@ public final class SwtScheduler implements TimedScheduler {
         }
     }
 
-    static final class SwtPeriodicAction extends AtomicBoolean implements Runnable, Cancellation {
+    static final class SwtPeriodicAction extends AtomicBoolean implements Runnable, Disposable {
         /** */
         private static final long serialVersionUID = 1890399765810263705L;
 

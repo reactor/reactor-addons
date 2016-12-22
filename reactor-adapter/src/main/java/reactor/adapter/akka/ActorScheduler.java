@@ -24,7 +24,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import reactor.core.Cancellation;
+import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
 
@@ -61,7 +61,7 @@ public class ActorScheduler implements reactor.core.scheduler.Scheduler {
 	}
 
 	@Override
-    public Cancellation schedule(Runnable task) {
+    public Disposable schedule(Runnable task) {
         DirectRunnable dr = new DirectRunnable(task);
         actor.tell(dr, ActorRef.noSender());
         return dr;
@@ -85,7 +85,7 @@ public class ActorScheduler implements reactor.core.scheduler.Scheduler {
         }
         
         @Override
-        public Cancellation schedule(Runnable task) {
+        public Disposable schedule(Runnable task) {
             WorkerRunnable wr = new WorkerRunnable(task, this);
             
             synchronized (this) {
@@ -129,7 +129,7 @@ public class ActorScheduler implements reactor.core.scheduler.Scheduler {
     }
 
     static final class DirectRunnable 
-    extends AtomicBoolean implements Runnable, Cancellation {
+    extends AtomicBoolean implements Runnable, Disposable {
         /** */
         private static final long serialVersionUID = -8208677295345126172L;
         
@@ -153,7 +153,7 @@ public class ActorScheduler implements reactor.core.scheduler.Scheduler {
     }
     
     static final class WorkerRunnable 
-    extends AtomicBoolean implements Runnable, Cancellation {
+    extends AtomicBoolean implements Runnable, Disposable {
         /** */
         private static final long serialVersionUID = -1760219254778525714L;
 

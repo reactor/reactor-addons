@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.disposables.Disposable;
-import reactor.core.Cancellation;
 import reactor.core.scheduler.TimedScheduler;
 
 /**
@@ -44,19 +43,19 @@ public final class RxJava2Scheduler implements TimedScheduler {
 	}
 
 	@Override
-	public Cancellation schedule(Runnable task) {
+	public reactor.core.Disposable schedule(Runnable task) {
 		Disposable s = scheduler.scheduleDirect(task);
 		return s::dispose;
 	}
 
     @Override
-    public Cancellation schedule(Runnable task, long delay, TimeUnit unit) {
+    public reactor.core.Disposable schedule(Runnable task, long delay, TimeUnit unit) {
 	    Disposable s = scheduler.scheduleDirect(task, delay, unit);
 	    return s::dispose;
     }
 
     @Override
-    public Cancellation schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
+    public reactor.core.Disposable schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
 	    Disposable s =
 			    scheduler.schedulePeriodicallyDirect(task, initialDelay, period, unit);
 	    return s::dispose;
@@ -75,7 +74,7 @@ public final class RxJava2Scheduler implements TimedScheduler {
         }
 
         @Override
-        public Cancellation schedule(Runnable task) {
+        public reactor.core.Disposable schedule(Runnable task) {
             Disposable s = w.schedule(task);
             return s::dispose;
         }
@@ -86,13 +85,13 @@ public final class RxJava2Scheduler implements TimedScheduler {
         }
 
         @Override
-        public Cancellation schedule(Runnable task, long delay, TimeUnit unit) {
+        public reactor.core.Disposable schedule(Runnable task, long delay, TimeUnit unit) {
             Disposable s = w.schedule(task, delay, unit);
             return s::dispose;
         }
 
         @Override
-        public Cancellation schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
+        public reactor.core.Disposable schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
             Disposable s = w.schedulePeriodically(task, initialDelay, period, unit);
             return s::dispose;
         }
