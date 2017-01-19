@@ -23,7 +23,7 @@ public class StepVerifierAssertionsTests {
 		}).take(3))
 		            .expectNext("foo")
 		            .expectComplete()
-		            .assertThatScenario()
+		            .verifyThenAssertThat()
 		            .hasDroppedElements()
 		            .hasDropped("baz")
 		            .hasDroppedExactly("baz", "bar");
@@ -34,7 +34,7 @@ public class StepVerifierAssertionsTests {
 		try {
 			StepVerifier.create(Mono.empty())
 			            .expectComplete()
-			            .assertThatScenario()
+			            .verifyThenAssertThat()
 			            .hasDroppedElements();
 			fail("expected an AssertionError");
 		}
@@ -55,7 +55,7 @@ public class StepVerifierAssertionsTests {
 			}).take(3))
 			            .expectNext("foo")
 			            .expectComplete()
-			            .assertThatScenario()
+			            .verifyThenAssertThat()
 			            .hasDropped("foo");
 			fail("expected an AssertionError");
 		}
@@ -76,7 +76,7 @@ public class StepVerifierAssertionsTests {
 			}).take(3))
 			            .expectNext("foo")
 			            .expectComplete()
-			            .assertThatScenario()
+			            .verifyThenAssertThat()
 			            .hasDroppedExactly("baz");
 			fail("expected an AssertionError");
 		}
@@ -95,7 +95,7 @@ public class StepVerifierAssertionsTests {
 			s.onError(err2);
 		}).buffer(1))
 		            .expectError()
-		            .assertThatScenario()
+		            .verifyThenAssertThat()
 		            .hasDroppedError()
 		            .hasDroppedErrorOfType(IllegalStateException.class)
 		            .hasDroppedErrorWithMessageContaining("boom")
@@ -108,7 +108,7 @@ public class StepVerifierAssertionsTests {
 		try {
 			StepVerifier.create(Mono.empty())
 			            .expectComplete()
-			            .assertThatScenario()
+			            .verifyThenAssertThat()
 			            .hasDroppedError();
 			fail("expected an AssertionError");
 		}
@@ -128,7 +128,7 @@ public class StepVerifierAssertionsTests {
 				s.onError(err2);
 			}).buffer(1))
 			            .expectError()
-			            .assertThatScenario()
+			            .verifyThenAssertThat()
 			            .hasDroppedErrorOfType(IllegalArgumentException.class);
 			fail("expected an AssertionError");
 		}
@@ -148,7 +148,7 @@ public class StepVerifierAssertionsTests {
 				s.onError(err2);
 			}).buffer(1))
 			            .expectError()
-			            .assertThatScenario()
+			            .verifyThenAssertThat()
 			            .hasDroppedErrorWithMessageContaining("foo");
 			fail("expected an AssertionError");
 		}
@@ -168,7 +168,7 @@ public class StepVerifierAssertionsTests {
 				s.onError(err2);
 			}).buffer(1))
 			            .expectError()
-			            .assertThatScenario()
+			            .verifyThenAssertThat()
 			            .hasDroppedErrorWithMessage("boom1");
 			fail("expected an AssertionError");
 		}
@@ -188,7 +188,7 @@ public class StepVerifierAssertionsTests {
 				s.onError(err2);
 			}).buffer(1))
 			            .expectError()
-			            .assertThatScenario()
+			            .verifyThenAssertThat()
 			            .hasDroppedErrorMatching(t -> t instanceof IllegalStateException && "foo".equals(t.getMessage()));
 			fail("expected an AssertionError");
 		}
@@ -201,7 +201,7 @@ public class StepVerifierAssertionsTests {
 	public void assertDurationLessThanOk() {
 		StepVerifier.create(Mono.delay(Duration.ofMillis(500)).then())
 		            .expectComplete()
-		            .assertThatScenario()
+		            .verifyThenAssertThat()
 		            .tookLessThan(Duration.ofSeconds(1));
 	}
 
@@ -210,7 +210,7 @@ public class StepVerifierAssertionsTests {
 		try {
 			StepVerifier.create(Mono.delay(Duration.ofMillis(500)).then())
 		                .expectComplete()
-		                .assertThatScenario()
+		                .verifyThenAssertThat()
 		                .tookLessThan(Duration.ofMillis(200));
 
 			fail("expected an AssertionError");
@@ -234,7 +234,7 @@ public class StepVerifierAssertionsTests {
 	public void assertDurationMoreThanOk() {
 		StepVerifier.create(Mono.delay(Duration.ofMillis(500)).then())
 		            .expectComplete()
-		            .assertThatScenario()
+		            .verifyThenAssertThat()
 		            .tookMoreThan(Duration.ofMillis(100));
 	}
 
@@ -243,7 +243,7 @@ public class StepVerifierAssertionsTests {
 		try {
 			StepVerifier.create(Mono.delay(Duration.ofMillis(500)).then())
 		                .expectComplete()
-		                .assertThatScenario()
+		                .verifyThenAssertThat()
 		                .tookMoreThan(Duration.ofMillis(800));
 
 			fail("expected an AssertionError");

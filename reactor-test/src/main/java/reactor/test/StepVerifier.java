@@ -20,7 +20,6 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -28,6 +27,7 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.Fuseable;
+import reactor.core.publisher.Hooks;
 import reactor.test.scheduler.VirtualTimeScheduler;
 
 /**
@@ -267,7 +267,19 @@ public interface StepVerifier {
 	 */
 	Duration verify(Duration duration) throws AssertionError;
 
-	StepVerifierAssertions assertThatScenario();
+	/**
+	 * {@link #verify() Verifies} the signals received by this subscriber, then exposes
+	 * various {@link StepVerifierAssertions assertion methods} on the final state.
+	 * <p>
+	 * Note this method will <strong>block</strong> indefinitely until the stream has
+	 * been terminated (either through {@link Subscriber#onComplete()},
+	 * {@link Subscriber#onError(Throwable)} or {@link Subscription#cancel()}).
+	 *
+	 * @return the {@link Duration} of the verification
+	 *
+	 * @throws AssertionError in case of expectation failures
+	 */
+	StepVerifierAssertions verifyThenAssertThat();
 
 	/**
 	 * Define a builder for terminal states.
@@ -762,26 +774,72 @@ public interface StepVerifier {
 		Step<T> expectSubscriptionMatches(Predicate<? super Subscription> predicate);
 	}
 
+	/**
+	 * Exposes post-verification state assertions.
+	 */
 	interface StepVerifierAssertions {
 
+		/**
+		 * Assert that the tested publisher has dropped at least one element to the
+		 * {@link Hooks#onNextDropped(Consumer)} hook.
+		 */
 		StepVerifierAssertions hasDroppedElements();
 
+		/**
+		 * Assert that the tested publisher has dropped at least all of the provided
+		 * elements to the {@link Hooks#onNextDropped(Consumer)} hook, in any order.
+		 */
 		StepVerifierAssertions hasDropped(Object... values);
 
+		/**
+		 * Assert that the tested publisher has dropped all of the provided elements to
+		 * the {@link Hooks#onNextDropped(Consumer)} hook, in any order, and that no
+		 * other elements were dropped.
+		 */
 		StepVerifierAssertions hasDroppedExactly(Object... values);
 
+		/**
+		 * Assert that the tested publisher has dropped an error to the
+		 * {@link Hooks#onErrorDropped(Consumer)} hook.
+		 */
 		StepVerifierAssertions hasDroppedError();
 
+		/**
+		 * Assert that the tested publisher has dropped an error of the given type to the
+		 * {@link Hooks#onErrorDropped(Consumer)} hook.
+		 */
 		StepVerifierAssertions hasDroppedErrorOfType(Class<? extends Throwable> clazz);
 
-		StepVerifierAssertions hasDroppedErrorMatching(Function<Throwable, Boolean> matcher);
+		/**
+		 * Assert that the tested publisher has dropped an error matching the given
+		 * predicate to the {@link Hooks#onErrorDropped(Consumer)} hook.
+		 */
+		StepVerifierAssertions hasDroppedErrorMatching(Predicate<Throwable> matcher);
 
+		/**
+		 * Assert that the tested publisher has dropped an error with the exact provided
+		 * message to the {@link Hooks#onErrorDropped(Consumer)} hook.
+		 */
 		StepVerifierAssertions hasDroppedErrorWithMessage(String message);
 
+		/**
+		 * Assert that the tested publisher has dropped an error with a message containing
+		 * the provided string to the {@link Hooks#onErrorDropped(Consumer)} hook.
+		 */
 		StepVerifierAssertions hasDroppedErrorWithMessageContaining(String messagePart);
 
+		/**
+		 * Assert that the whole verification took strictly less than the provided
+		 * duration to execute.
+		 * @param d the expected maximum duration of the verification
+		 */
 		StepVerifierAssertions tookLessThan(Duration d);
 
+		/**
+		 * Assert that the whole verification took strictly more than the provided
+		 * duration to execute.
+		 * @param d the expected minimum duration of the verification
+		 */
 		StepVerifierAssertions tookMoreThan(Duration d);
 	}
 

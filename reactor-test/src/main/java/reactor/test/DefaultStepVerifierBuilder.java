@@ -576,7 +576,7 @@ final class DefaultStepVerifierBuilder<T>
 		}
 
 		@Override
-		public StepVerifierAssertions assertThatScenario() {
+		public StepVerifierAssertions verifyThenAssertThat() {
 			//plug in the correct hooks
 			Queue<Object> droppedElements = new ConcurrentLinkedQueue<>();
 			AtomicReference<Throwable> droppedError = new AtomicReference<>();
@@ -964,7 +964,7 @@ final class DefaultStepVerifierBuilder<T>
 		}
 
 		@Override
-		public StepVerifierAssertions assertThatScenario() {
+		public StepVerifierAssertions verifyThenAssertThat() {
 			//plug in the correct hooks
 			Queue<Object> droppedElements = new ConcurrentLinkedQueue<>();
 			AtomicReference<Throwable> droppedError = new AtomicReference<>();
@@ -1590,10 +1590,10 @@ final class DefaultStepVerifierBuilder<T>
 		}
 
 		@Override
-		public StepVerifier.StepVerifierAssertions hasDroppedErrorMatching(Function<Throwable, Boolean> matcher) {
+		public StepVerifier.StepVerifierAssertions hasDroppedErrorMatching(Predicate<Throwable> matcher) {
 			satisfies(() -> matcher != null, () -> "Require non-null matcher");
 			hasDroppedError();
-			return satisfies(() -> matcher.apply(droppedError.get()),
+			return satisfies(() -> matcher.test(droppedError.get()),
 					() -> String.format("Expected dropped error matching the given predicate, did not match: <%s>.", droppedError.get()));
 		}
 
