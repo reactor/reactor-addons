@@ -16,16 +16,21 @@
 
 package reactor.test;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +39,9 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -47,6 +54,7 @@ import reactor.core.Exceptions;
 import reactor.core.Fuseable;
 import reactor.core.Receiver;
 import reactor.core.Trackable;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Operators;
 import reactor.core.publisher.Signal;
 import reactor.test.scheduler.VirtualTimeScheduler;
@@ -568,6 +576,25 @@ final class DefaultStepVerifierBuilder<T>
 		}
 
 		@Override
+		public StepVerifierAssertions assertThatScenario() {
+			//plug in the correct hooks
+			Queue<Object> droppedElements = new ConcurrentLinkedQueue<>();
+			AtomicReference<Throwable> droppedError = new AtomicReference<>();
+			Hooks.onNextDropped(droppedElements::offer);
+			Hooks.onErrorDropped(droppedError::set);
+
+			//trigger the verify
+			Duration time = verify();
+
+			//unplug the hooks
+			Hooks.resetOnNextDropped();
+			Hooks.resetOnErrorDropped();
+
+			//return the assertion API
+			return new DefaultStepVerifierAssertions(droppedElements, droppedError, time);
+		}
+
+		@Override
 		public Duration verify() {
 			return verify(Duration.ZERO);
 		}
@@ -640,6 +667,7 @@ final class DefaultStepVerifierBuilder<T>
 					this.debugEnabled,
 					vts);
 		}
+
 	}
 
 	final static class DefaultVerifySubscriber<T>
@@ -936,6 +964,25 @@ final class DefaultStepVerifierBuilder<T>
 		}
 
 		@Override
+		public StepVerifierAssertions assertThatScenario() {
+			//plug in the correct hooks
+			Queue<Object> droppedElements = new ConcurrentLinkedQueue<>();
+			AtomicReference<Throwable> droppedError = new AtomicReference<>();
+			Hooks.onErrorDropped(droppedError::set);
+			Hooks.onNextDropped(droppedElements::offer);
+
+			//trigger the verify
+			Duration time = verify();
+
+			//unplug the hooks
+			Hooks.resetOnNextDropped();
+			Hooks.resetOnErrorDropped();
+
+			//return the assertion API
+			return new DefaultStepVerifierAssertions(droppedElements, droppedError, time);
+		}
+
+		@Override
 		public Duration verify() {
 			return verify(Duration.ZERO);
 		}
@@ -953,7 +1000,6 @@ final class DefaultStepVerifierBuilder<T>
 			}
 			validate();
 			return Duration.between(now, Instant.now());
-
 		}
 
 		/**
@@ -1485,6 +1531,107 @@ final class DefaultStepVerifierBuilder<T>
 		}
 
 	}
+
+	static class DefaultStepVerifierAssertions implements
+	                                            StepVerifier.StepVerifierAssertions {
+
+		private final Queue<Object> droppedElements;
+		private final AtomicReference<Throwable> droppedError;
+		private final Duration duration;
+
+		DefaultStepVerifierAssertions(Queue<Object> droppedElements,
+				AtomicReference<Throwable> droppedError, Duration duration) {
+			this.droppedElements = droppedElements;
+			this.droppedError = droppedError;
+			this.duration = duration;
+		}
+
+		private StepVerifier.StepVerifierAssertions satisfies(BooleanSupplier check, Supplier<String> message) {
+			if (!check.getAsBoolean()) {
+				throw new AssertionError(message.get());
+			}
+			return this;
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedElements() {
+			return satisfies(() -> !droppedElements.isEmpty(), () -> "Expected dropped elements, none found.");
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDropped(Object... values) {
+			satisfies(() -> values != null && values.length > 0, () -> "Require non-empty values");
+			List<Object> valuesList = Arrays.asList(values);
+			return satisfies(() -> droppedElements.containsAll(valuesList),
+					() -> String.format("Expected dropped elements to contain <%s>, was <%s>.", valuesList, droppedElements));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedExactly(Object... values) {
+			satisfies(() -> values != null && values.length > 0, () -> "Require non-empty values");
+			List<Object> valuesList = Arrays.asList(values);
+			return satisfies(() -> droppedElements.containsAll(valuesList)
+							&& droppedElements.size() == valuesList.size(),
+					() -> String.format("Expected dropped elements to contain exactly <%s>, was <%s>.", valuesList, droppedElements));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedError() {
+			return satisfies(() -> droppedError.get() != null,
+					() -> "Expected dropped error, none found.");
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedErrorOfType(Class<? extends Throwable> clazz) {
+			satisfies(() -> clazz != null, () -> "Require non-null clazz");
+			hasDroppedError();
+			return satisfies(() -> clazz.isInstance(droppedError.get()),
+					() -> String.format("Expected dropped error to be of type %s, was %s.", clazz.getCanonicalName(), droppedError.get().getClass().getCanonicalName()));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedErrorMatching(Function<Throwable, Boolean> matcher) {
+			satisfies(() -> matcher != null, () -> "Require non-null matcher");
+			hasDroppedError();
+			return satisfies(() -> matcher.apply(droppedError.get()),
+					() -> String.format("Expected dropped error matching the given predicate, did not match: <%s>.", droppedError.get()));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedErrorWithMessage(String message) {
+			satisfies(() -> message != null, () -> "Require non-null message");
+			hasDroppedError();
+			String actual = droppedError.get().getMessage();
+			return satisfies(() -> message.equals(actual),
+					() -> String.format("Expected dropped error with message <\"%s\">, was <\"%s\">.", message, actual));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedErrorWithMessageContaining(
+				String messagePart) {
+			satisfies(() -> messagePart != null, () -> "Require non-null messagePart");
+			hasDroppedError();
+			String actual = droppedError.get().getMessage();
+			return satisfies(() -> actual != null && actual.contains(messagePart),
+					() -> String.format("Expected dropped error with message containing <\"%s\">, was <\"%s\">.", messagePart, actual));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions tookLessThan(Duration d) {
+			return satisfies(() -> duration.compareTo(d) <= 0,
+					() -> String.format("Expected scenario to be verified in less than %sms, took %sms.",
+							d.toMillis(), duration.toMillis()));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions tookMoreThan(Duration d) {
+			return satisfies(() -> duration.compareTo(d) >= 0,
+					() -> String.format("Expected scenario to be verified in more than %sms, took %sms.",
+							d.toMillis(), duration.toMillis()));
+		}
+	}
+
+
 
 	interface EagerEvent<T> extends Event<T> {
 

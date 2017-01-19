@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -265,6 +266,8 @@ public interface StepVerifier {
 	 *                        times out
 	 */
 	Duration verify(Duration duration) throws AssertionError;
+
+	StepVerifierAssertions assertThatScenario();
 
 	/**
 	 * Define a builder for terminal states.
@@ -757,6 +760,29 @@ public interface StepVerifier {
 		 * @see Subscriber#onSubscribe(Subscription)
 		 */
 		Step<T> expectSubscriptionMatches(Predicate<? super Subscription> predicate);
+	}
+
+	interface StepVerifierAssertions {
+
+		StepVerifierAssertions hasDroppedElements();
+
+		StepVerifierAssertions hasDropped(Object... values);
+
+		StepVerifierAssertions hasDroppedExactly(Object... values);
+
+		StepVerifierAssertions hasDroppedError();
+
+		StepVerifierAssertions hasDroppedErrorOfType(Class<? extends Throwable> clazz);
+
+		StepVerifierAssertions hasDroppedErrorMatching(Function<Throwable, Boolean> matcher);
+
+		StepVerifierAssertions hasDroppedErrorWithMessage(String message);
+
+		StepVerifierAssertions hasDroppedErrorWithMessageContaining(String messagePart);
+
+		StepVerifierAssertions tookLessThan(Duration d);
+
+		StepVerifierAssertions tookMoreThan(Duration d);
 	}
 
 }
