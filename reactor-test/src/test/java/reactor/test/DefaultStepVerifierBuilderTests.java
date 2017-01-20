@@ -47,7 +47,7 @@ public class DefaultStepVerifierBuilderTests {
 		Flux<String> flux = Flux.just("foo", "bar");
 
 		DefaultVerifySubscriber<String> s =
-				new DefaultStepVerifierBuilder<String>(Long.MAX_VALUE,
+				new DefaultStepVerifierBuilder<String>(new StepVerifierOptions().initialRequest(Long.MAX_VALUE),
 						null,
 						null).expectNext("foo", "bar")
 				             .expectComplete()
@@ -69,7 +69,7 @@ public class DefaultStepVerifierBuilderTests {
 			Flux<String> flux = Flux.just("foo").delay(Duration.ofSeconds(4));
 
 			DefaultVerifySubscriber<String> s =
-					new DefaultStepVerifierBuilder<String>(Long.MAX_VALUE,
+					new DefaultStepVerifierBuilder<String>(new StepVerifierOptions().initialRequest(Long.MAX_VALUE),
 					null, //important to avoid triggering of vts capture-and-enable
 					() -> vts)
 					.thenAwait(Duration.ofSeconds(1))
@@ -93,7 +93,7 @@ public class DefaultStepVerifierBuilderTests {
 	public void suppliedVirtualTimeButNoSourceDoesntEnableScheduler() {
 		VirtualTimeScheduler vts = VirtualTimeScheduler.create();
 
-		new DefaultStepVerifierBuilder<String>(Long.MAX_VALUE,
+		new DefaultStepVerifierBuilder<String>(new StepVerifierOptions().initialRequest(Long.MAX_VALUE),
 							null, //important to avoid triggering of vts capture-and-enable
 							() -> vts)
 							.expectNoEvent(Duration.ofSeconds(4))
