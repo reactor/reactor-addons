@@ -119,7 +119,7 @@ public interface StepVerifier {
 	 *                        times out
 	 */
 	static <T> FirstStep<T> create(Publisher<? extends T> publisher, StepVerifierOptions options) {
-		return DefaultStepVerifierBuilder.newVerifier(options, () -> publisher, null);
+		return DefaultStepVerifierBuilder.newVerifier(options, () -> publisher);
 	}
 
 	/**
@@ -176,10 +176,10 @@ public interface StepVerifier {
 		Objects.requireNonNull(scenarioSupplier, "scenarioSupplier");
 		Objects.requireNonNull(vtsLookup, "vtsLookup");
 
-		StepVerifierOptions options = new StepVerifierOptions().initialRequest(n);
+		StepVerifierOptions options = new StepVerifierOptions().initialRequest(n)
+				.virtualTimeSchedulerSupplier(vtsLookup);
 		return DefaultStepVerifierBuilder.newVerifier(options,
-				scenarioSupplier,
-				vtsLookup);
+				scenarioSupplier);
 	}
 
 	/**
@@ -201,7 +201,9 @@ public interface StepVerifier {
 			Supplier<? extends Publisher<? extends T>> scenarioSupplier,
 			Supplier<? extends VirtualTimeScheduler> vtsLookup,
 			long n) {
-		return withVirtualTime(scenarioSupplier, vtsLookup, new StepVerifierOptions().initialRequest(n));
+		return withVirtualTime(scenarioSupplier, new StepVerifierOptions()
+				.initialRequest(n)
+				.virtualTimeSchedulerSupplier(vtsLookup));
 	}
 
 	/**
@@ -212,24 +214,21 @@ public interface StepVerifier {
 	 * the provided {@link StepVerifierOptions options}.
 	 *
 	 * @param scenarioSupplier a mandatory supplier of the {@link Publisher} to test
-	 * @param vtsLookup a mandatory {@link VirtualTimeScheduler} lookup to use in {@code
-	 * thenAwait}
-	 * @param options the verification options
+	 * @param options the verification options, including a mandatory
+	 *      {@link VirtualTimeScheduler} lookup to use in {@code thenAwait}
 	 * @param <T> the type of the subscriber
 	 *
 	 * @return a builder for setting up value expectations
 	 */
 	static <T> FirstStep<T> withVirtualTime(
 			Supplier<? extends Publisher<? extends T>> scenarioSupplier,
-			Supplier<? extends VirtualTimeScheduler> vtsLookup,
 			StepVerifierOptions options) {
 		DefaultStepVerifierBuilder.checkPositive(options.getInitialRequest());
+		Objects.requireNonNull(options.getVirtualTimeSchedulerSupplier(), "vtsLookup");
 		Objects.requireNonNull(scenarioSupplier, "scenarioSupplier");
-		Objects.requireNonNull(vtsLookup, "vtsLookup");
 
 		return DefaultStepVerifierBuilder.newVerifier(options,
-				scenarioSupplier,
-				vtsLookup);
+				scenarioSupplier);
 	}
 
 	/**

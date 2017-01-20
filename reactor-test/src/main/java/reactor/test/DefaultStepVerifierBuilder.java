@@ -76,12 +76,11 @@ final class DefaultStepVerifierBuilder<T>
 	}
 
 	static <T> StepVerifier.FirstStep<T> newVerifier(StepVerifierOptions options,
-			Supplier<? extends Publisher<? extends T>> scenarioSupplier,
-			Supplier<? extends VirtualTimeScheduler> vtsLookup) {
+			Supplier<? extends Publisher<? extends T>> scenarioSupplier) {
 		DefaultStepVerifierBuilder.checkPositive(options.getInitialRequest());
 		Objects.requireNonNull(scenarioSupplier, "scenarioSupplier");
 
-		return new DefaultStepVerifierBuilder<>(options, scenarioSupplier, vtsLookup);
+		return new DefaultStepVerifierBuilder<>(options, scenarioSupplier);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -100,11 +99,10 @@ final class DefaultStepVerifierBuilder<T>
 	int  expectedFusionMode  = -1;
 
 	DefaultStepVerifierBuilder(StepVerifierOptions options,
-			Supplier<? extends Publisher<? extends T>> sourceSupplier,
-			Supplier<? extends VirtualTimeScheduler> vtsLookup) {
+			Supplier<? extends Publisher<? extends T>> sourceSupplier) {
 		this.initialRequest = options.getInitialRequest();
 		this.options = options;
-		this.vtsLookup = vtsLookup;
+		this.vtsLookup = options.getVirtualTimeSchedulerSupplier();
 		this.sourceSupplier = sourceSupplier;
 		this.script = new ArrayList<>();
 		this.script.add(defaultFirstStep());
