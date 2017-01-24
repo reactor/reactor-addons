@@ -799,34 +799,53 @@ public interface StepVerifier {
 		StepVerifierAssertions hasDroppedExactly(Object... values);
 
 		/**
-		 * Assert that the tested publisher has dropped an error to the
+		 * Assert that the tested publisher has dropped at least one error to the
 		 * {@link Hooks#onErrorDropped(Consumer)} hook.
 		 */
-		StepVerifierAssertions hasDroppedError();
+		StepVerifierAssertions hasDroppedErrors();
 
 		/**
-		 * Assert that the tested publisher has dropped an error of the given type to the
+		 * Assert that the tested publisher has dropped exactly n errors to the
 		 * {@link Hooks#onErrorDropped(Consumer)} hook.
+		 */
+		StepVerifierAssertions hasDroppedErrors(int n);
+
+		/**
+		 * Assert that the tested publisher has dropped exactly one error of the given type
+		 * to the {@link Hooks#onErrorDropped(Consumer)} hook.
 		 */
 		StepVerifierAssertions hasDroppedErrorOfType(Class<? extends Throwable> clazz);
 
 		/**
-		 * Assert that the tested publisher has dropped an error matching the given
+		 * Assert that the tested publisher has dropped exactly one error matching the given
 		 * predicate to the {@link Hooks#onErrorDropped(Consumer)} hook.
 		 */
 		StepVerifierAssertions hasDroppedErrorMatching(Predicate<Throwable> matcher);
 
 		/**
-		 * Assert that the tested publisher has dropped an error with the exact provided
+		 * Assert that the tested publisher has dropped exactly one error with the exact provided
 		 * message to the {@link Hooks#onErrorDropped(Consumer)} hook.
 		 */
 		StepVerifierAssertions hasDroppedErrorWithMessage(String message);
 
 		/**
-		 * Assert that the tested publisher has dropped an error with a message containing
+		 * Assert that the tested publisher has dropped exactly one error with a message containing
 		 * the provided string to the {@link Hooks#onErrorDropped(Consumer)} hook.
 		 */
 		StepVerifierAssertions hasDroppedErrorWithMessageContaining(String messagePart);
+
+		/**
+		 * Assert that the tested publisher has dropped one or more errors to the
+		 * {@link Hooks#onErrorDropped(Consumer)} hook, and assert them as a collection.
+		 */
+		StepVerifierAssertions hasDroppedErrorsSatisfying(Consumer<Collection<Throwable>> errorsConsumer);
+
+		/**
+		 * Assert that the tested publisher has dropped one or more errors to the
+		 * {@link Hooks#onErrorDropped(Consumer)} hook, and check that the collection of
+		 * errors matches a predicate.
+		 */
+		StepVerifierAssertions hasDroppedErrorsMatching(Predicate<Collection<Throwable>> errorsConsumer);
 
 		/**
 		 * Assert that the whole verification took strictly less than the provided

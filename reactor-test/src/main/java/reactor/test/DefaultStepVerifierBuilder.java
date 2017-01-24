@@ -579,9 +579,9 @@ final class DefaultStepVerifierBuilder<T>
 		public StepVerifierAssertions verifyThenAssertThat() {
 			//plug in the correct hooks
 			Queue<Object> droppedElements = new ConcurrentLinkedQueue<>();
-			AtomicReference<Throwable> droppedError = new AtomicReference<>();
+			Queue<Throwable> droppedErrors = new ConcurrentLinkedQueue<>();
 			Hooks.onNextDropped(droppedElements::offer);
-			Hooks.onErrorDropped(droppedError::set);
+			Hooks.onErrorDropped(droppedErrors::offer);
 
 			//trigger the verify
 			Duration time = verify();
@@ -591,7 +591,7 @@ final class DefaultStepVerifierBuilder<T>
 			Hooks.resetOnErrorDropped();
 
 			//return the assertion API
-			return new DefaultStepVerifierAssertions(droppedElements, droppedError, time);
+			return new DefaultStepVerifierAssertions(droppedElements, droppedErrors, time);
 		}
 
 		@Override
@@ -967,8 +967,8 @@ final class DefaultStepVerifierBuilder<T>
 		public StepVerifierAssertions verifyThenAssertThat() {
 			//plug in the correct hooks
 			Queue<Object> droppedElements = new ConcurrentLinkedQueue<>();
-			AtomicReference<Throwable> droppedError = new AtomicReference<>();
-			Hooks.onErrorDropped(droppedError::set);
+			Queue<Throwable> droppedErrors = new ConcurrentLinkedQueue<>();
+			Hooks.onErrorDropped(droppedErrors::offer);
 			Hooks.onNextDropped(droppedElements::offer);
 
 			//trigger the verify
@@ -979,7 +979,7 @@ final class DefaultStepVerifierBuilder<T>
 			Hooks.resetOnErrorDropped();
 
 			//return the assertion API
-			return new DefaultStepVerifierAssertions(droppedElements, droppedError, time);
+			return new DefaultStepVerifierAssertions(droppedElements, droppedErrors, time);
 		}
 
 		@Override
@@ -1536,13 +1536,13 @@ final class DefaultStepVerifierBuilder<T>
 	                                            StepVerifier.StepVerifierAssertions {
 
 		private final Queue<Object> droppedElements;
-		private final AtomicReference<Throwable> droppedError;
+		private final Queue<Throwable> droppedErrors;
 		private final Duration duration;
 
 		DefaultStepVerifierAssertions(Queue<Object> droppedElements,
-				AtomicReference<Throwable> droppedError, Duration duration) {
+				Queue<Throwable> droppedErrors, Duration duration) {
 			this.droppedElements = droppedElements;
-			this.droppedError = droppedError;
+			this.droppedErrors = droppedErrors;
 			this.duration = duration;
 		}
 
@@ -1576,32 +1576,53 @@ final class DefaultStepVerifierBuilder<T>
 		}
 
 		@Override
-		public StepVerifier.StepVerifierAssertions hasDroppedError() {
-			return satisfies(() -> droppedError.get() != null,
-					() -> "Expected dropped error, none found.");
+		public StepVerifier.StepVerifierAssertions hasDroppedErrors() {
+			return satisfies(() -> !droppedErrors.isEmpty(),
+					() -> "Expected at least 1 dropped error, none found.");
+		}
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedErrors(int size) {
+			return satisfies(() -> droppedErrors.size() == size,
+					() -> String.format("Expected exactly %d dropped errors, %d found.", size, droppedErrors.size()));
 		}
 
 		@Override
 		public StepVerifier.StepVerifierAssertions hasDroppedErrorOfType(Class<? extends Throwable> clazz) {
 			satisfies(() -> clazz != null, () -> "Require non-null clazz");
-			hasDroppedError();
-			return satisfies(() -> clazz.isInstance(droppedError.get()),
-					() -> String.format("Expected dropped error to be of type %s, was %s.", clazz.getCanonicalName(), droppedError.get().getClass().getCanonicalName()));
+			hasDroppedErrors(1);
+			return satisfies(() -> clazz.isInstance(droppedErrors.peek()),
+					() -> String.format("Expected dropped error to be of type %s, was %s.", clazz.getCanonicalName(), droppedErrors.peek().getClass().getCanonicalName()));
 		}
 
 		@Override
 		public StepVerifier.StepVerifierAssertions hasDroppedErrorMatching(Predicate<Throwable> matcher) {
 			satisfies(() -> matcher != null, () -> "Require non-null matcher");
-			hasDroppedError();
-			return satisfies(() -> matcher.test(droppedError.get()),
-					() -> String.format("Expected dropped error matching the given predicate, did not match: <%s>.", droppedError.get()));
+			hasDroppedErrors(1);
+			return satisfies(() -> matcher.test(droppedErrors.peek()),
+					() -> String.format("Expected dropped error matching the given predicate, did not match: <%s>.", droppedErrors.peek()));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedErrorsMatching(Predicate<Collection<Throwable>> matcher) {
+			satisfies(() -> matcher != null, () -> "Require non-null matcher");
+			hasDroppedErrors();
+			return satisfies(() -> matcher.test(droppedErrors),
+					() -> String.format("Expected collection of dropped errors matching the given predicate, did not match: <%s>.", droppedErrors));
+		}
+
+		@Override
+		public StepVerifier.StepVerifierAssertions hasDroppedErrorsSatisfying(Consumer<Collection<Throwable>> asserter) {
+			satisfies(() -> asserter != null, () -> "Require non-null asserter");
+			hasDroppedErrors();
+			asserter.accept(droppedErrors);
+			return this;
 		}
 
 		@Override
 		public StepVerifier.StepVerifierAssertions hasDroppedErrorWithMessage(String message) {
 			satisfies(() -> message != null, () -> "Require non-null message");
-			hasDroppedError();
-			String actual = droppedError.get().getMessage();
+			hasDroppedErrors(1);
+			String actual = droppedErrors.peek().getMessage();
 			return satisfies(() -> message.equals(actual),
 					() -> String.format("Expected dropped error with message <\"%s\">, was <\"%s\">.", message, actual));
 		}
@@ -1610,8 +1631,8 @@ final class DefaultStepVerifierBuilder<T>
 		public StepVerifier.StepVerifierAssertions hasDroppedErrorWithMessageContaining(
 				String messagePart) {
 			satisfies(() -> messagePart != null, () -> "Require non-null messagePart");
-			hasDroppedError();
-			String actual = droppedError.get().getMessage();
+			hasDroppedErrors(1);
+			String actual = droppedErrors.peek().getMessage();
 			return satisfies(() -> actual != null && actual.contains(messagePart),
 					() -> String.format("Expected dropped error with message containing <\"%s\">, was <\"%s\">.", messagePart, actual));
 		}

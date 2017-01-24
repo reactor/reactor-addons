@@ -96,7 +96,8 @@ public class StepVerifierAssertionsTests {
 		}).buffer(1))
 		            .expectError()
 		            .verifyThenAssertThat()
-		            .hasDroppedError()
+		            .hasDroppedErrors()
+		            .hasDroppedErrors(1)
 		            .hasDroppedErrorOfType(IllegalStateException.class)
 		            .hasDroppedErrorWithMessageContaining("boom")
 		            .hasDroppedErrorWithMessage("boom2")
@@ -109,11 +110,11 @@ public class StepVerifierAssertionsTests {
 			StepVerifier.create(Mono.empty())
 			            .expectComplete()
 			            .verifyThenAssertThat()
-			            .hasDroppedError();
+			            .hasDroppedErrors();
 			fail("expected an AssertionError");
 		}
 		catch (AssertionError ae) {
-			assertThat(ae).hasMessage("Expected dropped error, none found.");
+			assertThat(ae).hasMessage("Expected at least 1 dropped error, none found.");
 		}
 	}
 
@@ -194,6 +195,75 @@ public class StepVerifierAssertionsTests {
 		}
 		catch (AssertionError ae) {
 			assertThat(ae).hasMessage("Expected dropped error matching the given predicate, did not match: <java.lang.IllegalStateException: boom2>.");
+		}
+	}
+
+	@Test
+	public void assertDroppedErrorsFailureWrongCount() {
+		Throwable err1 = new IllegalStateException("boom1");
+		Throwable err2 = new IllegalStateException("boom2");
+		Throwable err3 = new IllegalStateException("boom3");
+		try {
+			StepVerifier.create(Flux.from(s -> {
+				s.onSubscribe(Operators.emptySubscription());
+				s.onError(err1);
+				s.onError(err2);
+				s.onError(err3);
+			}).buffer(1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasDroppedErrors()
+			            .hasDroppedErrors(3);
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected exactly 3 dropped errors, 2 found.");
+		}
+	}
+
+	@Test
+	public void assertDroppedErrorsNotSatisfying() {
+		Throwable err1 = new IllegalStateException("boom1");
+		Throwable err2 = new IllegalStateException("boom2");
+		Throwable err3 = new IllegalStateException("boom3");
+		try {
+			StepVerifier.create(Flux.from(s -> {
+				s.onSubscribe(Operators.emptySubscription());
+				s.onError(err1);
+				s.onError(err2);
+				s.onError(err3);
+			}).buffer(1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasDroppedErrorsSatisfying(c -> assertThat(c).hasSize(3));
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessageContaining("Expected size:<3> but was:<2> in:");
+		}
+	}
+
+	@Test
+	public void assertDroppedErrorsNotMatching() {
+		Throwable err1 = new IllegalStateException("boom1");
+		Throwable err2 = new IllegalStateException("boom2");
+		Throwable err3 = new IllegalStateException("boom3");
+		try {
+			StepVerifier.create(Flux.from(s -> {
+				s.onSubscribe(Operators.emptySubscription());
+				s.onError(err1);
+				s.onError(err2);
+				s.onError(err3);
+			}).buffer(1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasDroppedErrorsMatching(c -> c.size() == 3);
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected collection of dropped errors matching the " +
+					"given predicate, did not match: <[java.lang.IllegalStateException: boom2, " +
+					"java.lang.IllegalStateException: boom3]>.");
 		}
 	}
 
