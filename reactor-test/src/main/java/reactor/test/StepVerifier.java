@@ -19,6 +19,7 @@ package reactor.test;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -29,6 +30,7 @@ import org.reactivestreams.Subscription;
 import reactor.core.Fuseable;
 import reactor.core.publisher.Hooks;
 import reactor.test.scheduler.VirtualTimeScheduler;
+import reactor.util.function.Tuple2;
 
 /**
  * A {@link StepVerifier} is a verifiable, blocking script usually produced by
@@ -846,6 +848,55 @@ public interface StepVerifier {
 		 * errors matches a predicate.
 		 */
 		StepVerifierAssertions hasDroppedErrorsMatching(Predicate<Collection<Throwable>> errorsConsumer);
+
+		/**
+		 * Assert that the tested publisher has triggered the {@link Hooks#onOperatorError(BiFunction) onOperatorError} hook
+		 * at least once.
+		 */
+		StepVerifierAssertions hasOperatorErrors();
+
+		/**
+		 * Assert that the tested publisher has triggered the {@link Hooks#onOperatorError(BiFunction) onOperatorError} hook
+		 * exactly n times.
+		 */
+		StepVerifierAssertions hasOperatorErrors(int n);
+
+		/**
+		 * Assert that the tested publisher has triggered the {@link Hooks#onOperatorError(BiFunction) onOperatorError} hook
+		 * exactly once and the error is of the given type.
+		 */
+		StepVerifierAssertions hasOperatorErrorOfType(Class<? extends Throwable> clazz);
+
+		/**
+		 * Assert that the tested publisher has triggered the {@link Hooks#onOperatorError(BiFunction) onOperatorError} hook
+		 * exactly once and the error matches the given predicate.
+		 */
+		StepVerifierAssertions hasOperatorErrorMatching(Predicate<Throwable> matcher);
+
+		/**
+		 * Assert that the tested publisher has triggered the {@link Hooks#onOperatorError(BiFunction) onOperatorError} hook
+		 * exactly once and the error has the exact provided message.
+		 */
+		StepVerifierAssertions hasOperatorErrorWithMessage(String message);
+
+		/**
+		 * Assert that the tested publisher has triggered the {@link Hooks#onOperatorError(BiFunction) onOperatorError} hook
+		 * exactly once, with the error message containing the provided string.
+		 */
+		StepVerifierAssertions hasOperatorErrorWithMessageContaining(String messagePart);
+
+		/**
+		 * Assert that the tested publisher has triggered the {@link Hooks#onOperatorError(BiFunction) onOperatorError} hook
+		 * once or more, and assert the errors and optionally associated data as a collection.
+		 */
+		StepVerifierAssertions hasOperatorErrorsSatisfying(Consumer<Collection<Tuple2<Throwable, ?>>> errorsConsumer);
+
+		/**
+		 * Assert that the tested publisher has triggered the {@link Hooks#onOperatorError(BiFunction) onOperatorError} hook
+		 * once or more, and check that the collection of errors and their optionally
+		 * associated data matches a predicate.
+		 */
+		StepVerifierAssertions hasOperatorErrorsMatching(Predicate<Collection<Tuple2<Throwable, ?>>> errorsConsumer);
 
 		/**
 		 * Assert that the whole verification took strictly less than the provided

@@ -268,6 +268,166 @@ public class StepVerifierAssertionsTests {
 	}
 
 	@Test
+	public void assertOperatorErrorAllPass() {
+		Throwable err1 = new IllegalStateException("boom1");
+		StepVerifier.create(Flux.error(err1))
+		            .expectError()
+		            .verifyThenAssertThat()
+		            .hasOperatorErrors()
+		            .hasOperatorErrors(1)
+		            .hasOperatorErrorOfType(IllegalStateException.class)
+		            .hasOperatorErrorWithMessageContaining("boom")
+		            .hasOperatorErrorWithMessage("boom1")
+		            .hasOperatorErrorMatching(t -> t instanceof IllegalStateException && "boom1".equals(t.getMessage()));
+	}
+
+	@Test
+	public void assertOperatorErrorFailureNoDrop() {
+		try {
+			StepVerifier.create(Mono.empty())
+			            .expectComplete()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrors();
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected at least 1 operator error, none found.");
+		}
+	}
+
+	@Test
+	public void assertOperatorErrorFailureWrongType() {
+		try {
+			Throwable err1 = new IllegalStateException("boom1");
+			StepVerifier.create(Flux.error(err1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrorOfType(IllegalArgumentException.class);
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected operator error to be of type java.lang.IllegalArgumentException, was java.lang.IllegalStateException.");
+		}
+	}
+
+	@Test
+	public void assertOperatorErrorFailureWrongContains() {
+		try {
+			Throwable err1 = new IllegalStateException("boom1");
+			StepVerifier.create(Flux.error(err1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrorWithMessageContaining("foo");
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected operator error with message containing <\"foo\">, was <\"boom1\">.");
+		}
+	}
+
+	@Test
+	public void assertOperatorErrorFailureWrongMessage() {
+		try {
+			Throwable err1 = new IllegalStateException("boom1");
+			StepVerifier.create(Flux.error(err1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrorWithMessage("boom2");
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected operator error with message <\"boom2\">, was <\"boom1\">.");
+		}
+	}
+
+	@Test
+	public void assertOperatorErrorFailureWrongMatch() {
+		try {
+			Throwable err1 = new IllegalStateException("boom1");
+			StepVerifier.create(Flux.error(err1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrorMatching(t -> t instanceof IllegalStateException && "foo".equals(t.getMessage()));
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected operator error matching the given predicate," +
+					" did not match: <[java.lang.IllegalStateException: boom1,]>.");
+		}
+	}
+
+	@Test
+	public void assertOperatorErrorsFailureWrongCount() {
+		Throwable err1 = new IllegalStateException("boom1");
+		Throwable err2 = new IllegalStateException("boom2");
+		Throwable err3 = new IllegalStateException("boom3");
+		try {
+			StepVerifier.create(Flux.from(s -> {
+				s.onSubscribe(Operators.emptySubscription());
+				s.onError(err1);
+				Operators.onOperatorError(err2);
+				Operators.onOperatorError(err3);
+			}).buffer(1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrors()
+			            .hasOperatorErrors(3);
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected exactly 3 operator errors, 2 found.");
+		}
+	}
+
+	@Test
+	public void assertOperatorErrorsNotSatisfying() {
+		Throwable err1 = new IllegalStateException("boom1");
+		Throwable err2 = new IllegalStateException("boom2");
+		Throwable err3 = new IllegalStateException("boom3");
+		try {
+			StepVerifier.create(Flux.from(s -> {
+				s.onSubscribe(Operators.emptySubscription());
+				s.onError(err1);
+				Operators.onOperatorError(err2);
+				Operators.onOperatorError(err3);
+			}).buffer(1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrorsSatisfying(c -> assertThat(c).hasSize(3));
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessageEndingWith("Expected size:<3> but was:<2> in:\n" +
+					"<[[java.lang.IllegalStateException: boom2,],\n" +
+					"    [java.lang.IllegalStateException: boom3,]]>");
+		}
+	}
+
+	@Test
+	public void assertOperatorErrorsNotMatching() {
+		Throwable err1 = new IllegalStateException("boom1");
+		Throwable err2 = new IllegalStateException("boom2");
+		Throwable err3 = new IllegalStateException("boom3");
+		try {
+			StepVerifier.create(Flux.from(s -> {
+				s.onSubscribe(Operators.emptySubscription());
+				s.onError(err1);
+				Operators.onOperatorError(err2);
+				Operators.onOperatorError(err3);
+			}).buffer(1))
+			            .expectError()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrorsMatching(c -> c.size() == 3);
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected collection of operator errors matching the" +
+					" given predicate, did not match: <[[java.lang.IllegalStateException: boom2,]," +
+					" [java.lang.IllegalStateException: boom3,]]>.");
+		}
+	}
+
+	@Test
 	public void assertDurationLessThanOk() {
 		StepVerifier.create(Mono.delay(Duration.ofMillis(500)).then())
 		            .expectComplete()
@@ -295,7 +455,7 @@ public class StepVerifierAssertionsTests {
 
 	@Test
 	public void assertDurationConsidersEqualsASuccess() {
-		new DefaultStepVerifierBuilder.DefaultStepVerifierAssertions(null, null, Duration.ofSeconds(3))
+		new DefaultStepVerifierBuilder.DefaultStepVerifierAssertions(null, null, null, Duration.ofSeconds(3))
 				.tookLessThan(Duration.ofMillis(3000L))
 				.tookMoreThan(Duration.ofSeconds(3));
 	}
@@ -323,6 +483,38 @@ public class StepVerifierAssertionsTests {
 					//the actual duration can vary a bit
 					.hasMessageStartingWith("Expected scenario to be verified in more than 800ms, took 5")
 					.hasMessageEndingWith("ms.");
+		}
+	}
+
+	@Test
+	public void assertOperationErrorShortcutTestExactCount() {
+		try {
+			StepVerifier.create(Flux.empty())
+			            .expectComplete()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrorWithMessage("boom2");
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected exactly one operator error, 0 found.");
+		}
+	}
+
+	@Test
+	public void assertOperationErrorShortcutTestTupleContainsError() {
+		try {
+			StepVerifier.create(Flux.from(f -> {
+				f.onSubscribe(Operators.emptySubscription());
+				Operators.onOperatorError(null, null, "foo");
+				f.onComplete();
+			}))
+			            .expectComplete()
+			            .verifyThenAssertThat()
+			            .hasOperatorErrorWithMessage("boom2");
+			fail("expected an AssertionError");
+		}
+		catch (AssertionError ae) {
+			assertThat(ae).hasMessage("Expected exactly one operator error with an actual throwable content, no throwable found.");
 		}
 	}
 
