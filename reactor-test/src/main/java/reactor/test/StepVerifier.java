@@ -101,7 +101,7 @@ public interface StepVerifier {
 	 */
 	static <T> FirstStep<T> create(Publisher<? extends T> publisher,
 			long n) {
-		return create(publisher, new StepVerifierOptions().initialRequest(n));
+		return create(publisher, StepVerifierOptions.create().initialRequest(n));
 	}
 
 	/**
@@ -176,7 +176,8 @@ public interface StepVerifier {
 		Objects.requireNonNull(scenarioSupplier, "scenarioSupplier");
 		Objects.requireNonNull(vtsLookup, "vtsLookup");
 
-		StepVerifierOptions options = new StepVerifierOptions().initialRequest(n)
+		StepVerifierOptions options = StepVerifierOptions.create()
+				.initialRequest(n)
 				.virtualTimeSchedulerSupplier(vtsLookup);
 		return DefaultStepVerifierBuilder.newVerifier(options,
 				scenarioSupplier);
@@ -201,7 +202,7 @@ public interface StepVerifier {
 			Supplier<? extends Publisher<? extends T>> scenarioSupplier,
 			Supplier<? extends VirtualTimeScheduler> vtsLookup,
 			long n) {
-		return withVirtualTime(scenarioSupplier, new StepVerifierOptions()
+		return withVirtualTime(scenarioSupplier, StepVerifierOptions.create()
 				.initialRequest(n)
 				.virtualTimeSchedulerSupplier(vtsLookup));
 	}

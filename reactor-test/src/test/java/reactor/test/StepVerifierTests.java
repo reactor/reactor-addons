@@ -1615,7 +1615,7 @@ public class StepVerifierTests {
 	@Test(timeout = 1000L)
 	public void lowRequestCheckCanBeDisabled() {
 		StepVerifier.create(Flux.just(1, 2),
-				new StepVerifierOptions().initialRequest(1).checkUnderRequesting(false))
+				StepVerifierOptions.create().initialRequest(1).checkUnderRequesting(false))
 		            .expectNext(1)
 		            .thenConsumeWhile(s -> s == 1); //don't verify, this alone would throw an exception if check activated
 	}
