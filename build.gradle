@@ -237,6 +237,14 @@ project('reactor-test') {
   }
 }
 
+project('reactor-math') {
+  description = 'Reactor Math support'
+
+  dependencies {
+	testCompile(project(":reactor-test"))
+  }
+}
+
 task release {
   subprojects.each{
 	if(it.version.endsWith('SNAPSHOT')) return

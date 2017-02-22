@@ -20,6 +20,10 @@ Test Support with various Subscribers, mocking scheduler (virtual time) and grap
 
 Logback support over asynchronous Reactor Core Processors.
 
+# reactor-math
+
+Mathematical utilities to compute sum, average, min or max from numerical sources.
+
 # Contributing an Addon
 
 ### Build instructions
