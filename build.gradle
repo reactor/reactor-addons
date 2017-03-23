@@ -149,8 +149,7 @@ configure(subprojects) { project ->
 
   // dependencies that are common across all java projects
   dependencies {
-//	compile "io.projectreactor:reactor-core:$version"
-	compile "io.projectreactor:reactor-core:3.0.5.RELEASE"
+	compile "io.projectreactor:reactor-core:$version"
 
 	// JSR-305 annotations
 	optional "com.google.code.findbugs:jsr305:3.0.0"
