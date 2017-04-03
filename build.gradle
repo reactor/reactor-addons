@@ -236,8 +236,8 @@ project('reactor-test') {
   }
 }
 
-project('reactor-math') {
-  description = 'Reactor Math support'
+project('reactor-extra') {
+  description = 'Reactor Extra utilities'
 
   dependencies {
 	testCompile(project(":reactor-test"))
