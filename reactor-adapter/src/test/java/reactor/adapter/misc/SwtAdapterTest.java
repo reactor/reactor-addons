@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import org.eclipse.swt.widgets.Display;
 import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
-import reactor.core.scheduler.TimedScheduler;
+import reactor.core.scheduler.Scheduler;
 import reactor.test.StepVerifier;
 
 /**
@@ -30,7 +30,7 @@ public class SwtAdapterTest {
 	@Test
 	@Ignore("cannot test without display")
 	public void normal() {
-		TimedScheduler swtScheduler = SwtScheduler.from(new Display());
+		Scheduler swtScheduler = SwtScheduler.from(new Display());
 
 		Flux<Integer> swtFlux = Flux.range(0, 1_000_000)
 		                              .publishOn(swtScheduler);

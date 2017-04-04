@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,17 @@ import javax.swing.Timer;
 import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
-import reactor.core.scheduler.TimedScheduler;
+import reactor.core.scheduler.Scheduler;
 
 /** 
  * Scheduler that runs tasks on Swing's event dispatch thread. 
  */
-public final class SwingScheduler implements TimedScheduler {
+public final class SwingScheduler implements Scheduler {
 
 	/**
-	 * @return a new {@link TimedScheduler}
+	 * @return a new {@link Scheduler}
 	 */
-	public static TimedScheduler create() {
+	public static Scheduler create() {
 		return new SwingScheduler();
 	}
 
@@ -91,17 +91,17 @@ public final class SwingScheduler implements TimedScheduler {
 	}
 	
 	@Override
-	public TimedWorker createWorker() {
+	public Worker createWorker() {
 		return new SwingSchedulerWorker();
 	}
 
-	static final class SwingSchedulerWorker implements TimedScheduler.TimedWorker {
+	static final class SwingSchedulerWorker implements Worker {
 
 		volatile boolean unsubscribed;
 
 		Set<Timer> tasks;
 		
-		public SwingSchedulerWorker() {
+		SwingSchedulerWorker() {
 		    this.tasks = new HashSet<>();
 		}
 		

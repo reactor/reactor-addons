@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package reactor.adapter.misc;
 
+import java.time.Duration;
+
 import org.junit.Test;
 import reactor.core.publisher.Flux;
-import reactor.core.scheduler.TimedScheduler;
+import reactor.core.scheduler.Scheduler;
 import reactor.test.StepVerifier;
 
 /**
@@ -28,7 +30,7 @@ public class SwingAdapterTest {
 
 	@Test
 	public void normal() {
-		TimedScheduler swingScheduler = SwingScheduler.create();
+		Scheduler swingScheduler = SwingScheduler.create();
 
 		Flux<Integer> swingFlux = Flux.range(0, 1_000_000)
 		                              .publishOn(swingScheduler);
@@ -41,9 +43,9 @@ public class SwingAdapterTest {
 
 	@Test
 	public void timed() {
-		TimedScheduler swingScheduler = SwingScheduler.create();
+		Scheduler swingScheduler = SwingScheduler.create();
 
-		Flux<Long> swingFlux = Flux.intervalMillis(100, swingScheduler)
+		Flux<Long> swingFlux = Flux.interval(Duration.ofMillis(100), swingScheduler)
 		                           .take(3);
 
 		StepVerifier.create(swingFlux)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,21 +88,6 @@ abstract class MathSubscriber<T, R> extends Operators.MonoSubscriber<T, R> {
 	public void cancel() {
 		super.cancel();
 		s.cancel();
-	}
-
-	@Override
-	public boolean isTerminated() {
-		return done;
-	}
-
-	@Override
-	public Object upstream() {
-		return s;
-	}
-
-	@Override
-	public boolean isStarted() {
-		return s != null && !isTerminated();
 	}
 
 	protected abstract void reset();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,19 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.disposables.Disposable;
-import reactor.core.scheduler.TimedScheduler;
+import reactor.core.scheduler.Scheduler;
 
 /**
  * Wraps an RxJava scheduler and exposes it as a Reactor-Core Scheduler.
  */
-public final class RxJava2Scheduler implements TimedScheduler {
+public final class RxJava2Scheduler implements Scheduler {
 
 	/**
 	 *
 	 * @param scheduler an rxjava 2 {@link io.reactivex.Scheduler}
-	 * @return a new {@link TimedScheduler}
+	 * @return a new {@link Scheduler}
 	 */
-	public static TimedScheduler from(io.reactivex.Scheduler scheduler) {
+	public static Scheduler from(io.reactivex.Scheduler scheduler) {
 		return new RxJava2Scheduler(scheduler);
 	}
 
@@ -62,11 +62,11 @@ public final class RxJava2Scheduler implements TimedScheduler {
     }
 
     @Override
-    public TimedWorker createWorker() {
+    public Worker createWorker() {
         return new RxSchedulerWorker(scheduler.createWorker());
     }
     
-    static final class RxSchedulerWorker implements TimedWorker {
+    static final class RxSchedulerWorker implements Worker {
         final io.reactivex.Scheduler.Worker w;
         
         public RxSchedulerWorker(io.reactivex.Scheduler.Worker w) {

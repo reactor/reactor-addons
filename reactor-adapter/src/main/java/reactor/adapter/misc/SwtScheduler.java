@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,19 @@ import org.eclipse.swt.widgets.Display;
 import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
-import reactor.core.scheduler.TimedScheduler;
+import reactor.core.scheduler.Scheduler;
 
 /** 
  * Scheduler that runs tasks on Swt's event dispatch thread. 
  */
-public final class SwtScheduler implements TimedScheduler {
+public final class SwtScheduler implements Scheduler {
 
 	/**
 	 *
 	 * @param display a {@link Display}
-	 * @return a new {@link TimedScheduler}
+	 * @return a new {@link Scheduler}
 	 */
-	public static TimedScheduler from(Display display){
+	public static Scheduler from(Display display){
 		Objects.requireNonNull(display, "display");
 		return new SwtScheduler(display);
 	}
@@ -98,16 +98,16 @@ public final class SwtScheduler implements TimedScheduler {
 	}
 	
 	@Override
-	public TimedWorker createWorker() {
+	public Worker createWorker() {
 		return new SwtWorker(display);
 	}
 
-	static final class SwtWorker implements TimedScheduler.TimedWorker {
+	static final class SwtWorker implements Worker {
 		final Display display;
 
 		volatile boolean unsubscribed;
 
-		public SwtWorker(Display display) {
+		SwtWorker(Display display) {
 			this.display = display;
 		}
 
