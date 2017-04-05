@@ -106,7 +106,7 @@ public final class SwingScheduler implements Scheduler {
 		}
 		
 		@Override
-		public void shutdown() {
+		public void dispose() {
 			if (unsubscribed) {
 				return;
 			}

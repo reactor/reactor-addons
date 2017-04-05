@@ -112,7 +112,7 @@ public final class SwtScheduler implements Scheduler {
 		}
 
 		@Override
-		public void shutdown() {
+		public void dispose() {
 			if (unsubscribed) {
 				return;
 			}

@@ -69,7 +69,7 @@ public final class RxJava2Scheduler implements Scheduler {
     static final class RxSchedulerWorker implements Worker {
         final io.reactivex.Scheduler.Worker w;
         
-        public RxSchedulerWorker(io.reactivex.Scheduler.Worker w) {
+        RxSchedulerWorker(io.reactivex.Scheduler.Worker w) {
             this.w = w;
         }
 
@@ -80,7 +80,7 @@ public final class RxJava2Scheduler implements Scheduler {
         }
 
         @Override
-        public void shutdown() {
+        public void dispose() {
             w.dispose();
         }
 
