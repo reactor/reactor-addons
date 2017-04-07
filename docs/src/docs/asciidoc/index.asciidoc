@@ -26,3 +26,5 @@ include::spring.adoc[]
 include::spring.adoc[]
 
 include::groovy.adoc[]
+
+include::routing.adoc[]
