@@ -6,7 +6,13 @@
 It conditionally emits values received from the source flux into downstream subscribers.
 This is what is called "routing". The routing decision can be made on a key that is calculated once
 for each source value in the stream. This key is passed to a function that makes the decision of emitting the source
-value to downstream subscribers. 
+value to downstream subscribers.
+
+=== How is it different that sharing a source flux and filtering each downstream flux?
+
+In the initial version, the difference is subtle when using a `PredicateRoutingFlux`. The main differentiator
+in this case would be the future features to be added to handle <<backpressure-in-routing,backpressure>>
+ in the routing scenario.
 
 === Basic building block
 
@@ -29,6 +35,7 @@ back.
 This allows implementing optimized keyed routing when it's required, without changing the underlying basic building 
 block. See `KeyedRoutingFlux` for an example.
 
+[[backpressure-in-routing]]
 ==== Backpressure in a single downstream subscriber stops the stream
 
 Currently when any downstream subscriber gets backpressured, it will stop the `RoutingFlux` stream 
