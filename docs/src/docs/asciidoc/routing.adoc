@@ -4,36 +4,31 @@
 === What does the routing flux do
 
 It conditionally emits values received from the source flux into downstream subscribers.
-This is what is called "routing". The routing decision can be made on a key that is calculated once
-for each source value in the stream. This key is passed to a function that makes the decision of emitting the source
-value to downstream subscribers.
+This is what is called routing. It can be also seen as simply sharing the source flux and efficiently filtering the
+ downstream fluxes. The routing decision can be made on a key that is calculated once for each source value in the
+ stream. This key is passed to a function that makes the decision of emitting the source value to downstream
+ subscribers. The solution supports efficient lookup table routing decisions.
+The base `RoutingFlux` class can be used as a building block for creating routers for different type of use cases.
 
-=== How is it different that sharing a source flux and filtering each downstream flux?
 
-In the initial version, the difference is subtle when using a `PredicateRoutingFlux`. The main differentiator
-in this case would be the future features to be added to handle <<backpressure-in-routing,backpressure>>
- in the routing scenario.
+=== Differentiators
 
-=== Basic building block
+==== How is a routing flux different that sharing a source flux and filtering each downstream flux with a predicate function?
 
-The `RoutingFlux` class can be used as a building block for
-creating routers for different type of use cases. Most of the source code for `RoutingFlux` originates from 
-`FluxPublish`.
-
-In the spike, `PredicateRoutingFlux` provides a `route(Predicate<K> interest)` method which can be used to create
-a downstream flux. Internally it creates an `EmitterProcessor` that is added as a subscriber to the `RoutingFlux`.
-`KeyedRoutingFlux` is an example of optimized keyed routing. The benefit of it over `PredicateRoutingFlux` is
-that the routing decision can be made without executing a predicate function for every subscriber for every value
-that is emitted to the downstream subscribers.
+In the initial version, the difference is subtle when using a `PredicateRoutingFlux`.
+The main differentiator in using a `PredicateRoutingFlux` would be the future features to be added to
+handle <<backpressure-in-routing,backpressure>> in the routing scenario.
+Since the base `RoutingFlux` isn't tied to predicate based filtering, it's extendable to lookup table based routing.
 
 === Design problems
 
-==== Each filter has to be evaluated once
+==== Non-scalable solution when the routing decision uses a per-subscriber predicate function for filtering values
 
-Solution: pass all active subscribers as a stream to selection function. Should return a stream of filtered subscribers 
-back.
-This allows implementing optimized keyed routing when it's required, without changing the underlying basic building 
-block. See `KeyedRoutingFlux` for an example.
+When the routing decision is based on a predicate function, the function has to be evaluated once for every
+downstream subscriber, for every value in the stream.
+To make the basic routing building block scalable, it should provide a way to implement key-based routing with a lookup
+table.
+
 
 [[backpressure-in-routing]]
 ==== Backpressure in a single downstream subscriber stops the stream
