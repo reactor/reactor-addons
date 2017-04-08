@@ -1,24 +1,25 @@
 [[routing]]
+= Routing
+
 == RoutingFlux
 
-=== What does the routing flux do
+The routing flux connects a source stream to downstream subscribers by providing a way to efficient filter interesting
+ values while keeping reactive stream semantics.
 
-It conditionally emits values received from the source flux into downstream subscribers.
-This is what is called routing. It can be also seen as simply sharing the source flux and efficiently filtering the
- downstream fluxes. The routing decision can be made on a key that is calculated once for each source value in the
- stream. This key is passed to a function that makes the decision of emitting the source value to downstream
- subscribers. The solution supports efficient lookup table routing decisions.
-The base `RoutingFlux` class can be used as a building block for creating routers for different type of use cases.
-
+The routing decision is based on a key that is calculated once for each source value in the stream. This key is
+passed to a function that selects the downstream subscribers which should receive the source value. Since the
+base `RoutingFlux` class doesn't decide how routing is implemented, it can be used as a building block
+for creating routers for different type of use cases.
 
 === Differentiators
 
-==== How is a routing flux different that sharing a source flux and filtering each downstream flux with a predicate function?
+==== How is a routing flux different than sharing a source flux and filtering each downstream flux with a predicate function?
 
 In the initial version, the difference is subtle when using a `PredicateRoutingFlux`.
 The main differentiator in using a `PredicateRoutingFlux` would be the future features to be added to
 handle <<backpressure-in-routing,backpressure>> in the routing scenario.
 Since the base `RoutingFlux` isn't tied to predicate based filtering, it's extendable to lookup table based routing.
+The `KeyedRoutingFlux` is an example of lookup table based routing.
 
 === Design problems
 
