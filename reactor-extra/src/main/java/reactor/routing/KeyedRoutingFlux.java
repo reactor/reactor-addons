@@ -57,6 +57,7 @@ public class KeyedRoutingFlux<T, K> extends RoutingFlux<T, K> {
     }
 
     public Flux<T> route(final K interestedValue) {
+        subscriberCounter.incrementAndGet();
         return new Flux<T>() {
             @Override
             public void subscribe(Subscriber<? super T> s) {

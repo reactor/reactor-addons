@@ -26,8 +26,6 @@ public class PredicateRoutingFluxTest {
         Mono<List<Integer>> evenListMono = evenFlux.collectList().subscribe();
         Mono<List<Integer>> oddListMono = oddFlux.collectList().subscribe();
 
-        routingFlux.connect();
-
         assertEquals(Arrays.asList(2, 4), evenListMono.block());
         assertEquals(Arrays.asList(1, 3, 5), oddListMono.block());
     }
@@ -39,11 +37,9 @@ public class PredicateRoutingFluxTest {
                 Function.identity());
 
         Flux<Integer> evenFlux = routingFlux.route(x -> x % 2 == 0);
-        routingFlux.route(x -> x % 2 != 0).log().onBackpressureDrop().subscribe(); // this is unused to test partially subscribed downstream fan-out
+        routingFlux.route(x -> x % 2 != 0).subscribe();
 
         MonoProcessor<List<Integer>> evenListMono = evenFlux.collectList().subscribe();
-
-        routingFlux.connect();
 
         assertEquals(Arrays.asList(2, 4), evenListMono.block());
     }
@@ -54,13 +50,10 @@ public class PredicateRoutingFluxTest {
                 QueueSupplier.SMALL_BUFFER_SIZE, QueueSupplier.get(QueueSupplier.SMALL_BUFFER_SIZE),
                 Function.identity());
 
-        routingFlux.route(x -> x % 2 == 0).log().onBackpressureDrop().subscribe();
+        routingFlux.route(x -> x % 2 == 0).log().subscribe();
         Flux<Integer> oddFlux = routingFlux.route(x -> x % 2 != 0).log();
 
-
         Mono<List<Integer>> oddListMono = oddFlux.collectList().subscribe();
-
-        routingFlux.connect();
 
         assertEquals(Arrays.asList(1, 3, 5), oddListMono.block());
     }

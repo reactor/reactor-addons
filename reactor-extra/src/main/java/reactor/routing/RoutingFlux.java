@@ -5,18 +5,16 @@ import org.reactivestreams.Subscription;
 import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.Fuseable;
+import reactor.core.Fuseable.QueueSubscription;
 import reactor.core.Scannable;
 import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Operators;
 import reactor.util.concurrent.QueueSupplier;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -85,6 +83,9 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
                     RoutingFlux.PublishSubscriber.class,
                     "connection");
 
+    final AtomicInteger subscriberCounter = new AtomicInteger(0);
+    final RoutingFluxRefCount<T> connectionHandlerWrapper = new RoutingFluxRefCount<>(this, subscriberCounter);
+
     RoutingFlux(Flux<? extends T> source,
                 int prefetch,
                 Supplier<? extends Queue<T>> queueSupplier, Function<? super T, K> routingKeyFunction, BiFunction<Stream<Subscriber<? super T>>, K, Stream<Subscriber<? super T>>> subscriberFilter, Consumer<Subscriber<? super T>> onSubscriberAdded, Consumer<Subscriber<? super T>> onSubscriberRemoved) {
@@ -128,6 +129,10 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
 
     @Override
     public void subscribe(Subscriber<? super T> s) {
+        connectionHandlerWrapper.subscribe(s);
+    }
+
+    void subscribeDirect(RefCountInner<? super T> s) {
         RoutingFlux.PublishInner<T,K> inner = new RoutingFlux.PublishInner<>(s);
         s.onSubscribe(inner);
         for (; ; ) {
@@ -341,8 +346,8 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
                 if (actualSubscriberToInner == null) {
                     actualSubscriberToInner = new HashMap<>();
                 }
-                actualSubscriberToInner.put(inner.actual, inner);
-                parent.onSubscriberAdded.accept(inner.actual);
+                actualSubscriberToInner.put(inner.actual(), inner);
+                parent.onSubscriberAdded.accept(inner.actual());
                 return true;
             }
         }
@@ -381,9 +386,16 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
                 }
 
                 subscribers = b;
-                actualSubscriberToInner.remove(inner.actual);
-                parent.onSubscriberRemoved.accept(inner.actual);
+                deregisterInner(inner);
             }
+        }
+
+        private void deregisterInner(PublishInner<T, K> inner) {
+            if (actualSubscriberToInner != null) {
+                actualSubscriberToInner.remove(inner.actual());
+            }
+            parent.onSubscriberRemoved.accept(inner.actual());
+            parent.subscriberCounter.decrementAndGet();
         }
 
         @SuppressWarnings("unchecked")
@@ -511,7 +523,7 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
                         K key = parent.routingKeyFunction.apply(v);
 
                         Stream<Subscriber<? super T>> filtered = parent.subscriberFilter.apply(Arrays.stream(a).map(x
-                                -> x.actual), key);
+                                -> x.actual()), key);
 
                         for(Subscriber<? super T> actualSubscriber : (Iterable<Subscriber<? super T>>)filtered::iterator) {
                             RoutingFlux.PublishInner<T, K> inner =
@@ -556,12 +568,14 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
                     queue.clear();
                     for (RoutingFlux.PublishInner<T,K> inner : terminate()) {
                         inner.actual.onError(e);
+                        deregisterInner(inner);
                     }
                     return true;
                 } else if (empty) {
                     CONNECTION.compareAndSet(parent, this, null);
                     for (RoutingFlux.PublishInner<T,K> inner : terminate()) {
                         inner.actual.onComplete();
+                        deregisterInner(inner);
                     }
                     return true;
                 }
@@ -602,7 +616,7 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
 
     static final class PublishInner<T,K> implements Scannable, Subscription {
 
-        final Subscriber<? super T> actual;
+        final RefCountInner<? super T> actual;
 
         RoutingFlux.PublishSubscriber<T,K> parent;
 
@@ -611,7 +625,7 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
         static final AtomicLongFieldUpdater<PublishInner> REQUESTED =
                 AtomicLongFieldUpdater.newUpdater(RoutingFlux.PublishInner.class, "requested");
 
-        PublishInner(Subscriber<? super T> actual) {
+        PublishInner(RefCountInner<? super T> actual) {
             this.actual = actual;
         }
 
@@ -648,7 +662,7 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
         }
 
         public Subscriber<? super T> actual() {
-            return actual;
+            return actual.actual();
         }
 
         @Override
@@ -705,6 +719,236 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
                     return update;
                 }
             }
+        }
+    }
+
+    static final Disposable CANCELLED = () -> {
+    };
+
+    /**
+     * Connects to the underlying Flux once the given number of Subscribers subscribed
+     * to it and disconnects once all Subscribers cancelled their Subscriptions.
+     *
+     * @param <T> the value type
+     * @see <a href="https://github.com/reactor/reactive-streams-commons">Reactive-Streams-Commons</a>
+     */
+    static final class RoutingFluxRefCount<T> extends Flux<T> implements Scannable, Fuseable {
+
+        final RoutingFlux<? extends T, ?> source;
+
+        final AtomicInteger n;
+
+        volatile RefCountMonitor<T> connection;
+        @SuppressWarnings("rawtypes")
+        static final AtomicReferenceFieldUpdater<RoutingFluxRefCount, RefCountMonitor> CONNECTION =
+                AtomicReferenceFieldUpdater.newUpdater(RoutingFluxRefCount.class, RefCountMonitor.class, "connection");
+
+        RoutingFluxRefCount(RoutingFlux<? extends T, ?> source, AtomicInteger n) {
+            this.source = Objects.requireNonNull(source, "source");
+            this.n = n;
+        }
+
+        @Override
+        public int getPrefetch() {
+            return source.getPrefetch();
+        }
+
+        @Override
+        public void subscribe(Subscriber<? super T> s) {
+            RefCountMonitor<T> state;
+
+            for (;;) {
+                state = connection;
+                if (state == null || state.isDisconnected()) {
+                    RefCountMonitor<T> u = new RefCountMonitor<>(n, this);
+
+                    if (!CONNECTION.compareAndSet(this, state, u)) {
+                        continue;
+                    }
+
+                    state = u;
+                }
+
+                state.subscribe(s);
+                break;
+            }
+        }
+
+        @Override
+        public Object scan(Attr key) {
+            switch (key){
+                case PREFETCH:
+                    return getPrefetch();
+                case PARENT:
+                    return source;
+            }
+            return null;
+        }
+    }
+
+    static final class RefCountMonitor<T> implements Consumer<Disposable> {
+
+        final AtomicInteger n;
+
+        final RoutingFluxRefCount<? extends T> parent;
+
+        volatile int subscribers;
+        @SuppressWarnings("rawtypes")
+        static final AtomicIntegerFieldUpdater<RefCountMonitor> SUBSCRIBERS =
+                AtomicIntegerFieldUpdater.newUpdater(RefCountMonitor.class, "subscribers");
+
+        volatile Disposable disconnect;
+        @SuppressWarnings("rawtypes")
+        static final AtomicReferenceFieldUpdater<RefCountMonitor, Disposable> DISCONNECT =
+                AtomicReferenceFieldUpdater.newUpdater(RefCountMonitor.class, Disposable.class, "disconnect");
+
+        RefCountMonitor(AtomicInteger n, RoutingFluxRefCount<? extends T> parent) {
+            this.n = n;
+            this.parent = parent;
+        }
+
+        void subscribe(Subscriber<? super T> s) {
+            // FIXME think about what happens when subscribers come and go below the connection threshold concurrently
+
+            RefCountInner<T> inner = new RefCountInner<>(s, this);
+            parent.source.subscribeDirect(inner);
+
+            if (SUBSCRIBERS.incrementAndGet(this) >= n.get()) {
+                parent.source.connect(this);
+            }
+        }
+
+        @Override
+        public void accept(Disposable r) {
+            if (!DISCONNECT.compareAndSet(this, null, r)) {
+                r.dispose();
+            }
+        }
+
+        void doDisconnect() {
+            Disposable a = disconnect;
+            if (a != CANCELLED) {
+                a = DISCONNECT.getAndSet(this, CANCELLED);
+                if (a != null && a != CANCELLED) {
+                    a.dispose();
+                }
+            }
+        }
+
+        boolean isDisconnected() {
+            return disconnect == CANCELLED;
+        }
+
+        void innerCancelled() {
+            if (SUBSCRIBERS.decrementAndGet(this) == 0) {
+                doDisconnect();
+            }
+        }
+
+        void upstreamFinished() {
+            Disposable a = disconnect;
+            if (a != CANCELLED) {
+                DISCONNECT.getAndSet(this, CANCELLED);
+            }
+        }
+
+    }
+
+    static final class RefCountInner<T>
+            implements QueueSubscription<T>, Subscriber<T>, Scannable, Subscription {
+
+        final Subscriber<? super T> actual;
+
+        final RefCountMonitor<T> parent;
+
+        Subscription s;
+        QueueSubscription<T> qs;
+
+        RefCountInner(Subscriber<? super T> actual, RefCountMonitor<T> parent) {
+            this.actual = actual;
+            this.parent = parent;
+        }
+
+        @Override
+        public Object scan(Attr key) {
+            switch(key){
+                case PARENT:
+                    return s;
+            }
+            if(key == Attr.ACTUAL){
+                return actual();
+            }
+            return null;
+        }
+
+        @Override
+        public void onSubscribe(Subscription s) {
+            if (Operators.validate(this.s, s)) {
+                this.s = s;
+                actual.onSubscribe(this);
+            }
+        }
+
+        @Override
+        public void onNext(T t) {
+            actual.onNext(t);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            actual.onError(t);
+            parent.upstreamFinished();
+        }
+
+        @Override
+        public void onComplete() {
+            actual.onComplete();
+            parent.upstreamFinished();
+        }
+
+        @Override
+        public void request(long n) {
+            s.request(n);
+        }
+
+        @Override
+        public void cancel() {
+            s.cancel();
+            parent.innerCancelled();
+        }
+
+        public Subscriber<? super T> actual() {
+            return actual;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public int requestFusion(int requestedMode) {
+            if(s instanceof QueueSubscription){
+                qs = (QueueSubscription<T>)s;
+                return qs.requestFusion(requestedMode);
+            }
+            return Fuseable.NONE;
+        }
+
+        @Override
+        public T poll() {
+            return qs.poll();
+        }
+
+        @Override
+        public int size() {
+            return qs.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return qs.isEmpty();
+        }
+
+        @Override
+        public void clear() {
+            qs.clear();
         }
     }
 }

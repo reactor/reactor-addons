@@ -1,9 +1,7 @@
 package reactor.routing;
 
 import org.reactivestreams.Subscriber;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxProcessor;
 
 import java.util.Map;
 import java.util.Queue;
@@ -45,6 +43,7 @@ public class PredicateRoutingFlux<T, K> extends RoutingFlux<T, K> {
     }
 
     public Flux<T> route(final Predicate<K> interest) {
+        subscriberCounter.incrementAndGet();
         return new Flux<T>() {
             @Override
             public void subscribe(Subscriber<? super T> s) {

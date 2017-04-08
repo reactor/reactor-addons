@@ -24,8 +24,6 @@ public class KeyedRoutingFluxTest {
         Mono<List<Integer>> evenListMono = evenFlux.collectList().subscribe();
         Mono<List<Integer>> oddListMono = oddFlux.collectList().subscribe();
 
-        routingFlux.connect();
-
         assertEquals(Arrays.asList(2, 4), evenListMono.block());
         assertEquals(Arrays.asList(1, 3, 5), oddListMono.block());
     }
