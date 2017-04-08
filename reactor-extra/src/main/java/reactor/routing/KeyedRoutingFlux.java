@@ -1,15 +1,9 @@
 package reactor.routing;
 
 import org.reactivestreams.Subscriber;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxProcessor;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
@@ -62,10 +56,13 @@ public class KeyedRoutingFlux<T, K> extends RoutingFlux<T, K> {
         this.routingRegistry = routingRegistry;
     }
 
-    public Flux<T> route(K interestedValue) {
-        FluxProcessor<T, T> fluxProcessor = EmitterProcessor.create();
-        routingRegistry.registerSubscriber(fluxProcessor, interestedValue);
-        subscribe(fluxProcessor);
-        return fluxProcessor;
+    public Flux<T> route(final K interestedValue) {
+        return new Flux<T>() {
+            @Override
+            public void subscribe(Subscriber<? super T> s) {
+                routingRegistry.registerSubscriber(s, interestedValue);
+                KeyedRoutingFlux.this.subscribe(s);
+            }
+        };
     }
 }

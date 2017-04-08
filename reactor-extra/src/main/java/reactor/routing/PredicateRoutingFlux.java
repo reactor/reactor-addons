@@ -44,10 +44,13 @@ public class PredicateRoutingFlux<T, K> extends RoutingFlux<T, K> {
         this.routingRegistry = routingRegistry;
     }
 
-    public Flux<T> route(Predicate<K> interest) {
-        FluxProcessor<T, T> fluxProcessor = EmitterProcessor.create();
-        routingRegistry.registerSubscriber(fluxProcessor, interest);
-        subscribe(fluxProcessor);
-        return fluxProcessor;
+    public Flux<T> route(final Predicate<K> interest) {
+        return new Flux<T>() {
+            @Override
+            public void subscribe(Subscriber<? super T> s) {
+                routingRegistry.registerSubscriber(s, interest);
+                PredicateRoutingFlux.this.subscribe(s);
+            }
+        };
     }
 }
