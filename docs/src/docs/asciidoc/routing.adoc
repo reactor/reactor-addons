@@ -3,11 +3,11 @@
 
 == RoutingFlux
 
-The routing flux connects a source stream to downstream subscribers by providing a way to efficient filter interesting
+The routing flux connects a source stream to downstream subscribers by providing a way to efficiently filter interesting
  values while keeping reactive stream semantics.
 
 The routing decision is based on a key that is calculated once for each source value in the stream. This key is
-passed to a function that selects the downstream subscribers which should receive the source value. Since the
+passed to a function that selects the downstream subscribers for receiving the source value. Since the
 base `RoutingFlux` class doesn't decide how routing is implemented, it can be used as a building block
 for creating routers for different type of use cases.
 
