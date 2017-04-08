@@ -25,11 +25,11 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * One-to-many routing flux
- * <p>
- * Has one source and multiple sinks
+ * The routing flux connects a source stream to downstream subscribers by providing a way to
+ * efficiently filter interesting values while keeping reactive stream semantics.
  *
- * @param <T>
+ * @param <T> value type
+ * @param <K> key type
  */
 public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
 
