@@ -44,4 +44,21 @@ public class KeyedRoutingFluxTest {
         assertEquals(Arrays.asList(1, 3, 5), oddListMono.get().block());
     }
 
+    @Test
+    public void supportOtherwiseRouting() {
+        KeyedRoutingFlux<Integer, Integer> routingFlux = KeyedRoutingFlux.create(Flux.range(1, 10),
+                QueueSupplier.SMALL_BUFFER_SIZE, QueueSupplier.get(QueueSupplier.SMALL_BUFFER_SIZE),
+                value -> value % 3, true);
+
+        Flux<Integer> remainderZero = routingFlux.route(0);
+        Flux<Integer> remainderOther = routingFlux.routeOtherwise();
+
+        Mono<List<Integer>> remainderZeroMono = remainderZero.collectList().subscribe();
+        Mono<List<Integer>> remainderOtherMono = remainderOther.collectList().subscribe();
+
+        assertEquals(Arrays.asList(3, 6, 9), remainderZeroMono.block());
+        assertEquals(Arrays.asList(1, 2, 4, 5, 7, 8, 10), remainderOtherMono.block());
+
+    }
+
 }

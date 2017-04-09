@@ -3,7 +3,10 @@ package reactor.routing;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Flux;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
@@ -15,10 +18,10 @@ import java.util.stream.Stream;
 public class KeyedRoutingFlux<T, K> extends RoutingFlux<T, K> {
     private static class RoutingRegistry<T, K> {
         private final Map<K, List<Subscriber<? super T>>> interests = new ConcurrentHashMap<>();
-        private static final List EMPTY_LIST = Collections.emptyList();
+        private final List<Subscriber<? super T>> routeOtherwise = new CopyOnWriteArrayList<>();
 
         final BiFunction<Stream<Subscriber<? super T>>, K, Stream<Subscriber<? super T>>> filter = (subscribers, k) -> {
-            return interests.getOrDefault(k, EMPTY_LIST).stream();
+            return interests.getOrDefault(k, routeOtherwise).stream();
         };
 
         final Consumer<Subscriber<? super T>> onSubscriberRemoved = subscriber -> {
@@ -29,6 +32,7 @@ public class KeyedRoutingFlux<T, K> extends RoutingFlux<T, K> {
                     iterator.remove();
                 }
             }
+            routeOtherwise.remove(subscriber);
         };
 
         void registerSubscriber(Subscriber<? super T> subscriber, K interestedValue) {
@@ -38,6 +42,10 @@ public class KeyedRoutingFlux<T, K> extends RoutingFlux<T, K> {
                 interests.put(interestedValue, subscriberList);
             }
             subscriberList.add(subscriber);
+        }
+
+        public void registerSubscriberOtherwise(Subscriber<? super T> s) {
+            routeOtherwise.add(s);
         }
     }
 
@@ -69,6 +77,22 @@ public class KeyedRoutingFlux<T, K> extends RoutingFlux<T, K> {
 
     public KeyedRoutingFlux<T, K> route(final K interestedValue, Consumer<Flux<T>> fluxConsumer) {
         fluxConsumer.accept(route(interestedValue));
+        return this;
+    }
+
+    public Flux<T> routeOtherwise() {
+        subscriberCounter.incrementAndGet();
+        return new Flux<T>() {
+            @Override
+            public void subscribe(Subscriber<? super T> s) {
+                routingRegistry.registerSubscriberOtherwise(s);
+                KeyedRoutingFlux.this.subscribe(s);
+            }
+        };
+    }
+
+    public KeyedRoutingFlux<T, K> routeOtherwise(Consumer<Flux<T>> fluxConsumer) {
+        fluxConsumer.accept(routeOtherwise());
         return this;
     }
 }
