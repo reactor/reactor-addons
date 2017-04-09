@@ -46,13 +46,14 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
                 (subscriber) -> {}, (subscriber) -> {});
     }
 
+    @SuppressWarnings("unchecked")
     public static <T,K> RoutingFlux<T,K> create(Flux<T> source, int prefetch, Function<? super T, K> keyFunction,
                                                 BiFunction<Stream<Subscriber<? super T>>, K, Stream<Subscriber<? super T>>>
                                                         subscriptionFilter,
                                                 boolean autoConnect,
                                                 Consumer<Subscriber<? super T>> onSubscription,
                                                 Consumer<Subscriber<? super T>> onRemoval) {
-        return (RoutingFlux<T,K> ) onAssembly(new RoutingFlux<>(source, prefetch, QueueSupplier
+        return (RoutingFlux<T,K>) onAssembly(new RoutingFlux<>(source, prefetch, QueueSupplier
                 .get(prefetch), keyFunction, subscriptionFilter, autoConnect, onSubscription, onRemoval));
     }
 
