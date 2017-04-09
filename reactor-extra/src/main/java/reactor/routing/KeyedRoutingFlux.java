@@ -42,16 +42,16 @@ public class KeyedRoutingFlux<T, K> extends RoutingFlux<T, K> {
     }
 
     public static <T, K> KeyedRoutingFlux<T, K> create(Flux<? extends T> source, int prefetch, Supplier<? extends
-            Queue<T>> queueSupplier, Function<? super T, K> routingKeyFunction) {
+            Queue<T>> queueSupplier, Function<? super T, K> routingKeyFunction, boolean autoConnect) {
         return new KeyedRoutingFlux<T, K>(source, prefetch, queueSupplier, routingKeyFunction,
-                new RoutingRegistry<>());
+                new RoutingRegistry<>(), autoConnect);
     }
 
     private final RoutingRegistry<T, K> routingRegistry;
 
     KeyedRoutingFlux(Flux<? extends T> source, int prefetch, Supplier<? extends Queue<T>> queueSupplier, Function<?
-            super T, K> routingKeyFunction, RoutingRegistry<T, K> routingRegistry) {
-        super(source, prefetch, queueSupplier, routingKeyFunction, routingRegistry.filter,
+            super T, K> routingKeyFunction, RoutingRegistry<T, K> routingRegistry, boolean autoConnect) {
+        super(source, prefetch, queueSupplier, routingKeyFunction, routingRegistry.filter, autoConnect,
                 subscriber -> {}, routingRegistry.onSubscriberRemoved);
         this.routingRegistry = routingRegistry;
     }

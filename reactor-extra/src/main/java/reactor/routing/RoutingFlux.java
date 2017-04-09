@@ -37,22 +37,23 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
     }
 
     public static <T> RoutingFlux<T,T> create(Flux<T> source, int prefetch) {
-        return create(source, prefetch, Function.identity(), (subscribers, k) -> subscribers);
+        return create(source, prefetch, Function.identity(), (subscribers, k) -> subscribers, false);
     }
 
     public static <T,K> RoutingFlux<T,K> create(Flux<T> source, int prefetch, Function<T, K> keyFunction,
-                                                BiFunction<Stream<Subscriber<? super T>>, K, Stream<Subscriber<? super T>>> subscriberFilter) {
-        return create(source, prefetch, keyFunction, subscriberFilter,
+                                                BiFunction<Stream<Subscriber<? super T>>, K, Stream<Subscriber<? super T>>> subscriberFilter, boolean autoConnect) {
+        return create(source, prefetch, keyFunction, subscriberFilter, autoConnect,
                 (subscriber) -> {}, (subscriber) -> {});
     }
 
     public static <T,K> RoutingFlux<T,K> create(Flux<T> source, int prefetch, Function<? super T, K> keyFunction,
                                                 BiFunction<Stream<Subscriber<? super T>>, K, Stream<Subscriber<? super T>>>
                                                         subscriptionFilter,
+                                                boolean autoConnect,
                                                 Consumer<Subscriber<? super T>> onSubscription,
                                                 Consumer<Subscriber<? super T>> onRemoval) {
         return (RoutingFlux<T,K> ) onAssembly(new RoutingFlux<>(source, prefetch, QueueSupplier
-                .get(prefetch), keyFunction, subscriptionFilter, onSubscription, onRemoval));
+                .get(prefetch), keyFunction, subscriptionFilter, autoConnect, onSubscription, onRemoval));
     }
 
     /**
@@ -84,12 +85,17 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
 
     final AtomicInteger subscriberCounter = new AtomicInteger(0);
     final RoutingFluxRefCount<T> connectionHandlerWrapper = new RoutingFluxRefCount<>(this, subscriberCounter);
+    private final boolean autoConnect;
 
     RoutingFlux(Flux<? extends T> source,
                 int prefetch,
-                Supplier<? extends Queue<T>> queueSupplier, Function<? super T, K> routingKeyFunction, BiFunction<Stream<Subscriber<? super T>>, K, Stream<Subscriber<? super T>>> subscriberFilter, Consumer<Subscriber<? super T>> onSubscriberAdded, Consumer<Subscriber<? super T>> onSubscriberRemoved) {
+                Supplier<? extends Queue<T>> queueSupplier, Function<? super T, K> routingKeyFunction,
+                BiFunction<Stream<Subscriber<? super T>>, K, Stream<Subscriber<? super T>>> subscriberFilter,
+                boolean autoConnect, Consumer<Subscriber<? super T>> onSubscriberAdded,
+                Consumer<Subscriber<? super T>> onSubscriberRemoved) {
         this.routingKeyFunction = routingKeyFunction;
         this.subscriberFilter = subscriberFilter;
+        this.autoConnect = autoConnect;
         this.onSubscriberAdded = onSubscriberAdded;
         this.onSubscriberRemoved = onSubscriberRemoved;
         if (prefetch <= 0) {
@@ -149,11 +155,15 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
 
     @Override
     public void subscribe(Subscriber<? super T> s) {
-        connectionHandlerWrapper.subscribe(s);
+        if(autoConnect) {
+            connectionHandlerWrapper.subscribe(s);
+        } else {
+            subscribeDirect(s, () -> s);
+        }
     }
 
-    void subscribeDirect(RefCountInner<? super T> s) {
-        RoutingFlux.PublishInner<T,K> inner = new RoutingFlux.PublishInner<>(s);
+    void subscribeDirect(Subscriber<? super T> s, Supplier<Subscriber<? super T>> actualSubscriberSupplier) {
+        RoutingFlux.PublishInner<T,K> inner = new RoutingFlux.PublishInner<>(s, actualSubscriberSupplier);
         s.onSubscribe(inner);
         for (; ; ) {
             if (inner.isCancelled()) {
@@ -342,7 +352,7 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
             queue.clear();
             CancellationException ex = new CancellationException("Disconnected");
             for (RoutingFlux.PublishInner<T,K> inner : terminate()) {
-                inner.actual.onError(ex);
+                inner.subscriber.onError(ex);
             }
         }
 
@@ -549,7 +559,7 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
                             RoutingFlux.PublishInner<T, K> inner =
                                     actualSubscriberToInner.get(actualSubscriber);
                             if (inner != null) {
-                                inner.actual.onNext(v);
+                                inner.subscriber.onNext(v);
                                 if (inner.produced(1) == RoutingFlux.PublishInner.CANCEL_REQUEST) {
                                     cancel = Integer.MIN_VALUE;
                                 }
@@ -587,14 +597,14 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
                     e = Exceptions.terminate(ERROR, this);
                     queue.clear();
                     for (RoutingFlux.PublishInner<T,K> inner : terminate()) {
-                        inner.actual.onError(e);
+                        inner.subscriber.onError(e);
                         deregisterInner(inner);
                     }
                     return true;
                 } else if (empty) {
                     CONNECTION.compareAndSet(parent, this, null);
                     for (RoutingFlux.PublishInner<T,K> inner : terminate()) {
-                        inner.actual.onComplete();
+                        inner.subscriber.onComplete();
                         deregisterInner(inner);
                     }
                     return true;
@@ -636,7 +646,8 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
 
     static final class PublishInner<T,K> implements Scannable, Subscription {
 
-        final RefCountInner<? super T> actual;
+        final Subscriber<? super T> subscriber;
+        final Supplier<Subscriber<? super T>> actualSubscriberSupplier;
 
         RoutingFlux.PublishSubscriber<T,K> parent;
 
@@ -645,8 +656,9 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
         static final AtomicLongFieldUpdater<PublishInner> REQUESTED =
                 AtomicLongFieldUpdater.newUpdater(RoutingFlux.PublishInner.class, "requested");
 
-        PublishInner(RefCountInner<? super T> actual) {
-            this.actual = actual;
+        PublishInner(Subscriber<? super T> subscriber, Supplier<Subscriber<? super T>> actualSubscriberSupplier) {
+            this.subscriber = subscriber;
+            this.actualSubscriberSupplier = actualSubscriberSupplier;
         }
 
         @Override
@@ -682,7 +694,7 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
         }
 
         public Subscriber<? super T> actual() {
-            return actual.actual();
+            return actualSubscriberSupplier.get();
         }
 
         @Override
@@ -831,7 +843,7 @@ public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
             // FIXME think about what happens when subscribers come and go below the connection threshold concurrently
 
             RefCountInner<T> inner = new RefCountInner<>(s, this);
-            parent.source.subscribeDirect(inner);
+            parent.source.subscribeDirect(inner, () -> inner.actual());
 
             if (SUBSCRIBERS.incrementAndGet(this) >= n.get()) {
                 parent.source.connect(this);

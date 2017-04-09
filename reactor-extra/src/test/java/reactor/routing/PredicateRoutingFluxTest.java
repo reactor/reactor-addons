@@ -18,7 +18,7 @@ public class PredicateRoutingFluxTest {
     public void supportFluentRoutingSyntax() {
         PredicateRoutingFlux<Integer, Integer> routingFlux = PredicateRoutingFlux.create(Flux.range(1, 5),
                 QueueSupplier.SMALL_BUFFER_SIZE, QueueSupplier.get(QueueSupplier.SMALL_BUFFER_SIZE),
-                Function.identity());
+                Function.identity(), true);
 
         Flux<Integer> evenFlux = routingFlux.route(x -> x % 2 == 0);
         Flux<Integer> oddFlux = routingFlux.route(x -> x % 2 != 0);
@@ -34,7 +34,7 @@ public class PredicateRoutingFluxTest {
     public void fluentRoutingSubscribePartiallyLastUnconsumed() {
         PredicateRoutingFlux<Integer, Integer> routingFlux = PredicateRoutingFlux.create(Flux.range(1, 5),
                 QueueSupplier.SMALL_BUFFER_SIZE, QueueSupplier.get(QueueSupplier.SMALL_BUFFER_SIZE),
-                Function.identity());
+                Function.identity(), true);
 
         Flux<Integer> evenFlux = routingFlux.route(x -> x % 2 == 0);
         routingFlux.route(x -> x % 2 != 0).subscribe();
@@ -48,7 +48,7 @@ public class PredicateRoutingFluxTest {
     public void fluentRoutingSubscribePartiallyLastConsumed() {
         PredicateRoutingFlux<Integer, Integer> routingFlux = PredicateRoutingFlux.create(Flux.range(1, 5),
                 QueueSupplier.SMALL_BUFFER_SIZE, QueueSupplier.get(QueueSupplier.SMALL_BUFFER_SIZE),
-                Function.identity());
+                Function.identity(), true);
 
         routingFlux.route(x -> x % 2 == 0).log().subscribe();
         Flux<Integer> oddFlux = routingFlux.route(x -> x % 2 != 0).log();

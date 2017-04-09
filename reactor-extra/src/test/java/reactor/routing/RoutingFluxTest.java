@@ -31,7 +31,7 @@ public class RoutingFluxTest {
                             return subscriber == ts2;
                         }
                     });
-                });
+                }, false);
 
         p.subscribe(ts1);
         p.subscribe(ts2);
@@ -70,7 +70,8 @@ public class RoutingFluxTest {
                         return ts2;
                     }
                 },
-                (subscribers, key) -> subscribers.filter(subscriber -> subscriber == key)
+                (subscribers, key) -> subscribers.filter(subscriber -> subscriber == key),
+                false
         );
 
         p.subscribe(ts1);
