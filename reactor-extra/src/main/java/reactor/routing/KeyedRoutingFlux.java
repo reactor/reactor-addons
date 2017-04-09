@@ -66,4 +66,9 @@ public class KeyedRoutingFlux<T, K> extends RoutingFlux<T, K> {
             }
         };
     }
+
+    public KeyedRoutingFlux<T, K> route(final K interestedValue, Consumer<Flux<T>> fluxConsumer) {
+        fluxConsumer.accept(route(interestedValue));
+        return this;
+    }
 }

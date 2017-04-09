@@ -52,4 +52,9 @@ public class PredicateRoutingFlux<T, K> extends RoutingFlux<T, K> {
             }
         };
     }
+
+    public PredicateRoutingFlux<T, K> route(final Predicate<K> interest, Consumer<Flux<T>> fluxConsumer) {
+        fluxConsumer.accept(route(interest));
+        return this;
+    }
 }

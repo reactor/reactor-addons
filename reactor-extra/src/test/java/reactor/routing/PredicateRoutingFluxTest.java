@@ -8,6 +8,7 @@ import reactor.util.concurrent.QueueSupplier;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
@@ -15,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public class PredicateRoutingFluxTest {
 
     @Test
-    public void supportFluentRoutingSyntax() {
+    public void supportPredicateRouting() {
         PredicateRoutingFlux<Integer, Integer> routingFlux = PredicateRoutingFlux.create(Flux.range(1, 5),
                 QueueSupplier.SMALL_BUFFER_SIZE, QueueSupplier.get(QueueSupplier.SMALL_BUFFER_SIZE),
                 Function.identity(), true);
@@ -28,6 +29,21 @@ public class PredicateRoutingFluxTest {
 
         assertEquals(Arrays.asList(2, 4), evenListMono.block());
         assertEquals(Arrays.asList(1, 3, 5), oddListMono.block());
+    }
+
+    @Test
+    public void supportFluentRoutingSyntax() {
+        PredicateRoutingFlux<Integer, Integer> routingFlux = PredicateRoutingFlux.create(Flux.range(1, 5),
+                QueueSupplier.SMALL_BUFFER_SIZE, QueueSupplier.get(QueueSupplier.SMALL_BUFFER_SIZE),
+                Function.identity(), true);
+
+        AtomicReference<Mono<List<Integer>>> evenListMono = new AtomicReference<>();
+        AtomicReference<Mono<List<Integer>>> oddListMono = new AtomicReference<>();
+        routingFlux.route(x -> x % 2 == 0, flux -> evenListMono.set(flux.collectList().subscribe()))
+                .route(x -> x % 2 != 0, flux -> oddListMono.set(flux.collectList().subscribe()));
+
+        assertEquals(Arrays.asList(2, 4), evenListMono.get().block());
+        assertEquals(Arrays.asList(1, 3, 5), oddListMono.get().block());
     }
 
     @Test
