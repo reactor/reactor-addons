@@ -7,7 +7,6 @@ import reactor.core.Exceptions;
 import reactor.core.Fuseable;
 import reactor.core.Fuseable.QueueSubscription;
 import reactor.core.Scannable;
-import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Operators;
 import reactor.util.concurrent.QueueSupplier;
@@ -31,7 +30,7 @@ import java.util.stream.Stream;
  * @param <T> value type
  * @param <K> key type
  */
-public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
+public class RoutingFlux<T,K> extends Flux<T> implements Scannable {
 
     public static <T> RoutingFlux<T,T> create(Flux<T> source) {
         return create(source, QueueSupplier.SMALL_BUFFER_SIZE);
@@ -101,7 +100,28 @@ public class RoutingFlux<T,K> extends ConnectableFlux<T> implements Scannable {
         this.queueSupplier = Objects.requireNonNull(queueSupplier, "queueSupplier");
     }
 
-    @Override
+    /**
+     * Connect this {@link RoutingFlux} to its source and return a {@link Runnable} that
+     * can be used for disconnecting.
+     * @return the {@link Disposable} that allows disconnecting the connection after.
+     */
+    public final Disposable connect() {
+        final Disposable[] out = { null };
+        connect(r -> out[0] = r);
+        return out[0];
+    }
+
+    /**
+     * Connects this {@link RoutingFlux} to its source and sends a {@link Disposable} to a callback that
+     * can be used for disconnecting.
+     *
+     * <p>The call should be idempotent in respect of connecting the first
+     * and subsequent times. In addition the disconnection should be also tied
+     * to a particular connection (so two different connection can't disconnect the other).
+     *
+     * @param cancelSupport the callback is called with a Disposable instance that can
+     * be called to disconnect the source, even synchronously.
+     */
     public void connect(Consumer<? super Disposable> cancelSupport) {
         boolean doConnect;
         RoutingFlux.PublishSubscriber<T,K> s;

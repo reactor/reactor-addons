@@ -3,7 +3,6 @@ package reactor.routing;
 import org.junit.Assert;
 import org.junit.Test;
 import reactor.core.Disposable;
-import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
@@ -22,7 +21,7 @@ public class RoutingFluxTest {
         AssertSubscriber<Integer> ts1 = AssertSubscriber.create();
         AssertSubscriber<Integer> ts2 = AssertSubscriber.create();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(Flux.range(1, 5), QueueSupplier.SMALL_BUFFER_SIZE,
+        RoutingFlux<Integer,?> p = RoutingFlux.create(Flux.range(1, 5), QueueSupplier.SMALL_BUFFER_SIZE,
                 Function.identity(),
                 (subscribers, value) -> {
                     return subscribers.filter(subscriber -> {
@@ -63,7 +62,7 @@ public class RoutingFluxTest {
         AssertSubscriber<Integer> ts1 = AssertSubscriber.create();
         AssertSubscriber<Integer> ts2 = AssertSubscriber.create();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(Flux.range(1, 5), QueueSupplier.SMALL_BUFFER_SIZE,
+        RoutingFlux<Integer,?> p = RoutingFlux.create(Flux.range(1, 5), QueueSupplier.SMALL_BUFFER_SIZE,
                 value -> {
                     if(value % 2 == 0) {
                         return ts1;
@@ -94,7 +93,7 @@ public class RoutingFluxTest {
         AssertSubscriber<Integer> ts1 = AssertSubscriber.create(0);
         AssertSubscriber<Integer> ts2 = AssertSubscriber.create(0);
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(Flux.range(1, 5));
+        RoutingFlux<Integer,?> p = RoutingFlux.create(Flux.range(1, 5));
 
         p.subscribe(ts1);
         p.subscribe(ts2);
@@ -157,7 +156,7 @@ public class RoutingFluxTest {
         up.onNext(5);
         up.onComplete();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(up);
+        RoutingFlux<Integer,?> p = RoutingFlux.create(up);
 
         p.subscribe(ts1);
         p.subscribe(ts2);
@@ -196,7 +195,7 @@ public class RoutingFluxTest {
         up.onNext(5);
         up.onComplete();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(up);
+        RoutingFlux<Integer,?> p = RoutingFlux.create(up);
 
         p.subscribe(ts1);
         p.subscribe(ts2);
@@ -251,7 +250,7 @@ public class RoutingFluxTest {
         AssertSubscriber<Integer> ts1 = AssertSubscriber.create();
         AssertSubscriber<Integer> ts2 = AssertSubscriber.create();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(Flux.range(1, 5), 5);
+        RoutingFlux<Integer,?> p = RoutingFlux.create(Flux.range(1, 5), 5);
 
         p.subscribe(ts1);
         p.subscribe(ts2);
@@ -282,7 +281,7 @@ public class RoutingFluxTest {
         AssertSubscriber<Integer> ts1 = AssertSubscriber.create(0);
         AssertSubscriber<Integer> ts2 = AssertSubscriber.create(0);
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(Flux.range(1, 5), 5);
+        RoutingFlux<Integer,?> p = RoutingFlux.create(Flux.range(1, 5), 5);
 
         p.subscribe(ts1);
         p.subscribe(ts2);
@@ -339,7 +338,7 @@ public class RoutingFluxTest {
         EmitterProcessor<Integer> e = EmitterProcessor.create();
         e.connect();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(e);
+        RoutingFlux<Integer,?> p = RoutingFlux.create(e);
 
         p.subscribe(ts);
 
@@ -364,7 +363,7 @@ public class RoutingFluxTest {
         EmitterProcessor<Integer> e = EmitterProcessor.create();
         e.connect();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(e);
+        RoutingFlux<Integer,?> p = RoutingFlux.create(e);
 
         p.subscribe(ts);
 
@@ -386,7 +385,7 @@ public class RoutingFluxTest {
         EmitterProcessor<Integer> e = EmitterProcessor.create();
         e.connect();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(e);
+        RoutingFlux<Integer,?> p = RoutingFlux.create(e);
 
         p.subscribe(ts);
 
@@ -406,7 +405,7 @@ public class RoutingFluxTest {
     public void fusedMapInvalid() {
         AssertSubscriber<Integer> ts = AssertSubscriber.create();
 
-        ConnectableFlux<Integer> p = RoutingFlux.create(Flux.range(1, 5).map(v -> (Integer)null));
+        RoutingFlux<Integer,?> p = RoutingFlux.create(Flux.range(1, 5).map(v -> (Integer)null));
 
         p.subscribe(ts);
 
