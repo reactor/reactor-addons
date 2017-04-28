@@ -25,7 +25,6 @@ import java.util.function.Predicate;
 
 import org.reactivestreams.Publisher;
 
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
@@ -537,33 +536,29 @@ public class RetryBuilder<T> {
 
 		@Override
 		public Publisher<Long> apply(Flux<Long> companionValues) {
-
-			EmitterProcessor<Long> emitter = EmitterProcessor.create();
-			return companionValues.zipWith(Flux.range(1, Integer.MAX_VALUE))
-							.concatMap(tuple -> repeatWhen(tuple.getT2(), emitter, tuple.getT1()))
-							.zipWith(emitter, (t1, t2) -> t1);
+			return companionValues
+					.zipWith(Flux.range(1, Integer.MAX_VALUE), this::nextRepeat)
+					.takeWhile(backoff -> backoff != NO_RETRY)
+					.concatMap(backoff -> retryMono(backoff));
 		}
 
-		Publisher<Long> repeatWhen(long attempts, EmitterProcessor<Long> emitter, Long companionValue) {
+		Duration nextRepeat(Long companionValue, int attempts) {
 			retryContext.setAttempts(attempts);
 			retryContext.setCompanionValue(companionValue);
 			Duration backoff = calculateBackoff();
 
 			if (!retryPredicate.test(retryContext)) {
 				log.debug("Stopping repeats since predicate returned false, retry context: {}", retryContext);
-				emitter.onComplete();
-				return Mono.empty();
+				return NO_RETRY;
 			}
 			else if (backoff == NO_RETRY) {
 				log.debug("Repeats exhausted, retry context: {}", retryContext);
-				emitter.onComplete();
-				return Mono.empty();
+				return NO_RETRY;
 			}
 			else {
 				log.debug("Scheduling repeat attempt, retry context: {}", retryContext);
 				onRetry.accept(retryContext);
-				emitter.onNext(attempts);
-				return retryMono(backoff);
+				return backoff;
 			}
 		}
 	}
