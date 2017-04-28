@@ -562,6 +562,55 @@ public class RetryBuilderTests {
 
 	}
 
+	@Test
+	public void fluxRetryCompose() {
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(3);
+		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new IOException())).as(builder::retry);
+
+		StepVerifier.create(flux)
+					.expectNext(0, 1, 0, 1, 0, 1)
+					.verifyError(RetryExhaustedException.class);
+		assertRetries(IOException.class, IOException.class);
+	}
+
+	@Test
+	public void fluxRepeatCompose() {
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(3);
+		Flux<Integer> flux = Flux.range(0, 2).as(builder::repeat);
+
+		StepVerifier.create(flux)
+					.expectNext(0, 1, 0, 1, 0, 1)
+					.verifyComplete();
+		assertRepeats(2L, 2L);
+	}
+
+	@Test
+	public void monoRetryCompose() {
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(3);
+		Flux<?> flux = Mono.error(new IOException()).as(builder::retry);
+
+		StepVerifier.create(flux)
+					.verifyError(RetryExhaustedException.class);
+		assertRetries(IOException.class, IOException.class);
+	}
+
+	@Test
+	public void monoRepeatCompose() {
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(4);
+		Flux<Integer> flux = Mono.just(5).as(builder::repeat);
+
+		StepVerifier.create(flux)
+					.expectNext(5, 5, 5, 5)
+					.verifyComplete();
+		assertRepeats(1L, 1L, 1L);
+
+		// Test with empty Mono
+		retries.clear();
+		StepVerifier.create(Mono.empty().as(builder::repeat))
+					.verifyComplete();
+		assertRepeats(0L, 0L, 0L);
+	}
+
 	private RetryBuilder<?> createBuilder() {
 		return RetryBuilder.create()
 				.doOnRetry(c -> retries.add(c.clone()));

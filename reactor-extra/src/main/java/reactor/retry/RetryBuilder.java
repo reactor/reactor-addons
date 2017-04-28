@@ -77,7 +77,7 @@ import reactor.util.Loggers;
  *                          .anyOf(SocketException.class)
  *                          .exponentialBackoff(Duration.ofMillis(100), Duration.ofSeconds(60))
  *                          .doOnRetry(context -&gt; context.getApplicationContext().rollback());
- *    flux.retryWhen(retryBuilder.buildRetry());
+ *    flux.as(retryBuilder::retry);
  * </code></pre>
  *
  */
@@ -398,6 +398,44 @@ public class RetryBuilder<T> {
 	 */
 	public Function<Flux<Long>, ? extends Publisher<?>> buildRepeat() {
 		return new RepeatFunction<T>(this);
+	}
+
+	/**
+	 * Transforms the source into a {@link Flux} that retries errors using the retry
+	 * configuration of this builder.
+	 * <p>
+	 * Example usage:
+	 * <pre><code>
+	 *    builder = RetryBuilder.create(applicationContext)
+	 *                          .anyOf(SocketException.class)
+	 *                          .exponentialBackoff(Duration.ofMillis(100), Duration.ofSeconds(60))
+	 *                          .doOnRetry(context -&gt; context.getApplicationContext().rollback());
+	 *    flux.as(retryBuilder::retry);
+	 * </code></pre>
+	 *
+	 * @param source the source publisher
+	 * @return {@link Flux} with retries configured on this builder
+	 */
+	public <S> Flux<S> retry(Publisher<S> source) {
+		return Flux.from(source).retryWhen(this.buildRetry());
+	}
+
+
+	/**
+	 * Transforms the source into a repeating {@link Flux} using the repeat
+	 * configuration of this builder.
+	 * <p>
+	 * Example usage:
+	 *  <pre><code>
+	 *    builder = RetryBuilder.create().maxAttempts(5);
+	 *    flux.as(retryBuilder::repeat);
+	 * </code></pre>
+	 *
+	 * @param source the source publisher
+	 * @return {@link Flux} with repeats configured on this builder
+	 */
+	public <S> Flux<S> repeat(Publisher<S> source) {
+		return Flux.from(source).repeatWhen(this.buildRepeat());
 	}
 
 	Duration noJitter(RetryContext<T> context) {
