@@ -70,53 +70,84 @@ import reactor.util.Loggers;
  *       <li>Retry context with application state</li>
  *   </ul></li>
  * </ul>
+ * <p>
+ * Example usage:
+ * <pre><code>
+ *    builder = RetryBuilder.create(applicationContext)
+ *                          .anyOf(SocketException.class)
+ *                          .exponentialBackoff(Duration.ofMillis(100), Duration.ofSeconds(60))
+ *                          .doOnRetry(context -&gt; context.getApplicationContext().rollback());
+ *    flux.retryWhen(retryBuilder.buildRetry());
+ * </code></pre>
  *
  */
-public class RetryBuilder {
+public class RetryBuilder<T> {
 
 	static final Logger log = Loggers.getLogger(RetryBuilder.class);
 
 	static final Duration NO_RETRY = Duration.ofSeconds(-1);
 
-	final Predicate<RetryContext> retryPredicate;
+	final RetryContext<T> retryContext;
+	Predicate<RetryContext<T>> retryPredicate;
 	Integer maxAttempts;
 	Duration timeout;
-	Instant timeoutInstant;
-	Function<RetryContext, Duration> backoffCalculator;
+	Function<RetryContext<T>, Duration> backoffCalculator;
+	Function<RetryContext<T>, Duration> jitter;
 	Scheduler backoffScheduler;
-	Consumer<RetryContext> onRetry;
-	RetryContext retryContext;
+	Consumer<RetryContext<T>> onRetry;
 
-	RetryBuilder(Predicate<RetryContext> retryPredicate) {
-		this.retryPredicate = retryPredicate;
-		this.maxAttempts = null;
-		this.onRetry = r -> {};
-		this.retryContext = new RetryContext(null);
+	RetryBuilder(T applicationContext) {
+		this.retryContext = new RetryContext<T>(applicationContext);
+		any();
 		noBackoff();
+		this.onRetry = r -> {};
 	}
 
 	/**
-	 * Creates a RetryBuilder that retries based on the number of attempts configured
-	 * using {@link #maxAttempts(int)} and the overall timeout configured using
-	 * {@link #timeout(Duration)}. Any exception may be retried.
-	 * @return
+	 * Creates a RetryBuilder without an application context.
+	 * @return instance of {@link RetryBuilder}
 	 */
-	public static RetryBuilder any() {
-		return new RetryBuilder(context -> true);
+	public static RetryBuilder<Object> create() {
+		return new RetryBuilder<Object>(null);
+	}
+
+
+
+	/**
+	 * Creates a RetryBuilder with an application context that may be used in
+	 * rollback operations specified using {@link #doOnRetry(Consumer)}.
+	 * @param applicationContext Application context
+	 * @return instance of {@link RetryBuilder}
+	 */
+	public static <T> RetryBuilder<T> create(T applicationContext) {
+		return new RetryBuilder<T>(applicationContext);
 	}
 
 	/**
-	 * Creates a RetryBuilder that retries errors resulting from any of the specified retriable
+	 * Configures retry for any exception. This is the default.
+	 * The number of retries is limited by the number of attempts configured
+	 * using {@link #maxAttempts(int)} and the overall timeout configured using
+	 * {@link #timeout(Duration)}.
+	 *
+	 * @return updated {@link RetryBuilder}
+	 */
+	public RetryBuilder<T> any() {
+		retryPredicate = context -> true;
+		return this;
+	}
+
+	/**
+	 * Configures retries for errors resulting from any of the specified retriable
 	 * exceptions. The number of retries is limited by the number of attempts configured
 	 * using {@link #maxAttempts(int)} and the overall timeout configured using
 	 * {@link #timeout(Duration)}.
 	 *
 	 * @param retriableExceptions Exception classes for which retry may be attempted.
-	 * @return instance of RetryBuilder that retries only the specified exceptions
+	 * @return updated {@link RetryBuilder}
 	 */
 	@SafeVarargs
-	public static RetryBuilder anyOf(Class<? extends Throwable>... retriableExceptions) {
-		return new RetryBuilder(context -> {
+	public final RetryBuilder<T> anyOf(Class<? extends Throwable>... retriableExceptions) {
+		retryPredicate = context -> {
 			Throwable exception = context.getException();
 			if (exception == null)
 				return true;
@@ -125,21 +156,22 @@ public class RetryBuilder {
 					return true;
 			}
 			return false;
-		});
+		};
+		return this;
 	}
 
 	/**
-	 * Creates a RetryBuilder that retries errors which are not any of the specified non-retriable
+	 * Configures retries for errors which are not any of the specified non-retriable
 	 * exceptions. The number of retries is limited by the number of attempts configured
 	 * using {@link #maxAttempts(int)} and the overall timeout configured using
 	 * {@link #timeout(Duration)}.
 	 *
 	 * @param nonRetriableExceptions Exception classes for which retry is not attempted.
-	 * @return instance of RetryBuilder that retries all exceptions except the specified non-retriable exceptions
+	 * @return updated {@link RetryBuilder}
 	 */
 	@SafeVarargs
-	public static RetryBuilder allBut(final Class<? extends Throwable>... nonRetriableExceptions) {
-		return new RetryBuilder(context -> {
+	public final RetryBuilder<T> allBut(final Class<? extends Throwable>... nonRetriableExceptions) {
+		retryPredicate = context -> {
 			Throwable exception = context.getException();
 			if (exception == null)
 				return true;
@@ -148,21 +180,24 @@ public class RetryBuilder {
 					return false;
 			}
 			return true;
-		});
+		};
+		return this;
 	}
 
 	/**
-	 * Creates a RetryBuilder that uses the predicate provided to determine if a
-	 * repeat or retry may be attempted. The context is updated with the latest
-	 * iteration count, exception if any as well as the next backoff interval before
-	 * the predicate is invoked. Retries may be further limited by {@link #timeout(Duration)}
+	 * Configures a custom predicate provided to determine if a repeat or
+	 * retry may be attempted. The context is updated with the latest iteration count,
+	 * exception if any as well as the next backoff interval before the predicate is
+	 * invoked. Retries may be further limited by {@link #timeout(Duration)}
 	 * and {@link #maxAttempts(int)}.
 	 *
 	 * @param predicate Predicate to determine if another retry may be performed
-	 * @return instance of RetryBuilder that retries only if predicate returns true
+	 * @return updated {@link RetryBuilder}
 	 */
-	public static RetryBuilder onlyIf(Predicate<RetryContext> predicate) {
-		return new RetryBuilder(context -> predicate.test(context)).maxAttempts(Integer.MAX_VALUE);
+	public RetryBuilder<T> onlyIf(Predicate<RetryContext<T>> predicate) {
+		retryPredicate = context -> predicate.test(context);
+		maxAttempts = Integer.MAX_VALUE;
+		return this;
 	}
 
 	/**
@@ -171,7 +206,7 @@ public class RetryBuilder {
 	 * timeout is configured.
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder once() {
+	public RetryBuilder<T> once() {
 		this.maxAttempts = 1;
 		return this;
 	}
@@ -185,7 +220,7 @@ public class RetryBuilder {
 	 *
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder maxAttempts(int maxAttempts) {
+	public RetryBuilder<T> maxAttempts(int maxAttempts) {
 		if (maxAttempts <= 0)
 			throw new IllegalArgumentException("maxAttempts should be > 0");
 		this.maxAttempts = maxAttempts;
@@ -202,7 +237,7 @@ public class RetryBuilder {
 	 * @param timeout Timeout for completion, no retries are attempted beyond this timeout.
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder timeout(Duration timeout) {
+	public RetryBuilder<T> timeout(Duration timeout) {
 		if (timeout.isNegative())
 			throw new IllegalArgumentException("timeout should be >= 0");
 		this.timeout = timeout;
@@ -214,8 +249,9 @@ public class RetryBuilder {
 	 *
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder noBackoff() {
+	public RetryBuilder<T> noBackoff() {
 		this.backoffCalculator = context -> Duration.ZERO;
+		this.jitter = this::noJitter;
 		return this;
 	}
 
@@ -226,8 +262,9 @@ public class RetryBuilder {
 	 * @param backoffInterval delay between retries
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder fixedBackoff(Duration backoffInterval) {
+	public RetryBuilder<T> fixedBackoff(Duration backoffInterval) {
 		this.backoffCalculator = context -> backoffInterval;
+		this.jitter = this::noJitter;
 		return this;
 	}
 
@@ -242,17 +279,35 @@ public class RetryBuilder {
 	 * @param maxBackoff the maximum backoff delay before a retry
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder exponentialBackoff(Duration firstBackoff, Duration maxBackoff) {
+	public RetryBuilder<T> exponentialBackoff(Duration firstBackoff, Duration maxBackoff) {
 		if (firstBackoff == null || firstBackoff.isNegative() || firstBackoff.isZero())
 			throw new IllegalArgumentException("firstBackoff must be > 0");
 		Duration maxBackoffInterval = maxBackoff != null ? maxBackoff : Duration.ofSeconds(Long.MAX_VALUE);
 		if (maxBackoffInterval.compareTo(firstBackoff) <= 0)
 			throw new IllegalArgumentException("maxBackoff must be >= firstBackoff");
+		retryContext.setMinBackoff(firstBackoff);
+		retryContext.setMaxBackoff(maxBackoffInterval);
 		this.backoffCalculator = context -> {
-			Duration expBackoff = firstBackoff.multipliedBy((long) Math.pow(2, (context.getAttempts() - 1)));
-			Duration backoff = expBackoff.compareTo(maxBackoffInterval) < 0 ? expBackoff : maxBackoffInterval;
-			return backoff;
+			return firstBackoff.multipliedBy((long) Math.pow(2, (context.getAttempts() - 1)));
 		};
+		this.jitter = this::noJitter;
+		return this;
+	}
+
+	/**
+	 * Configures full jitter backoff strategy between retries. The scheduler used for backoff may
+	 * be configured using {@link #backoffScheduler(Scheduler)}. Retries are performed after a backoff
+	 * interval of <code>firstBackoff * (2 ** n)</code> where n is the number of retries completed (attempts -1).
+	 * If <code>maxBackoff</code> is not null, the maximum backoff applied will be limited to <code>maxBackoff</code>.
+	 * The total number of attempts can be limited by {@link #timeout(Duration)} and/or {@link #maxAttempts(int)}.
+	 *
+	 * @param firstBackoff delay for the first backoff, which is also used as the coefficient for subsequent backoffs
+	 * @param maxBackoff the maximum backoff delay before a retry
+	 * @return updated {@link RetryBuilder}
+	 */
+	public RetryBuilder<T> exponentialBackoffWithJitter(Duration firstBackoff, Duration maxBackoff) {
+		exponentialBackoff(firstBackoff, maxBackoff);
+		this.jitter = this::randomJitter;
 		return this;
 	}
 
@@ -267,20 +322,20 @@ public class RetryBuilder {
 	 * @param maxBackoff the maximum backoff delay before a retry
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder randomBackoff(Duration firstBackoff, Duration maxBackoff) {
+	public RetryBuilder<T> randomBackoff(Duration firstBackoff, Duration maxBackoff) {
 		if (firstBackoff == null || firstBackoff.isNegative() || firstBackoff.isZero())
 			throw new IllegalArgumentException("firstBackoff must be > 0");
-		long firstBackoffMs = firstBackoff.toMillis();
-		long maxBackoffMs = maxBackoff != null ? maxBackoff.toMillis() : Long.MAX_VALUE;
-		if (maxBackoffMs < firstBackoffMs)
+		Duration maxBackoffInterval = maxBackoff != null ? maxBackoff : Duration.ofSeconds(Long.MAX_VALUE);
+		if (maxBackoffInterval.compareTo(firstBackoff) <= 0)
 			throw new IllegalArgumentException("maxBackoff must be >= firstBackoff");
-		ThreadLocalRandom random = ThreadLocalRandom.current();
+		retryContext.setMinBackoff(firstBackoff);
 		this.backoffCalculator = context -> {
-			long prevBackoffMs = context.getBackoff() == null ? 0 : context.getBackoff().toMillis();
-			long maxMs = Math.max(firstBackoffMs, prevBackoffMs * 3);
-			long jitterBackoffMs = firstBackoffMs == maxMs ? firstBackoffMs : random.nextLong(firstBackoffMs, maxMs);
-			return Duration.ofMillis(Math.min(maxBackoffMs, jitterBackoffMs));
+			Duration prevBackoff = context.getBackoff() == null ? Duration.ZERO : context.getBackoff();
+			Duration nextBackoff = prevBackoff.multipliedBy(3);
+			return nextBackoff.compareTo(firstBackoff) < 0 ? firstBackoff : nextBackoff;
 		};
+
+		this.jitter = this::randomJitter;
 		return this;
 	}
 
@@ -289,34 +344,21 @@ public class RetryBuilder {
 	 * @param scheduler a scheduler instance
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder backoffScheduler(Scheduler scheduler) {
+	public RetryBuilder<T> backoffScheduler(Scheduler scheduler) {
 		this.backoffScheduler = scheduler;
-		return this;
-	}
-
-	/**
-	 * Configures a retry context which may include application context. Applications which need access to
-	 * application state for rollbacks may set a retry context for easy access to the state in
-	 * {@link #doOnRetry(Consumer)} callbacks.
-	 *
-	 * @param retryContext RetryContext instance which is included in {@link #doOnRetry(Consumer)} callbacks
-	 * @return updated {@link RetryBuilder}
-	 */
-	public RetryBuilder retryContext(RetryContext retryContext) {
-		this.retryContext = retryContext;
 		return this;
 	}
 
 	/**
 	 * Configures an <code>onRetry</code> callback that is invoked prior to every retry
 	 * attempt, before any backoff delay. Any rollbacks that need to be performed before
-	 * retry can be performed in the callback. Application context required for rollback
-	 * may be configured using {@link #retryContext(RetryContext)}.
+	 * retry can be performed in the callback. Application context specified in
+	 * {@link RetryBuilder#create(Object)} can be accessed using {@link RetryContext#getApplicationContext()}.
 	 *
 	 * @param onRetry callback for retry notification
 	 * @return updated {@link RetryBuilder}
 	 */
-	public RetryBuilder doOnRetry(Consumer<RetryContext> onRetry) {
+	public RetryBuilder<T> doOnRetry(Consumer<RetryContext<T>> onRetry) {
 		this.onRetry = onRetry;
 		return this;
 	}
@@ -338,11 +380,8 @@ public class RetryBuilder {
 	 *         source sequence and returning a {@link Publisher} companion.
 	 */
 	public Function<Flux<Throwable>, ? extends Publisher<?>> buildRetry() {
-		initialize();
-		return errors -> errors.zipWith(Flux.range(1, Integer.MAX_VALUE)).flatMap(tuple -> retryWhen(tuple.getT2(), tuple.getT1()));
+		return new RetryFunction<T>(this);
 	}
-
-
 
 	/**
 	 * Returns a function that may be used to control repeats when used with:
@@ -357,79 +396,136 @@ public class RetryBuilder {
 	 *         source sequence and returning a {@link Publisher} companion.
 	 */
 	public Function<Flux<Long>, ? extends Publisher<?>> buildRepeat() {
-		EmitterProcessor<Long> emitter = EmitterProcessor.create();
-		initialize();
-		return companionValues -> companionValues.zipWith(Flux.range(1, Integer.MAX_VALUE))
-				.flatMap(tuple -> repeatWhen(tuple.getT2(), emitter, tuple.getT1()))
-				.zipWith(emitter, (t1, t2) -> t1);
+		return new RepeatFunction<T>(this);
 	}
 
-	private void initialize() {
-		if (maxAttempts == null)
-			maxAttempts = timeout == null ? 1 : Integer.MAX_VALUE;
-		timeoutInstant = timeout != null ? Instant.now().plus(timeout) : Instant.MAX;
+	Duration noJitter(RetryContext<T> context) {
+		return context.getBackoff();
 	}
 
-	private Duration calculateBackoff() {
-		Duration backoff = backoffCalculator.apply(retryContext);
-		retryContext.setBackoff(backoff);
-		if (retryContext.getAttempts() >= maxAttempts)
-			return NO_RETRY;
-		else if (Instant.now().plus(backoff).isAfter(timeoutInstant))
-			return NO_RETRY;
-		else
-			return backoff;
+	Duration randomJitter(RetryContext<T> context) {
+		ThreadLocalRandom random = ThreadLocalRandom.current();
+		long backoffMs = context.getBackoff().toMillis();
+		long minBackoffMs = context.getMinBackoff().toMillis();
+		long jitterBackoffMs = backoffMs == minBackoffMs ? minBackoffMs : random.nextLong(minBackoffMs, backoffMs);
+		return Duration.ofMillis(jitterBackoffMs);
 	}
 
-	private Publisher<?> retryMono(Duration delay) {
-		if (delay == Duration.ZERO)
-			return Mono.just(0);
-		else if (backoffScheduler == null)
-			return Mono.delay(delay);
-		else
-			return Mono.delay(delay, backoffScheduler);
+	abstract static class AbstractRetryFunction<T, R> implements Function<Flux<R>, Publisher<Long>> {
+
+		final Predicate<RetryContext<T>> retryPredicate;
+		final Instant timeoutInstant;
+		final Function<RetryContext<T>, Duration> backoffCalculator;
+		final Function<RetryContext<T>, Duration> jitter;
+		final Scheduler backoffScheduler;
+		final Consumer<RetryContext<T>> onRetry;
+		final RetryContext<T> retryContext;
+		final int maxAttempts;
+
+		AbstractRetryFunction(RetryBuilder<T> builder) {
+			this.retryContext = builder.retryContext;
+			this.retryPredicate = builder.retryPredicate;
+			this.backoffCalculator = builder.backoffCalculator;
+			this.jitter = builder.jitter;
+			this.backoffScheduler = builder.backoffScheduler;
+			this.onRetry = builder.onRetry;
+			this.maxAttempts = builder.maxAttempts != null ? builder.maxAttempts : builder.timeout == null ? 1 : Integer.MAX_VALUE;
+			this.timeoutInstant = builder.timeout != null ? Instant.now().plus(builder.timeout) : Instant.MAX;
+		}
+
+		Duration calculateBackoff() {
+			retryContext.setBackoff(backoffCalculator.apply(retryContext));
+			Duration backoff = jitter.apply(retryContext);
+			Duration minBackoff = retryContext.getMinBackoff();
+			Duration maxBackoff = retryContext.getMaxBackoff();
+			if (maxBackoff != null)
+				backoff = backoff.compareTo(maxBackoff) < 0 ? backoff : maxBackoff;
+			if (minBackoff != null)
+				backoff = backoff.compareTo(minBackoff) > 0 ? backoff : minBackoff;
+			retryContext.setBackoff(backoff);
+			if (retryContext.attempts >= maxAttempts || Instant.now().plus(backoff).isAfter(timeoutInstant))
+				return NO_RETRY;
+			else
+				return backoff;
+		}
+
+		Publisher<Long> retryMono(Duration delay) {
+			if (delay == Duration.ZERO)
+				return Mono.just(0L);
+			else if (backoffScheduler == null)
+				return Mono.delay(delay);
+			else
+				return Mono.delay(delay, backoffScheduler);
+		}
 	}
 
-	private Publisher<?> retryWhen(long attempts, Throwable e) {
-		retryContext.setAttempts(attempts);
-		retryContext.setException(e);
-		Duration backoff = calculateBackoff();
+	static class RetryFunction<T> extends AbstractRetryFunction<T, Throwable> {
+		RetryFunction(RetryBuilder<T> builder) {
+			super(builder);
+		}
 
-		if (!retryPredicate.test(retryContext)) {
-			log.debug("Stopping retries since predicate returned false, retry context: {}", retryContext);
-			return Mono.error(e);
+		@Override
+		public Publisher<Long> apply(Flux<Throwable> errors) {
+			return errors.zipWith(Flux.range(1, Integer.MAX_VALUE))
+					.concatMap(tuple -> retryWhen(tuple.getT2(), tuple.getT1()));
 		}
-		else if (backoff == NO_RETRY) {
-			log.debug("Retries exhausted, retry context: {}", retryContext);
-			return Mono.error(new RetryExhaustedException(e));
-		}
-		else {
-			log.debug("Scheduling retry attempt, retry context: {}", retryContext);
-			onRetry.accept(retryContext);
-			return retryMono(backoff);
+
+		Publisher<Long> retryWhen(long attempts, Throwable e) {
+			retryContext.setAttempts(attempts);
+			retryContext.setException(e);
+			Duration backoff = calculateBackoff();
+
+			if (!retryPredicate.test(retryContext)) {
+				log.debug("Stopping retries since predicate returned false, retry context: {}", retryContext);
+				return Mono.error(e);
+			}
+			else if (backoff == NO_RETRY) {
+				log.debug("Retries exhausted, retry context: {}", retryContext);
+				return Mono.error(new RetryExhaustedException(e));
+			}
+			else {
+				log.debug("Scheduling retry attempt, retry context: {}", retryContext);
+				onRetry.accept(retryContext);
+				return retryMono(backoff);
+			}
 		}
 	}
 
-	private Publisher<?> repeatWhen(long attempts, EmitterProcessor<Long> emitter, Long companionValue) {
-		retryContext.setAttempts(attempts);
-		retryContext.setCompanionValue(companionValue);
-		Duration backoff = calculateBackoff();
+	static class RepeatFunction<T> extends AbstractRetryFunction<T, Long> {
+		RepeatFunction(RetryBuilder<T> builder) {
+			super(builder);
+		}
 
-		if (!retryPredicate.test(retryContext)) {
-			log.debug("Stopping repeats since predicate returned false, retry context: {}", retryContext);
-			emitter.onComplete();
-			return Mono.empty();
+		@Override
+		public Publisher<Long> apply(Flux<Long> companionValues) {
+
+			EmitterProcessor<Long> emitter = EmitterProcessor.create();
+			return companionValues.zipWith(Flux.range(1, Integer.MAX_VALUE))
+							.concatMap(tuple -> repeatWhen(tuple.getT2(), emitter, tuple.getT1()))
+							.zipWith(emitter, (t1, t2) -> t1);
 		}
-		else if (backoff == NO_RETRY) {
-			log.debug("Repeats exhausted, retry context: {}", retryContext);
-			emitter.onComplete();
-			return Mono.empty();
-		}
-		else {
-			log.debug("Scheduling repeat attempt, retry context: {}", retryContext);
-			onRetry.accept(retryContext);
-			emitter.onNext(attempts);
-			return retryMono(backoff);
+
+		Publisher<Long> repeatWhen(long attempts, EmitterProcessor<Long> emitter, Long companionValue) {
+			retryContext.setAttempts(attempts);
+			retryContext.setCompanionValue(companionValue);
+			Duration backoff = calculateBackoff();
+
+			if (!retryPredicate.test(retryContext)) {
+				log.debug("Stopping repeats since predicate returned false, retry context: {}", retryContext);
+				emitter.onComplete();
+				return Mono.empty();
+			}
+			else if (backoff == NO_RETRY) {
+				log.debug("Repeats exhausted, retry context: {}", retryContext);
+				emitter.onComplete();
+				return Mono.empty();
+			}
+			else {
+				log.debug("Scheduling repeat attempt, retry context: {}", retryContext);
+				onRetry.accept(retryContext);
+				emitter.onNext(attempts);
+				return retryMono(backoff);
+			}
 		}
 	}
 }

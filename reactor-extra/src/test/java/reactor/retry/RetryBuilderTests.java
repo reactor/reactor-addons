@@ -22,10 +22,8 @@ import java.time.Duration;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
-import java.util.function.Function;
 
 import org.junit.Test;
-import org.reactivestreams.Publisher;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -41,11 +39,11 @@ import static org.junit.Assert.assertTrue;
 
 public class RetryBuilderTests {
 
-	private ConcurrentLinkedQueue<RetryContext> retries = new ConcurrentLinkedQueue<>();
+	private ConcurrentLinkedQueue<RetryContext<?>> retries = new ConcurrentLinkedQueue<>();
 
 	@Test
 	public void fluxRetryNoBackoff() {
-		RetryBuilder builder = RetryBuilder.any().noBackoff().maxAttempts(3);
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(3);
 		Flux<Integer> flux = createRetryFlux(2, new IOException(), builder);
 
 		StepVerifier.create(flux)
@@ -57,7 +55,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void fluxRepeatNoBackoff() {
-		RetryBuilder builder = RetryBuilder.any().noBackoff().maxAttempts(3);
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(3);
 		Flux<Integer> flux = createRepeatFlux(2, builder);
 
 		StepVerifier.create(flux)
@@ -69,7 +67,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRetryNoBackoff() {
-		RetryBuilder builder = RetryBuilder.any().noBackoff().maxAttempts(3);
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(3);
 		Mono<?> mono = createRetryMono( new IOException(), builder);
 
 		StepVerifier.create(mono)
@@ -80,7 +78,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRepeatNoBackoff() {
-		RetryBuilder builder = RetryBuilder.any().noBackoff().maxAttempts(4);
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(4);
 		Flux<Integer> flux = createRepeatMono(builder);
 
 		StepVerifier.create(flux)
@@ -91,7 +89,7 @@ public class RetryBuilderTests {
 
 		// Test with empty Mono
 		retries.clear();
-		StepVerifier.create(Mono.empty().repeatWhen(buildRepeat(builder)))
+		StepVerifier.create(Mono.empty().repeatWhen(builder.buildRepeat()))
 					.verifyComplete();
 		assertRepeats(0L, 0L, 0L);
 		assertDelays(0L, 0L, 0L);
@@ -99,7 +97,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRepeatEmptyNoBackoff() {
-		RetryBuilder builder = RetryBuilder.any().noBackoff().maxAttempts(4);
+		RetryBuilder<?> builder = createBuilder().noBackoff().maxAttempts(4);
 		Mono<Integer> mono = createRepeatEmptyMono(builder);
 
 		StepVerifier.create(mono)
@@ -110,7 +108,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void fluxRetryFixedBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.fixedBackoff(Duration.ofMillis(500))
 				.maxAttempts(2);
 		Flux<Integer> flux = createRetryFlux(2, new IOException(), builder);
@@ -127,7 +125,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void fluxRepeatFixedBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.fixedBackoff(Duration.ofMillis(500))
 				.maxAttempts(2);
 		Flux<Integer> flux = createRepeatFlux(2, builder);
@@ -144,7 +142,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRetryFixedBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.fixedBackoff(Duration.ofMillis(500))
 				.maxAttempts(2);
 		Mono<?> mono = createRetryMono( new IOException(), builder);
@@ -161,7 +159,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRepeatFixedBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.fixedBackoff(Duration.ofMillis(500))
 				.maxAttempts(2);
 		Flux<Integer> flux = createRepeatMono(builder);
@@ -178,7 +176,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRepeatEmptyFixedBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.fixedBackoff(Duration.ofMillis(500))
 				.maxAttempts(2);
 		Mono<Integer> mono = createRepeatEmptyMono(builder);
@@ -194,7 +192,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void fluxRetryExponentialBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 			.exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
 			.timeout(Duration.ofMillis(1500));
 		Flux<Integer> flux = createRetryFlux(2, new IOException(), builder);
@@ -217,7 +215,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void fluxRepeatExponentialBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 			.exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
 			.maxAttempts(5);
 		Flux<Integer> flux = createRepeatFlux(2, builder);
@@ -244,7 +242,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRetryExponentialBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
 				.maxAttempts(5);
 		Mono<?> mono = createRetryMono( new IOException(), builder);
@@ -263,7 +261,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRepeatExponentialBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
 				.maxAttempts(5);
 		Flux<Integer> flux = createRepeatMono(builder);
@@ -285,7 +283,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRepeatEmptyExponentialBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
 				.maxAttempts(5);
 		Mono<Integer> mono = createRepeatEmptyMono(builder);
@@ -304,7 +302,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void fluxRetryRandomBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 			.randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000))
 			.maxAttempts(5);
 		Flux<Integer> flux = createRetryFlux(2, new IOException(), builder);
@@ -320,7 +318,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void fluxRepeatRandomBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.randomBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
 				.maxAttempts(5);
 		Flux<Integer> flux = createRepeatFlux(2, builder);
@@ -344,7 +342,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRetryRandomBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000))
 				.maxAttempts(5);
 		Mono<?> mono = createRetryMono( new IOException(), builder);
@@ -363,7 +361,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRepeatRandomBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000))
 				.maxAttempts(5);
 		Flux<Integer> flux = createRepeatMono(builder);
@@ -385,7 +383,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void monoRepeatEmptyRandomBackoff() {
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000))
 				.maxAttempts(5);
 		Mono<Integer> mono = createRepeatEmptyMono(builder);
@@ -404,7 +402,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void fluxRetriableExceptions() {
-		RetryBuilder builder = RetryBuilder.anyOf(IOException.class).maxAttempts(2);
+		RetryBuilder<?> builder = createBuilder().anyOf(IOException.class).maxAttempts(2);
 		Flux<Integer> flux = createRetryFlux(2, new SocketException(), builder);
 
 		StepVerifier.create(flux)
@@ -421,7 +419,7 @@ public class RetryBuilderTests {
 	@Test
 	public void fluxNonRetriableExceptions() {
 
-		RetryBuilder builder = RetryBuilder.allBut(RuntimeException.class).maxAttempts(2);
+		RetryBuilder<?> builder = createBuilder().allBut(RuntimeException.class).maxAttempts(2);
 
 		Flux<Integer> flux = createRetryFlux(2, new IllegalStateException(), builder);
 		StepVerifier.create(flux)
@@ -436,9 +434,25 @@ public class RetryBuilderTests {
 	}
 
 	@Test
+	public void fluxRetryAnyException() {
+		RetryBuilder<?> builder = createBuilder().any().maxAttempts(2);
+		Flux<Integer> flux = createRetryFlux(2, new SocketException(), builder);
+
+		StepVerifier.create(flux)
+					.expectNext(0, 1, 0, 1)
+					.verifyErrorMatches(e -> isRetryExhausted(e, SocketException.class));
+
+		Flux<Integer> nonRetriable = createRetryFlux(2, new RuntimeException(), builder);
+		StepVerifier.create(nonRetriable)
+					.expectNext(0, 1, 0, 1)
+					.verifyErrorMatches(e -> isRetryExhausted(e, RuntimeException.class));
+
+	}
+
+	@Test
 	public void fluxRetryOnPredicate() {
 
-		RetryBuilder builder = RetryBuilder.onlyIf(context -> context.getAttempts() < 3);
+		RetryBuilder<?> builder = createBuilder().onlyIf(context -> context.getAttempts() < 3);
 		Flux<Integer> flux = createRetryFlux(2, new SocketException(), builder);
 
 		StepVerifier.create(flux)
@@ -449,7 +463,7 @@ public class RetryBuilderTests {
 	@Test
 	public void fluxRepeatOnPredicate() {
 
-		RetryBuilder builder = RetryBuilder.onlyIf(context -> context.getAttempts() < 3);
+		RetryBuilder<?> builder = createBuilder().onlyIf(context -> context.getAttempts() < 3);
 		Flux<Integer> flux = createRepeatFlux(2, builder);
 
 		StepVerifier.create(flux)
@@ -459,7 +473,7 @@ public class RetryBuilderTests {
 
 	@Test
 	public void attemptOnce() {
-		RetryBuilder builder = RetryBuilder.anyOf(IOException.class).once();
+		RetryBuilder<?> builder = createBuilder().anyOf(IOException.class).once();
 
 		StepVerifier.create(createRetryFlux(2, new SocketException(), builder))
 					.expectNext(0, 1)
@@ -473,7 +487,7 @@ public class RetryBuilderTests {
 	@Test
 	public void backoffScheduler() {
 		Scheduler backoffScheduler = Schedulers.newSingle("test");
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.maxAttempts(2)
 				.fixedBackoff(Duration.ofMillis(100))
 				.backoffScheduler(backoffScheduler);
@@ -499,7 +513,7 @@ public class RetryBuilderTests {
 	@Test
 	public void doOnRetry() {
 		Semaphore semaphore = new Semaphore(0);
-		RetryBuilder builder = RetryBuilder.any()
+		RetryBuilder<?> builder = createBuilder()
 				.maxAttempts(2)
 				.fixedBackoff(Duration.ofMillis(500))
 				.doOnRetry(context -> semaphore.release());
@@ -534,9 +548,7 @@ public class RetryBuilderTests {
 			}
 		}
 		AppContext appContext = new AppContext();
-		RetryContext retryContext = new RetryContext(appContext);
-		RetryBuilder builder = RetryBuilder.any()
-				.retryContext(retryContext)
+		RetryBuilder<?> builder = RetryBuilder.create(appContext)
 				.maxAttempts(3)
 				.doOnRetry(context -> {
 					AppContext ac = (AppContext) context.getApplicationContext();
@@ -550,24 +562,18 @@ public class RetryBuilderTests {
 
 	}
 
-	private Function<Flux<Throwable>, ? extends Publisher<?>> buildRetry(RetryBuilder retryBuilder) {
-		return retryBuilder
-				.doOnRetry(c -> retries.add(c.clone()))
-				.buildRetry();
-	}
+	private RetryBuilder<?> createBuilder() {
+		return RetryBuilder.create()
+				.doOnRetry(c -> retries.add(c.clone()));
 
-	private Function<Flux<Long>, ? extends Publisher<?>> buildRepeat(RetryBuilder retryBuilder) {
-		return retryBuilder
-				.doOnRetry(c -> retries.add(c.clone()))
-				.buildRepeat();
 	}
 
 	@SafeVarargs
 	private final void assertRetries(Class<? extends Throwable>... exceptions) {
 		assertEquals(exceptions.length, retries.size());
 		int index = 0;
-		for (Iterator<RetryContext> it = retries.iterator(); it.hasNext(); ) {
-			RetryContext retryContext = it.next();
+		for (Iterator<RetryContext<?>> it = retries.iterator(); it.hasNext(); ) {
+			RetryContext<?> retryContext = it.next();
 			assertEquals(index + 1, retryContext.getAttempts());
 			assertEquals(exceptions[index], retryContext.getException().getClass());
 			index++;
@@ -577,8 +583,8 @@ public class RetryBuilderTests {
 	private final void assertRepeats(Long... values) {
 		assertEquals(values.length, retries.size());
 		int index = 0;
-		for (Iterator<RetryContext> it = retries.iterator(); it.hasNext(); ) {
-			RetryContext retryContext = it.next();
+		for (Iterator<RetryContext<?>> it = retries.iterator(); it.hasNext(); ) {
+			RetryContext<?> retryContext = it.next();
 			assertEquals(index + 1, retryContext.getAttempts());
 			assertNull(retryContext.getException());
 			assertEquals(values[index], retryContext.getCompanionValue());
@@ -589,8 +595,8 @@ public class RetryBuilderTests {
 	private final void assertDelays(Long... delayMs) {
 		assertEquals(delayMs.length, retries.size());
 		int index = 0;
-		for (Iterator<RetryContext> it = retries.iterator(); it.hasNext(); ) {
-			RetryContext retryContext = it.next();
+		for (Iterator<RetryContext<?>> it = retries.iterator(); it.hasNext(); ) {
+			RetryContext<?> retryContext = it.next();
 			assertEquals(delayMs[index].longValue(), retryContext.getBackoff().toMillis());
 			index++;
 		}
@@ -599,7 +605,7 @@ public class RetryBuilderTests {
 	private void assertRandomDelays(int firstMs, int maxMs) {
 		long prevMs = 0;
 		int randomValues = 0;
-		for (RetryContext context : retries) {
+		for (RetryContext<?> context : retries) {
 			long backoffMs = context.getBackoff().toMillis();
 			if (prevMs == 0)
 				assertEquals(firstMs, backoffMs);
@@ -612,29 +618,29 @@ public class RetryBuilderTests {
 		assertTrue("Delays not random", randomValues >= 2); // Allow for at most one edge case.
 	}
 
-	private Flux<Integer> createRetryFlux(int exceptionIndex, Throwable exception, RetryBuilder retryBuilder) {
+	private Flux<Integer> createRetryFlux(int exceptionIndex, Throwable exception, RetryBuilder<?> builder) {
 		return Flux.concat(Flux.range(0, exceptionIndex), Flux.error(exception))
-				.retryWhen(buildRetry(retryBuilder));
+				.retryWhen(builder.buildRetry());
 	}
 
-	private Mono<?> createRetryMono(Throwable exception, RetryBuilder retryBuilder) {
+	private Mono<?> createRetryMono(Throwable exception, RetryBuilder<?> builder) {
 		return Mono.error(exception)
-				.retryWhen(buildRetry(retryBuilder));
+				.retryWhen(builder.buildRetry());
 	}
 
-	private Flux<Integer> createRepeatFlux(int count, RetryBuilder retryBuilder) {
+	private Flux<Integer> createRepeatFlux(int count, RetryBuilder<?> builder) {
 		return Flux.range(0, count)
-				.repeatWhen(buildRepeat(retryBuilder));
+				.repeatWhen(builder.buildRepeat());
 	}
 
-	private Flux<Integer> createRepeatMono(RetryBuilder retryBuilder) {
+	private Flux<Integer> createRepeatMono(RetryBuilder<?> builder) {
 		return Mono.just(0)
-				.repeatWhen(buildRepeat(retryBuilder));
+				.repeatWhen(builder.buildRepeat());
 	}
 
-	private Mono<Integer> createRepeatEmptyMono(RetryBuilder retryBuilder) {
+	private Mono<Integer> createRepeatEmptyMono(RetryBuilder<?> builder) {
 		return Mono.<Integer>empty()
-				.repeatWhenEmpty(buildRepeat(retryBuilder));
+				.repeatWhenEmpty(builder.buildRepeat());
 	}
 
 	private boolean isRetryExhausted(Throwable e, Class<? extends Throwable> cause) {

@@ -24,17 +24,19 @@ import reactor.core.publisher.Mono;
 /**
  * Class that encapsulates the retry context. The context is provided
  * retry callbacks configured using {@link RetryBuilder#doOnRetry(java.util.function.Consumer)}.
- * Application context may be included in the <code>RetryContext</code> for
+ * Application context may be included in the <code>RetryContext<T></code> for
  * easy access to application state in any rollback operations.
  *
  */
-public class RetryContext implements Cloneable {
+public class RetryContext<T> implements Cloneable {
 
-	final Object applicationContext;
+	final T applicationContext;
 	long attempts;
 	Throwable exception;
 	Long companionValue;
 	Duration backoff;
+	Duration minBackoff;
+	Duration maxBackoff;
 
 	/**
 	 * Creates a retry context with the specified application context which may be
@@ -43,7 +45,7 @@ public class RetryContext implements Cloneable {
 	 *
 	 * @param applicationContext Context provided by application
 	 */
-	public RetryContext(Object applicationContext) {
+	public RetryContext(T applicationContext) {
 		this.applicationContext = applicationContext;
 	}
 
@@ -55,7 +57,7 @@ public class RetryContext implements Cloneable {
 		return attempts;
 	}
 
-	RetryContext setAttempts(long attempts) {
+	RetryContext<T> setAttempts(long attempts) {
 		this.attempts = attempts;
 		return this;
 	}
@@ -68,7 +70,7 @@ public class RetryContext implements Cloneable {
 		return exception;
 	}
 
-	RetryContext setException(Throwable exception) {
+	RetryContext<T> setException(Throwable exception) {
 		this.exception = exception;
 		return this;
 	}
@@ -89,7 +91,7 @@ public class RetryContext implements Cloneable {
 		return companionValue;
 	}
 
-	RetryContext setCompanionValue(Long companionValue) {
+	RetryContext<T> setCompanionValue(Long companionValue) {
 		this.companionValue = companionValue;
 		return this;
 	}
@@ -102,13 +104,39 @@ public class RetryContext implements Cloneable {
 		return backoff;
 	}
 
-	RetryContext setBackoff(Duration backoff) {
+	RetryContext<T> setBackoff(Duration backoff) {
 		this.backoff = backoff;
 		return this;
 	}
 
 	/**
-	 * Returns the application context configured on this RetryContext.
+	 * Returns the minimum backoff delay. If the backoff delay calculated is less than this
+	 * value, this minimum will be used.
+	 * @return minimum backoff delay
+	 */
+	public Duration getMinBackoff() {
+		return minBackoff;
+	}
+
+	void setMinBackoff(Duration minBackoff) {
+		this.minBackoff = minBackoff;
+	}
+
+	/**
+	 * Returns the maximum backoff delay. If the backoff delay calculated is greater than this
+	 * value, this maximum will be used.
+	 * @return maximum backoff delay
+	 */
+	public Duration getMaxBackoff() {
+		return maxBackoff;
+	}
+
+	void setMaxBackoff(Duration maxBackoff) {
+		this.maxBackoff = maxBackoff;
+	}
+
+	/**
+	 * Returns the application context configured on this RetryContext<T>.
 	 * @return application context if configured, null otherwise
 	 */
 	public Object getApplicationContext() {
@@ -116,8 +144,8 @@ public class RetryContext implements Cloneable {
 	}
 
 	@Override
-	protected RetryContext clone() {
-		RetryContext clone = new RetryContext(applicationContext);
+	protected RetryContext<T> clone() {
+		RetryContext<T> clone = new RetryContext<T>(applicationContext);
 		clone.attempts = attempts;
 		clone.exception = exception;
 		clone.companionValue = companionValue;
