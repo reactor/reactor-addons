@@ -86,21 +86,22 @@ public class RetryBuilder<T> {
 	static final Logger log = Loggers.getLogger(RetryBuilder.class);
 
 	static final Duration NO_RETRY = Duration.ofSeconds(-1);
+	static final Consumer<? super RetryContext<?>> NOOP_ON_RETRY = r -> {};
 
 	final RetryContext<T> retryContext;
-	Predicate<RetryContext<T>> retryPredicate;
+	Predicate<? super RetryContext<T>> retryPredicate;
 	Integer maxAttempts;
 	Duration timeout;
-	Function<RetryContext<T>, Duration> backoffCalculator;
-	Function<RetryContext<T>, Duration> jitter;
+	Function<? super RetryContext<T>, Duration> backoffCalculator;
+	Function<? super RetryContext<T>, Duration> jitter;
 	Scheduler backoffScheduler;
-	Consumer<RetryContext<T>> onRetry;
+	Consumer<? super RetryContext<T>> onRetry;
 
 	RetryBuilder(T applicationContext) {
 		this.retryContext = new RetryContext<T>(applicationContext);
 		any();
 		noBackoff();
-		this.onRetry = r -> {};
+		this.onRetry = NOOP_ON_RETRY;
 	}
 
 	/**
@@ -413,12 +414,12 @@ public class RetryBuilder<T> {
 
 	abstract static class AbstractRetryFunction<T, R> implements Function<Flux<R>, Publisher<Long>> {
 
-		final Predicate<RetryContext<T>> retryPredicate;
+		final Predicate<? super RetryContext<T>> retryPredicate;
 		final Instant timeoutInstant;
-		final Function<RetryContext<T>, Duration> backoffCalculator;
-		final Function<RetryContext<T>, Duration> jitter;
+		final Function<? super RetryContext<T>, Duration> backoffCalculator;
+		final Function<? super RetryContext<T>, Duration> jitter;
 		final Scheduler backoffScheduler;
-		final Consumer<RetryContext<T>> onRetry;
+		final Consumer<? super RetryContext<T>> onRetry;
 		final RetryContext<T> retryContext;
 		final int maxAttempts;
 
