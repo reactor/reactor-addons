@@ -329,6 +329,7 @@ public class RetryBuilder<T> {
 		if (maxBackoffInterval.compareTo(firstBackoff) <= 0)
 			throw new IllegalArgumentException("maxBackoff must be >= firstBackoff");
 		retryContext.setMinBackoff(firstBackoff);
+		retryContext.setMaxBackoff(maxBackoff);
 		this.backoffCalculator = context -> {
 			Duration prevBackoff = context.getBackoff() == null ? Duration.ZERO : context.getBackoff();
 			Duration nextBackoff = prevBackoff.multipliedBy(3);

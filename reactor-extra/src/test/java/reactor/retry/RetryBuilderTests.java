@@ -337,7 +337,7 @@ public class RetryBuilderTests {
 					.verifyComplete();
 
 		assertRepeats(2L, 2L, 2L, 2L);
-		assertRandomDelays(100, 2000);
+		assertRandomDelays(100, 500);
 	}
 
 	@Test
