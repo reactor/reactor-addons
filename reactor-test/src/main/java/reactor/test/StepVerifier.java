@@ -595,17 +595,6 @@ public interface StepVerifier {
 		Step<T> expectNext(T... ts);
 
 		/**
-		 * Expect the next elements received to be equal to the given values.
-		 *
-		 * @param ts the values to expect
-		 *
-		 * @return this builder
-		 *
-		 * @see Subscriber#onNext(Object)
-		 */
-		Step<T> expectNext(List<T> ts);
-
-		/**
 		 * Expect to received {@code count} elements, starting from the previous
 		 * expectation or onSubscribe.
 		 *

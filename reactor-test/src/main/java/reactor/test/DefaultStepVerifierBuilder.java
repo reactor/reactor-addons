@@ -345,13 +345,6 @@ final class DefaultStepVerifierBuilder<T>
 		return this;
 	}
 
-	@Override
-	public final DefaultStepVerifierBuilder<T> expectNext(List<T> ts) {
-		Objects.requireNonNull(ts, "ts");
-		ts.forEach(this::addExpectedValue);
-		return this;
-	}
-
 	@SuppressWarnings("unchecked") // cast to a known type
 	private DefaultStepVerifierBuilder<T> addExpectedValues(Object[] values) {
 		Arrays.stream(values).map(val -> (T) val).forEach(this::addExpectedValue);
