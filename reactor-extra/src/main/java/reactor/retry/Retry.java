@@ -94,15 +94,15 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 	}
 
 	default Retry<T> exponentialBackoff(Duration firstBackoff, Duration maxBackoff) {
-		return backoff(Backoff.exponential(firstBackoff, maxBackoff));
+		return backoff(Backoff.exponential(firstBackoff, maxBackoff, 2, false));
 	}
 
 	default Retry<T> exponentialBackoffWithJitter(Duration firstBackoff, Duration maxBackoff) {
-		return backoff(Backoff.exponential(firstBackoff, maxBackoff)).jitter(Jitter.random());
+		return backoff(Backoff.exponential(firstBackoff, maxBackoff, 2, false)).jitter(Jitter.random());
 	}
 
 	default Retry<T> randomBackoff(Duration firstBackoff, Duration maxBackoff) {
-		return backoff(Backoff.prevTimes3(firstBackoff, maxBackoff)).jitter(Jitter.random());
+		return backoff(Backoff.exponential(firstBackoff, maxBackoff, 3, true)).jitter(Jitter.random());
 	}
 
 	default <S> Flux<S> apply(Publisher<S> source) {

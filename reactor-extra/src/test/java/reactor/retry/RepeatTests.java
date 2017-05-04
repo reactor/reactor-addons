@@ -369,6 +369,24 @@ public class RepeatTests {
 		assertRepeats(0L, 0L, 0L);
 	}
 
+	@Test
+	public void functionReuseInParallel() throws Exception {
+		int repeatCount = 19;
+		int range = 100;
+		Integer[] values = new Integer[(repeatCount + 1) * range];
+		for (int i = 0; i <= repeatCount; i++) {
+			for (int j = 1; j <= range; j++)
+				values[i * range + j - 1] = j;
+		}
+		RetryTestUtils.<Long>testReuseInParallel(2, 20,
+				backoff -> Repeat.<Integer>times(19).backoff(backoff),
+				repeatFunc -> {
+					StepVerifier.create(Flux.range(1, range).repeatWhen(repeatFunc))
+								.expectNext(values)
+								.verifyComplete();
+					});
+	}
+
 	Consumer<? super RepeatContext<?>> onRepeat() {
 		return context -> repeats.add(context);
 	}

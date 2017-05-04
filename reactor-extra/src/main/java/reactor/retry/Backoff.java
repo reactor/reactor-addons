@@ -21,38 +21,36 @@ import java.util.function.Function;
 
 public interface Backoff extends Function<Context<?>, BackoffDelay> {
 
+	public static final Backoff ZERO_BACKOFF = context -> BackoffDelay.ZERO;
+
 	static Backoff zero() {
-		return context -> BackoffDelay.ZERO;
+		return ZERO_BACKOFF;
 	}
 
 	static Backoff fixed(Duration backoffInterval) {
 		return context -> new BackoffDelay(backoffInterval);
 	}
 
-	static Backoff exponential(Duration firstBackoff, Duration maxBackoff) {
+	static Backoff exponential(Duration firstBackoff, Duration maxBackoff, int factor, boolean basedOnPreviousValue) {
 		if (firstBackoff == null || firstBackoff.isNegative() || firstBackoff.isZero())
 			throw new IllegalArgumentException("firstBackoff must be > 0");
 		Duration maxBackoffInterval = maxBackoff != null ? maxBackoff : Duration.ofSeconds(Long.MAX_VALUE);
 		if (maxBackoffInterval.compareTo(firstBackoff) <= 0)
 			throw new IllegalArgumentException("maxBackoff must be >= firstBackoff");
-		return context -> {
-			Duration nextBackoff = firstBackoff.multipliedBy((long) Math.pow(2, (context.iteration() - 1)));
-			return new BackoffDelay(firstBackoff, maxBackoffInterval, nextBackoff);
-		};
-	}
-
-	static Backoff prevTimes3(Duration firstBackoff, Duration maxBackoff) {
-		if (firstBackoff == null || firstBackoff.isNegative() || firstBackoff.isZero())
-			throw new IllegalArgumentException("firstBackoff must be > 0");
-		Duration maxBackoffInterval = maxBackoff != null ? maxBackoff : Duration.ofSeconds(Long.MAX_VALUE);
-		if (maxBackoffInterval.compareTo(firstBackoff) <= 0)
-			throw new IllegalArgumentException("maxBackoff must be >= firstBackoff");
-		return context -> {
-			Duration prevBackoff = context.backoff() == null ? Duration.ZERO : context.backoff();
-			Duration nextBackoff = prevBackoff.multipliedBy(3);
-			nextBackoff = nextBackoff.compareTo(firstBackoff) < 0 ? firstBackoff : nextBackoff;
-			return new BackoffDelay(firstBackoff, maxBackoff, nextBackoff);
-		};
+		if (!basedOnPreviousValue) {
+			return context -> {
+				Duration nextBackoff = firstBackoff.multipliedBy((long) Math.pow(factor, (context.iteration() - 1)));
+				return new BackoffDelay(firstBackoff, maxBackoffInterval, nextBackoff);
+			};
+		}
+		else {
+			return context -> {
+				Duration prevBackoff = context.backoff() == null ? Duration.ZERO : context.backoff();
+				Duration nextBackoff = prevBackoff.multipliedBy(factor);
+				nextBackoff = nextBackoff.compareTo(firstBackoff) < 0 ? firstBackoff : nextBackoff;
+				return new BackoffDelay(firstBackoff, maxBackoff, nextBackoff);
+			};
+		}
 	}
 
 }

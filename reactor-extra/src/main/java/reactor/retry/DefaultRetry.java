@@ -17,8 +17,8 @@
 package reactor.retry;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.reactivestreams.Publisher;
@@ -59,11 +59,6 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 				null,
 				NOOP_ON_RETRY,
 				(T) null);
-	}
-
-	@Override
-	public Publisher<Long> apply(Flux<Throwable> errors) {
-		return new RetryFunction().apply(errors);
 	}
 
 	@Override
@@ -112,39 +107,32 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 				backoff, jitter, scheduler, onRetry, applicationContext);
 	}
 
-	class RetryFunction implements Function<Flux<Throwable>, Publisher<Long>> {
+	@Override
+	public Publisher<Long> apply(Flux<Throwable> errors) {
+		Instant timeoutInstant = calculateTimeout();
+		DefaultContext<T> context = new DefaultContext<>(applicationContext, 0, null, null);
+		return errors.zipWith(Flux.range(1, Integer.MAX_VALUE))
+				.concatMap(tuple -> retry(tuple.getT1(), tuple.getT2(), timeoutInstant, context));
+	}
 
-		DefaultContext<T> lastRetryContext;
+	Publisher<Long> retry(Throwable e, long iteration, Instant timeoutInstant, DefaultContext<T> context) {
+		DefaultContext<T> tmpContext = new DefaultContext<>(applicationContext, iteration, context.lastBackoff, e);
+		BackoffDelay nextBackoff = calculateBackoff(tmpContext, timeoutInstant);
+		DefaultContext<T> retryContext = new DefaultContext<T>(applicationContext, iteration, nextBackoff, e);
+		context.lastBackoff = nextBackoff;
 
-		RetryFunction() {
-			this.lastRetryContext = new DefaultContext<T>(applicationContext, 0, calculateTimeout(), null, null);;
+		if (!retryPredicate.test(retryContext)) {
+			log.debug("Stopping retries since predicate returned false, retry context: {}", retryContext);
+			return Mono.error(e);
 		}
-
-		@Override
-		public Publisher<Long> apply(Flux<Throwable> errors) {
-			return errors.zipWith(Flux.range(1, Integer.MAX_VALUE))
-					.concatMap(tuple -> retry(tuple.getT1(), tuple.getT2()));
+		else if (nextBackoff == RETRY_EXHAUSTED) {
+			log.debug("Retries exhausted, retry context: {}", retryContext);
+			return Mono.error(new RetryExhaustedException(e));
 		}
-
-		Publisher<Long> retry(Throwable e, long iteration) {
-			DefaultContext<T> tmpContext = new DefaultContext<>(applicationContext, iteration, lastRetryContext.timeoutInstant, lastRetryContext.backoff, e);
-			BackoffDelay nextBackoff = calculateBackoff(tmpContext);
-			DefaultContext<T> retryContext = new DefaultContext<T>(applicationContext, iteration, lastRetryContext.timeoutInstant, nextBackoff, e);
-
-			if (!retryPredicate.test(retryContext)) {
-				log.debug("Stopping retries since predicate returned false, retry context: {}", retryContext);
-				return Mono.error(e);
-			}
-			else if (nextBackoff == RETRY_EXHAUSTED) {
-				log.debug("Retries exhausted, retry context: {}", retryContext);
-				return Mono.error(new RetryExhaustedException(e));
-			}
-			else {
-				log.debug("Scheduling retry attempt, retry context: {}", retryContext);
-				this.lastRetryContext = retryContext;
-				onRetry.accept(retryContext);
-				return retryMono(nextBackoff.delay());
-			}
+		else {
+			log.debug("Scheduling retry attempt, retry context: {}", retryContext);
+			onRetry.accept(retryContext);
+			return retryMono(nextBackoff.delay());
 		}
 	}
 }

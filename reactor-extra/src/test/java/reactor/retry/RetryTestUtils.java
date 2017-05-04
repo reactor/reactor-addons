@@ -16,10 +16,28 @@
 
 package reactor.retry;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import org.reactivestreams.Publisher;
+
+import reactor.core.publisher.Flux;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class RetryTestUtils {
@@ -48,5 +66,59 @@ public class RetryTestUtils {
 			prevMs = backoffMs;
 		}
 		assertTrue("Delays not random", randomValues >= 2); // Allow for at most one edge case.
+	}
+
+	static <T> void testReuseInParallel(int threads, int iterations,
+			Function<Backoff, Function<Flux<T>, Publisher<Long>>> retryOrRepeat,
+			Consumer<Function<Flux<T>, Publisher<Long>>> testTask) throws Exception {
+		int repeatCount = iterations - 1;
+		AtomicInteger nextBackoff = new AtomicInteger();
+		// Keep track of the number of backoff invocations per instance
+		ConcurrentHashMap<Long, Integer> backoffCounts = new ConcurrentHashMap<>();
+		// Use a countdown latch to get all instances to stop in the first backoff callback
+		CountDownLatch latch = new CountDownLatch(threads);
+		Backoff customBackoff = new Backoff() {
+			@Override
+			public BackoffDelay apply(Context<?> context) {
+				Duration backoff = context.backoff();
+				if (latch.getCount() > 0) {
+					assertNull("Wrong context, backoff must be null", backoff);
+					backoff = Duration.ofMillis(nextBackoff.incrementAndGet());
+					backoffCounts.put(backoff.toMillis(), 1);
+					latch.countDown();
+					try {
+						latch.await(10, TimeUnit.SECONDS);
+					}
+					catch (Exception e) {
+						// ignore, errors are handled later
+					}
+				} else {
+					assertNotNull("Wrong context, backoff must not be null", backoff);
+					long index = backoff.toMillis();
+					backoffCounts.put(index, backoffCounts.get(index) + 1);
+				}
+				return new BackoffDelay(backoff);
+			}
+		};
+		Function<Flux<T>, Publisher<Long>> retryFunc = retryOrRepeat.apply(customBackoff);
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		List<Future<?>> futures = new ArrayList<>();
+		try {
+			for (int i = 0; i < threads; i++) {
+				Runnable runnable = () -> testTask.accept(retryFunc);
+				futures.add(executor.submit(runnable));
+			}
+			for (Future<?> future : futures)
+				future.get(5, TimeUnit.SECONDS);
+		}
+		finally {
+			executor.shutdownNow();
+		}
+
+		assertEquals(0, latch.getCount());
+		assertEquals(threads, backoffCounts.size());
+		for (Integer count : backoffCounts.values()) {
+			assertEquals(repeatCount + 1, count.intValue());
+		}
 	}
 }

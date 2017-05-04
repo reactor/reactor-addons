@@ -17,8 +17,8 @@
 package reactor.retry;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.reactivestreams.Publisher;
@@ -61,11 +61,6 @@ public class DefaultRepeat<T> extends AbstractRetry<T, Long> implements Repeat<T
 	}
 
 	@Override
-	public Publisher<Long> apply(Flux<Long> companionValues) {
-		return new RepeatFunction().apply(companionValues);
-	}
-
-	@Override
 	public Repeat<T> withApplicationContext(T applicationContext) {
 		return new DefaultRepeat<>(repeatPredicate, maxIterations, timeout,
 				backoff, jitter, backoffScheduler, onRepeat, applicationContext);
@@ -103,37 +98,34 @@ public class DefaultRepeat<T> extends AbstractRetry<T, Long> implements Repeat<T
 				backoff, jitter, scheduler, onRepeat, applicationContext);
 	}
 
-	class RepeatFunction implements Function<Flux<Long>, Publisher<Long>> {
+	@Override
+	public Publisher<Long> apply(Flux<Long> companionValues) {
+		Instant timeoutInstant = calculateTimeout();
+		DefaultContext<T> context = new DefaultContext<>(applicationContext, 0, null, -1L);
+		return companionValues
+				.zipWith(Flux.range(1, Integer.MAX_VALUE), (c, i) -> repeatBackoff(c, i, timeoutInstant, context))
+				.takeWhile(backoff -> backoff != RETRY_EXHAUSTED)
+				.concatMap(backoff -> retryMono(backoff.delay));
+	}
 
-		DefaultContext<T> lastRepeatContext;
+	BackoffDelay repeatBackoff(Long companionValue, Integer iteration, Instant timeoutInstant, DefaultContext<T> context) {
+		DefaultContext<T> tmpContext = new DefaultContext<>(applicationContext, iteration, context.lastBackoff, companionValue);
+		BackoffDelay nextBackoff = calculateBackoff(tmpContext, timeoutInstant);
+		DefaultContext<T> repeatContext = new DefaultContext<>(applicationContext, iteration, nextBackoff, companionValue);
+		context.lastBackoff = nextBackoff;
 
-		public Publisher<Long> apply(Flux<Long> companionValues) {
-			this.lastRepeatContext = new DefaultContext<T>(applicationContext, 0, calculateTimeout(), null, -1L);
-			return companionValues
-					.zipWith(Flux.range(1, Integer.MAX_VALUE), this::repeatBackoff)
-					.takeWhile(backoff -> backoff != RETRY_EXHAUSTED)
-					.concatMap(backoff -> retryMono(backoff.delay));
+		if (!repeatPredicate.test(repeatContext)) {
+			log.debug("Stopping repeats since predicate returned false, retry context: {}", repeatContext);
+			return RETRY_EXHAUSTED;
 		}
-
-		BackoffDelay repeatBackoff(Long companionValue, Integer iteration) {
-			DefaultContext<T> tmpCpntext = new DefaultContext<>(applicationContext, iteration, lastRepeatContext.timeoutInstant, lastRepeatContext.backoff, companionValue);
-			BackoffDelay nextBackoff = calculateBackoff(tmpCpntext);
-			DefaultContext<T> repeatContext = new DefaultContext<>(applicationContext, iteration, lastRepeatContext.timeoutInstant, nextBackoff, companionValue);
-
-			if (!repeatPredicate.test(repeatContext)) {
-				log.debug("Stopping repeats since predicate returned false, retry context: {}", repeatContext);
-				return RETRY_EXHAUSTED;
-			}
-			else if (nextBackoff == RETRY_EXHAUSTED) {
-				log.debug("Repeats exhausted, retry context: {}", repeatContext);
-				return RETRY_EXHAUSTED;
-			}
-			else {
-				log.debug("Scheduling repeat attempt, retry context: {}", repeatContext);
-				this.lastRepeatContext = repeatContext;
-				onRepeat.accept(repeatContext);
-				return nextBackoff;
-			}
+		else if (nextBackoff == RETRY_EXHAUSTED) {
+			log.debug("Repeats exhausted, retry context: {}", repeatContext);
+			return RETRY_EXHAUSTED;
+		}
+		else {
+			log.debug("Scheduling repeat attempt, retry context: {}", repeatContext);
+			onRepeat.accept(repeatContext);
+			return nextBackoff;
 		}
 	}
 }

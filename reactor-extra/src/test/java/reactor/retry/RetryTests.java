@@ -302,6 +302,24 @@ public class RetryTests {
 		assertRetries(IOException.class, IOException.class);
 	}
 
+	@Test
+	public void functionReuseInParallel() throws Exception {
+		int retryCount = 19;
+		int range = 100;
+		Integer[] values = new Integer[(retryCount + 1) * range];
+		for (int i = 0; i <= retryCount; i++) {
+			for (int j = 1; j <= range; j++)
+				values[i * range + j - 1] = j;
+		}
+		RetryTestUtils.<Throwable>testReuseInParallel(2, 20,
+				backoff -> Retry.<Integer>any().retryMax(19).backoff(backoff),
+				retryFunc -> {
+					StepVerifier.create(Flux.range(1, range).concatWith(Mono.error(new SocketException())).retryWhen(retryFunc))
+								.expectNext(values)
+								.verifyErrorMatches(e -> isRetryExhausted(e, SocketException.class));
+					});
+	}
+
 	Consumer<? super RetryContext<?>> onRetry() {
 		return context -> retries.add(context);
 	}

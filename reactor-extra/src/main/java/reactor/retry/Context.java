@@ -17,7 +17,6 @@
 package reactor.retry;
 
 import java.time.Duration;
-import java.time.Instant;
 
 public interface Context<T> {
 
@@ -26,6 +25,4 @@ public interface Context<T> {
 	public long iteration();
 
 	public Duration backoff();
-
-	public Instant timeoutInstant();
 }

@@ -17,7 +17,6 @@
 package reactor.retry;
 
 import java.time.Duration;
-import java.time.Instant;
 
 public class DefaultContext<T> implements RetryContext<T>, RepeatContext<T> {
 
@@ -25,34 +24,30 @@ public class DefaultContext<T> implements RetryContext<T>, RepeatContext<T> {
 	final long iteration;
 	final Long repeatCompanionValue;
 	final Throwable exception;
-	final Instant timeoutInstant;
 	final BackoffDelay backoff;
+	BackoffDelay lastBackoff;
 
 	public DefaultContext(T applicationContext,
 			long iteration,
-			Instant timeoutInstant,
 			BackoffDelay backoff,
 			long repeatCompanionValue) {
-		this(applicationContext, iteration, timeoutInstant, backoff, repeatCompanionValue, null);
+		this(applicationContext, iteration, backoff, repeatCompanionValue, null);
 	}
 
 	public DefaultContext(T applicationContext,
 			long iteration,
-			Instant timeoutInstant,
 			BackoffDelay backoff,
 			Throwable exception) {
-		this(applicationContext, iteration, timeoutInstant, backoff, null, exception);
+		this(applicationContext, iteration, backoff, null, exception);
 	}
 
 	private DefaultContext(T applicationContext,
 			long iteration,
-			Instant timeoutInstant,
 			BackoffDelay backoff,
 			Long repeatCompanionValue,
 			Throwable exception) {
 		this.applicationContext = applicationContext;
 		this.iteration = iteration;
-		this.timeoutInstant = timeoutInstant;
 		this.backoff = backoff;
 		this.repeatCompanionValue = repeatCompanionValue;
 		this.exception = exception;
@@ -76,10 +71,6 @@ public class DefaultContext<T> implements RetryContext<T>, RepeatContext<T> {
 
 	public Duration backoff() {
 		return backoff == null ? null : backoff.delay;
-	}
-
-	public Instant timeoutInstant() {
-		return timeoutInstant;
 	}
 
 	@Override

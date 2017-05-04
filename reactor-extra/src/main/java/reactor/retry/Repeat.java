@@ -63,15 +63,15 @@ public interface Repeat<T> extends Function<Flux<Long>, Publisher<Long>> {
 	}
 
 	default Repeat<T> exponentialBackoff(Duration firstBackoff, Duration maxBackoff) {
-		return backoff(Backoff.exponential(firstBackoff, maxBackoff));
+		return backoff(Backoff.exponential(firstBackoff, maxBackoff, 2, false));
 	}
 
 	default Repeat<T> exponentialBackoffWithJitter(Duration firstBackoff, Duration maxBackoff) {
-		return backoff(Backoff.exponential(firstBackoff, maxBackoff)).jitter(Jitter.random());
+		return backoff(Backoff.exponential(firstBackoff, maxBackoff, 2, false)).jitter(Jitter.random());
 	}
 
 	default Repeat<T> randomBackoff(Duration firstBackoff, Duration maxBackoff) {
-		return backoff(Backoff.prevTimes3(firstBackoff, maxBackoff)).jitter(Jitter.random());
+		return backoff(Backoff.exponential(firstBackoff, maxBackoff, 3, true)).jitter(Jitter.random());
 	}
 
 	default <S> Flux<S> apply(Publisher<S> source) {
