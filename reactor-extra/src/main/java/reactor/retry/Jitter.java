@@ -20,12 +20,25 @@ import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
+/**
+ * Jitter function that is applied to the backoff delay.
+ *
+ */
 public interface Jitter extends Function<BackoffDelay, Duration> {
 
+	/**
+	 * Jitter function that is a no-op.
+	 * @return Jitter function that does not apply any jitter
+	 */
 	static Jitter noJitter() {
 		return backoff -> backoff.delay();
 	}
 
+	/**
+	 * Jitter function that applies a random jitter to choose a random backoff
+	 * delay between {@link BackoffDelay#minDelay()} and {@link BackoffDelay#delay()}.
+	 * @return Jitter function to randomize backoff delay
+	 */
 	static Jitter random() {
 		ThreadLocalRandom random = ThreadLocalRandom.current();
 		return backoff -> {
@@ -35,5 +48,4 @@ public interface Jitter extends Function<BackoffDelay, Duration> {
 			return Duration.ofMillis(jitterBackoffMs);
 		};
 	}
-
 }

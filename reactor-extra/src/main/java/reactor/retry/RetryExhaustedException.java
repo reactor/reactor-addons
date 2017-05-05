@@ -16,7 +16,12 @@
 
 package reactor.retry;
 
-
+/**
+ * Exception indicating that retries have been exhausted after
+ * {@link Retry#timeout(java.time.Duration)} or {@link Retry#retryMax(int)}.
+ * For retries, {@link #getCause()} returns the original exception from the
+ * last retry attempt that generated this exception.
+ */
 public class RetryExhaustedException extends RuntimeException {
 
 	private static final long serialVersionUID = 6961442923363481283L;
@@ -41,6 +46,4 @@ public class RetryExhaustedException extends RuntimeException {
 	public RetryExhaustedException(Throwable cause) {
 		super(cause);
 	}
-
-
 }

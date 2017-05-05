@@ -16,7 +16,17 @@
 
 package reactor.retry;
 
+/**
+ * Context provided to retry predicate {@link Retry#onlyIf(java.util.function.Predicate)} and
+ * the retry callback {@link Retry#doOnRetry(java.util.function.Consumer)}.
+ *
+ * @param <T> Application context type
+ */
 public interface RetryContext<T> extends Context<T> {
 
+	/**
+	 * Returns the exception from the last iteration.
+	 * @return exception that resulted in retry
+	 */
 	public Throwable exception();
 }

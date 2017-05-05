@@ -19,18 +19,48 @@ package reactor.retry;
 import java.time.Duration;
 import java.util.function.Function;
 
+/**
+ * Backoff function
+ *
+ */
 public interface Backoff extends Function<Context<?>, BackoffDelay> {
 
 	public static final Backoff ZERO_BACKOFF = context -> BackoffDelay.ZERO;
 
+	/**
+	 * Backoff function with no backoff delay
+	 * @return Backoff function for zero backoff delay
+	 */
 	static Backoff zero() {
 		return ZERO_BACKOFF;
 	}
 
+	/**
+	 * Backoff function with fixed backoff delay
+	 * @param backoffInterval backoff interval
+	 * @return Backoff function with fixed backoff delay
+	 */
 	static Backoff fixed(Duration backoffInterval) {
 		return context -> new BackoffDelay(backoffInterval);
 	}
 
+	/**
+	 * Backoff function with exponential backoff delay. Retries are performed after a backoff
+	 * interval of <code>firstBackoff * (factor ** n)</code> where n is the iteration. If
+	 * <code>maxBackoff</code> is not null, the maximum backoff applied will be limited to
+	 * <code>maxBackoff</code>.
+	 * <p>
+	 * If <code>basedOnPreviousValue</code> is true, backoff will be calculated using
+	 * <code>prevBackoff * factor</code>. When backoffs are combined with {@link Jitter}, this
+	 * value will be different from the actual exponential value for the iteration.
+	 *
+	 * @param firstBackoff First backoff duration
+	 * @param maxBackoff Maximum backoff duration
+	 * @param factor The multiplicand for calculating backoff
+	 * @param basedOnPreviousValue If true, calculation is based on previous value which may
+	 *        be a backoff with jitter applied
+	 * @return Backoff function with exponential delay
+	 */
 	static Backoff exponential(Duration firstBackoff, Duration maxBackoff, int factor, boolean basedOnPreviousValue) {
 		if (firstBackoff == null || firstBackoff.isNegative() || firstBackoff.isZero())
 			throw new IllegalArgumentException("firstBackoff must be > 0");
@@ -52,5 +82,4 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 			};
 		}
 	}
-
 }
