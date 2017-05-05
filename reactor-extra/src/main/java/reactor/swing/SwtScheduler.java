@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package reactor.adapter.misc;
+package reactor.swing;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;

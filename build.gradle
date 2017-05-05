@@ -210,18 +210,11 @@ project('reactor-logback') {
 project('reactor-adapter') {
   description = 'Scheduler implementations on top of various async boundary providers'
 
-  repositories {
-	maven { url "http://maven-eclipse.github.io/maven" }
-  }
-
-
   dependencies {
 	//Optional RxJava 2 Converter
 	optional "io.reactivex.rxjava2:rxjava:$rxJava2Version"
 
 	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
-
-	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
 
 	testCompile(project(":reactor-test"))
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.0"
@@ -239,8 +232,14 @@ project('reactor-test') {
 project('reactor-extra') {
   description = 'Reactor Extra utilities'
 
+  repositories {
+	maven { url "http://maven-eclipse.github.io/maven" }
+  }
+
   dependencies {
 	testCompile(project(":reactor-test"))
+	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
+
   }
 }
 
