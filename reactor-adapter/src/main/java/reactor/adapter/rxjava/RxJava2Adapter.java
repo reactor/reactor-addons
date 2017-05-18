@@ -151,9 +151,9 @@ public abstract class RxJava2Adapter {
     
     static final class FlowableAsFlux<T> extends Flux<T> implements Fuseable {
         
-        final Publisher<T> source;
+        final Flowable<T> source;
         
-        public FlowableAsFlux(Publisher<T> source) {
+        public FlowableAsFlux(Flowable<T> source) {
             this.source = source;
         }
         
@@ -166,7 +166,7 @@ public abstract class RxJava2Adapter {
             }
         }
         
-        static final class FlowableAsFluxSubscriber<T> implements Subscriber<T>, QueueSubscription<T> {
+        static final class FlowableAsFluxSubscriber<T> implements FlowableSubscriber<T>, QueueSubscription<T> {
             
             final Subscriber<? super T> actual;
 
@@ -250,7 +250,7 @@ public abstract class RxJava2Adapter {
         }
         
         static final class FlowableAsFluxConditionalSubscriber<T> implements 
-        ConditionalSubscriber<T>, QueueSubscription<T> {
+        io.reactivex.internal.fuseable.ConditionalSubscriber<T>, QueueSubscription<T> {
             
             final ConditionalSubscriber<? super T> actual;
 

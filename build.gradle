@@ -45,7 +45,7 @@ ext {
 
   // Libraries
   openHftChronicleVersion = '3.4.2'
-  rxJava2Version = '2.0.0'
+  rxJava2Version = '2.1.0'
   akkaActorVersion = '2.4.10'
 
   swtVersion = '4.5.2'
