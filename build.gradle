@@ -221,14 +221,6 @@ project('reactor-adapter') {
   }
 }
 
-project('reactor-test') {
-  description = 'Reactor Test support'
-  
-  dependencies {
-	testCompile 'org.assertj:assertj-core:3.6.1'
-  }
-}
-
 project('reactor-extra') {
   description = 'Reactor Extra utilities'
 
