@@ -10,11 +10,7 @@
 
 # reactor-adapter
 
-Bridge to RxJava 1 or 2 Observable, Completable, Flowable, Single, Maybe, Scheduler, and also Swing/SWT Scheduler, Akka Scheduler ...
-
-# reactor-test
-
-Test Support with various Subscribers, mocking scheduler (virtual time) and graph representations.
+Bridge to RxJava 1 or 2 Observable, Completable, Flowable, Single, Maybe, Scheduler, and also SWT Scheduler, Akka Scheduler ...
 
 # reactor-logback
 
@@ -56,12 +52,6 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
     dependencies {
       // Reactor Adapter (RxJava2, Akka Actors scheduler and more)
       // compile "io.projectreactor.addons:reactor-adapter:$reactorVersion"
-
-      // Reactor Test (ScriptedVerification, ScriptedSubscriber, VirtualTimeScheduler)
-      // compile "io.projectreactor.addons:reactor-test:$reactorVersion"
-       
-      // ...
-
     }
 
 
