@@ -292,6 +292,15 @@ public class StepVerifierTests {
 	}
 
 	@Test
+	public void expectNextCountZeroThenValues() {
+		StepVerifier.create(Flux.just("foo", "bar"))
+		            .expectNextCount(0)
+		            .expectNext("foo", "bar")
+		            .expectComplete()
+		            .verify();
+	}
+
+	@Test
 	public void expectNextCountError() {
 		Flux<String> flux = Flux.just("foo", "bar");
 
@@ -544,7 +553,7 @@ public class StepVerifierTests {
 	}
 
 	@Test
-	public void verifyNextAsWithEmptyFlux() {
+	public void verifyNextAsErrorEmptyFlux() {
 	    final List<Integer> source = Arrays.asList(1,2,3);
 		Flux<Integer> flux = Flux.empty();
 
@@ -555,6 +564,44 @@ public class StepVerifierTests {
 				.verify())
                 .withMessageStartingWith("expectation \"expectNextSequence\" failed (")
                 .withMessageEndingWith("expected next value: 1; actual signal: onComplete(); iterable: [1, 2, 3])");;
+	}
+
+	@Test
+	public void verifyNextAsErrorEmptyIterable() {
+	    final List<Integer> expected = Collections.emptyList();
+		Flux<Integer> flux = Flux.just(1, 2, 3);
+
+		assertThatExceptionOfType(AssertionError.class)
+				.isThrownBy(() -> StepVerifier.create(flux)
+				                              .expectNextSequence(expected)
+				                              .expectComplete()
+				                              .verify())
+				.withMessageStartingWith("expectation \"expectComplete\" failed (")
+				.withMessageEndingWith("expected: onComplete(); actual: onNext(1))");;
+	}
+
+	@Test
+	public void verifyNextCountErrorZeroCount() {
+		Flux<Integer> flux = Flux.just(1, 2, 3);
+
+		assertThatExceptionOfType(AssertionError.class)
+				.isThrownBy(() -> StepVerifier.create(flux)
+				                              .expectNextCount(0L)
+				                              .expectComplete()
+				                              .verify())
+				.withMessageStartingWith("expectation \"expectComplete\" failed (")
+				.withMessageEndingWith("expected: onComplete(); actual: onNext(1))");;
+	}
+
+	@Test
+	public void verifyNextAsEmptyFluxEmptyIterable() {
+		final List<Integer> expected = Collections.emptyList();
+		Flux<Integer> flux = Flux.empty();
+
+		StepVerifier.create(flux)
+		            .expectNextSequence(expected)
+		            .expectComplete()
+		            .verify();
 	}
 
 	@Test

@@ -727,6 +727,7 @@ final class DefaultStepVerifierBuilder<T>
 		Fuseable.QueueSubscription<T> qs;
 		long                          produced;   //used for request tracking
 		long                          unasserted; //used for expectNextXXX tracking
+		boolean                       reEvaluate; //used to loop again on the same signal when an expectation is effectively no-op
 		volatile long                 requested;
 		volatile boolean done; // async fusion
 		Iterator<? extends T>         currentNextAs;
@@ -872,7 +873,11 @@ final class DefaultStepVerifierBuilder<T>
 				}
 				Signal<T> signal = Signal.next(t);
 				if (!checkRequestOverflow(signal)) {
-					onExpectation(signal);
+					reEvaluate = true;
+					while (reEvaluate) {
+						reEvaluate = false;
+						onExpectation(signal);
+					}
 				}
 			}
 		}
@@ -1260,6 +1265,11 @@ final class DefaultStepVerifierBuilder<T>
 			Iterator<? extends T> currentNextAs = this.currentNextAs;
 			if (currentNextAs == null) {
 				currentNextAs = sequenceEvent.iterable.iterator();
+				if (actualSignal.isOnNext() && !currentNextAs.hasNext()) {
+					this.script.poll();
+					this.reEvaluate = true;
+					return true;
+				}
 				this.currentNextAs = currentNextAs;
 			}
 
@@ -1312,28 +1322,31 @@ final class DefaultStepVerifierBuilder<T>
 		}
 
 		final boolean onSignalCount(Signal<T> actualSignal, SignalCountEvent<T> event) {
-			if (unasserted >= event.count) {
+			if (event.count <= 0) {
+				this.script.poll();
+				this.reEvaluate = true;
+				return true;
+			}
+			else if (unasserted >= event.count) {
 				this.script.poll();
 				unasserted -= event.count;
+				return false;
 			}
-			else {
-				if (event.count != 0) {
-					Optional<AssertionError> error =
-							this.checkCountMismatch(event, actualSignal);
+			else { //event.count > 0
+				Optional<AssertionError> error =
+						this.checkCountMismatch(event, actualSignal);
 
-					if (error.isPresent()) {
-						Exceptions.addThrowable(ERRORS, this, error.get());
-						if(actualSignal.isOnError()) {
-							// #55 ensure the onError is added as a suppressed to the AssertionError
-							error.get().addSuppressed(actualSignal.getThrowable());
-						}
-						maybeCancel(actualSignal);
-						this.completeLatch.countDown();
+				if (error.isPresent()) {
+					Exceptions.addThrowable(ERRORS, this, error.get());
+					if(actualSignal.isOnError()) {
+						// #55 ensure the onError is added as a suppressed to the AssertionError
+						error.get().addSuppressed(actualSignal.getThrowable());
 					}
+					maybeCancel(actualSignal);
+					this.completeLatch.countDown();
 				}
 				return true;
 			}
-			return false;
 		}
 
 		void onTaskEvent() {
