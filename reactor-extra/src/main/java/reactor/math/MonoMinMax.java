@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,30 +20,31 @@ import java.util.Comparator;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-
 import reactor.core.Fuseable;
-import reactor.core.publisher.MonoSource;
+import reactor.core.publisher.Flux;
+import reactor.util.context.Context;
 
 /**
  * Computes the maximum or minimum of source items and returns the result.
  *
  * @param <T> the input value type
  */
-final class MonoMinMax<T> extends MonoSource<T, T> implements Fuseable {
+final class MonoMinMax<T> extends MonoFromFluxOperator<T, T> implements Fuseable {
 
 	final Comparator<? super T> comparator;
 
 	final int comparisonMultiplier;
 
 	MonoMinMax(Publisher<? extends T> source, Comparator<? super T> comparator, int comparisonMultiplier) {
-		super(source);
+		super(Flux.from(source));
 		this.comparator = comparator;
 		this.comparisonMultiplier = comparisonMultiplier;
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super T> s) {
-		source.subscribe(new MinMaxSubscriber<T>(s, comparator, comparisonMultiplier));
+	public void subscribe(Subscriber<? super T> s, Context ctx) {
+		source.subscribe(new MinMaxSubscriber<T>(s, comparator, comparisonMultiplier),
+				ctx);
 	}
 
 	static final class MinMaxSubscriber<T> extends MathSubscriber<T, T> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,27 +20,27 @@ import java.util.function.Function;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-
 import reactor.core.Fuseable;
-import reactor.core.publisher.MonoSource;
+import reactor.core.publisher.Flux;
+import reactor.util.context.Context;
 
 /**
  * Computes the sum of source numbers and returns the result as a long.
  *
  * @param <T> the input value type
  */
-final class MonoSumLong<T> extends MonoSource<T, Long> implements Fuseable {
+final class MonoSumLong<T> extends MonoFromFluxOperator<T, Long> implements Fuseable {
 
 	final Function<? super T, ? extends Number> mapping;
 
 	MonoSumLong(Publisher<? extends T> source, Function<? super T, ? extends Number> mapping) {
-		super(source);
+		super(Flux.from(source));
 		this.mapping = mapping;
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super Long> s) {
-		source.subscribe(new SumLongSubscriber<T>(s, mapping));
+	public void subscribe(Subscriber<? super Long> s, Context ctx) {
+		source.subscribe(new SumLongSubscriber<T>(s, mapping), ctx);
 	}
 
 	static final class SumLongSubscriber<T> extends MathSubscriber<T, Long> {
