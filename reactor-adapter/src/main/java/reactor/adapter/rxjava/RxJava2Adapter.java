@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.reactivex.internal.operators.single.SingleFromPublisher;
 import reactor.core.*;
 import reactor.core.publisher.*;
 import reactor.core.publisher.Operators.MonoSubscriber;
+import reactor.util.context.Context;
 
 /**
  * Convert between RxJava 2 types and Mono/Flux back and forth and compose backpressure,
@@ -158,7 +159,7 @@ public abstract class RxJava2Adapter {
         }
         
         @Override
-        public void subscribe(Subscriber<? super T> s) {
+        public void subscribe(Subscriber<? super T> s, Context context) {
             if (s instanceof ConditionalSubscriber) {
                 source.subscribe(new FlowableAsFluxConditionalSubscriber<>((ConditionalSubscriber<? super T>)s));
             } else {
@@ -545,7 +546,7 @@ public abstract class RxJava2Adapter {
         }
         
         @Override
-        public void subscribe(Subscriber<? super Void> s) {
+        public void subscribe(Subscriber<? super Void> s, Context context) {
             source.subscribe(new CompletableAsMonoSubscriber(s));
         }
         
@@ -622,7 +623,7 @@ public abstract class RxJava2Adapter {
         }
         
         @Override
-        public void subscribe(Subscriber<? super T> s) {
+        public void subscribe(Subscriber<? super T> s, Context context) {
             SingleObserver<? super T> single = new SingleAsMonoSubscriber<>(s);
             source.subscribe(single);
         }
@@ -720,8 +721,8 @@ public abstract class RxJava2Adapter {
         }
         
         @Override
-        public void subscribe(Subscriber<? super T> s) {
-            source.subscribe(new MaybeAsMonoObserver<T>(s));
+        public void subscribe(Subscriber<? super T> s, Context context) {
+            source.subscribe(new MaybeAsMonoObserver<>(s));
         }
         
         static final class MaybeAsMonoObserver<T> extends MonoSubscriber<T, T> implements MaybeObserver<T> {
