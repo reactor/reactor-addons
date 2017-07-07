@@ -16,9 +16,8 @@
 
 package reactor.math;
 
-import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-
+import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Operators;
 
 abstract class MathSubscriber<T, R> extends Operators.MonoSubscriber<T, R> {
@@ -27,7 +26,7 @@ abstract class MathSubscriber<T, R> extends Operators.MonoSubscriber<T, R> {
 
 	boolean done;
 
-	MathSubscriber(Subscriber<? super R> actual) {
+	MathSubscriber(CoreSubscriber<? super R> actual) {
 		super(actual);
 	}
 

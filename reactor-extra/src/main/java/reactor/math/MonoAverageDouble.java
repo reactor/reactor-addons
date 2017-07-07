@@ -19,10 +19,9 @@ package reactor.math;
 import java.util.function.Function;
 
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
+import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
-import reactor.util.context.Context;
 
 /**
  * Computes the average of source numbers and returns the result as a double.
@@ -39,8 +38,8 @@ final class MonoAverageDouble<T> extends MonoFromFluxOperator<T, Double> impleme
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super Double> s, Context ctx) {
-		source.subscribe(new AverageDoubleSubscriber<T>(s, mapping), ctx);
+	public void subscribe(CoreSubscriber<? super Double> s) {
+		source.subscribe(new AverageDoubleSubscriber<T>(s, mapping));
 	}
 
 	static final class AverageDoubleSubscriber<T> extends MathSubscriber<T, Double> {
@@ -51,7 +50,7 @@ final class MonoAverageDouble<T> extends MonoFromFluxOperator<T, Double> impleme
 
 		double sum;
 
-		AverageDoubleSubscriber(Subscriber<? super Double> actual, Function<? super T, ? extends Number> mapping) {
+		AverageDoubleSubscriber(CoreSubscriber<? super Double> actual, Function<? super T, ? extends Number> mapping) {
 			super(actual);
 			this.mapping = mapping;
 		}

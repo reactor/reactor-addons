@@ -19,10 +19,9 @@ package reactor.math;
 import java.util.Comparator;
 
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
+import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
-import reactor.util.context.Context;
 
 /**
  * Computes the maximum or minimum of source items and returns the result.
@@ -42,9 +41,8 @@ final class MonoMinMax<T> extends MonoFromFluxOperator<T, T> implements Fuseable
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super T> s, Context ctx) {
-		source.subscribe(new MinMaxSubscriber<T>(s, comparator, comparisonMultiplier),
-				ctx);
+	public void subscribe(CoreSubscriber<? super T> s) {
+		source.subscribe(new MinMaxSubscriber<T>(s, comparator, comparisonMultiplier));
 	}
 
 	static final class MinMaxSubscriber<T> extends MathSubscriber<T, T> {
@@ -55,7 +53,7 @@ final class MonoMinMax<T> extends MonoFromFluxOperator<T, T> implements Fuseable
 
 		T result;
 
-		MinMaxSubscriber(Subscriber<? super T> actual, Comparator<? super T> comparator, int comparisonMultiplier) {
+		MinMaxSubscriber(CoreSubscriber<? super T> actual, Comparator<? super T> comparator, int comparisonMultiplier) {
 			super(actual);
 			this.comparator = comparator;
 			this.comparisonMultiplier = comparisonMultiplier;

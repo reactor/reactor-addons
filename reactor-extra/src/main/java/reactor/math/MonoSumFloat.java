@@ -19,10 +19,9 @@ package reactor.math;
 import java.util.function.Function;
 
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
+import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
-import reactor.util.context.Context;
 
 /**
  * Computes the sum of source numbers and returns the result as a float.
@@ -39,8 +38,8 @@ final class MonoSumFloat<T> extends MonoFromFluxOperator<T, Float> implements Fu
 	}
 
 	@Override
-	public void subscribe(Subscriber<? super Float> s, Context ctx) {
-		source.subscribe(new SumLongSubscriber<T>(s, mapping), ctx);
+	public void subscribe(CoreSubscriber<? super Float> s) {
+		source.subscribe(new SumLongSubscriber<T>(s, mapping));
 	}
 
 	static final class SumLongSubscriber<T> extends MathSubscriber<T, Float> {
@@ -51,7 +50,7 @@ final class MonoSumFloat<T> extends MonoFromFluxOperator<T, Float> implements Fu
 
 		boolean hasValue;
 
-		SumLongSubscriber(Subscriber<? super Float> actual, Function<? super T, ? extends Number> mapping) {
+		SumLongSubscriber(CoreSubscriber<? super Float> actual, Function<? super T, ? extends Number> mapping) {
 			super(actual);
 			this.mapping = mapping;
 		}

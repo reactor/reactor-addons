@@ -18,16 +18,29 @@ package reactor.adapter.rxjava;
 
 import java.util.NoSuchElementException;
 
-import org.reactivestreams.*;
-
-import io.reactivex.*;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
+import io.reactivex.CompletableObserver;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
+import io.reactivex.Maybe;
+import io.reactivex.MaybeObserver;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.SingleObserver;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.internal.operators.completable.CompletableFromPublisher;
 import io.reactivex.internal.operators.single.SingleFromPublisher;
-import reactor.core.*;
-import reactor.core.publisher.*;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import reactor.core.CoreSubscriber;
+import reactor.core.Exceptions;
+import reactor.core.Fuseable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Operators;
 import reactor.core.publisher.Operators.MonoSubscriber;
-import reactor.util.context.Context;
 
 /**
  * Convert between RxJava 2 types and Mono/Flux back and forth and compose backpressure,
@@ -159,7 +172,7 @@ public abstract class RxJava2Adapter {
         }
         
         @Override
-        public void subscribe(Subscriber<? super T> s, Context context) {
+        public void subscribe(CoreSubscriber<? super T> s) {
             if (s instanceof ConditionalSubscriber) {
                 source.subscribe(new FlowableAsFluxConditionalSubscriber<>((ConditionalSubscriber<? super T>)s));
             } else {
@@ -546,7 +559,7 @@ public abstract class RxJava2Adapter {
         }
         
         @Override
-        public void subscribe(Subscriber<? super Void> s, Context context) {
+        public void subscribe(CoreSubscriber<? super Void> s) {
             source.subscribe(new CompletableAsMonoSubscriber(s));
         }
         
@@ -623,7 +636,7 @@ public abstract class RxJava2Adapter {
         }
         
         @Override
-        public void subscribe(Subscriber<? super T> s, Context context) {
+        public void subscribe(CoreSubscriber<? super T> s) {
             SingleObserver<? super T> single = new SingleAsMonoSubscriber<>(s);
             source.subscribe(single);
         }
@@ -633,7 +646,7 @@ public abstract class RxJava2Adapter {
             
             Disposable d;
             
-            public SingleAsMonoSubscriber(Subscriber<? super T> subscriber) {
+            public SingleAsMonoSubscriber(CoreSubscriber<? super T> subscriber) {
                 super(subscriber);
             }
 
@@ -721,7 +734,7 @@ public abstract class RxJava2Adapter {
         }
         
         @Override
-        public void subscribe(Subscriber<? super T> s, Context context) {
+        public void subscribe(CoreSubscriber<? super T> s) {
             source.subscribe(new MaybeAsMonoObserver<>(s));
         }
         
@@ -729,7 +742,7 @@ public abstract class RxJava2Adapter {
 
             Disposable d;
             
-            public MaybeAsMonoObserver(Subscriber<? super T> subscriber) {
+            public MaybeAsMonoObserver(CoreSubscriber<? super T> subscriber) {
                 super(subscriber);
             }
 
