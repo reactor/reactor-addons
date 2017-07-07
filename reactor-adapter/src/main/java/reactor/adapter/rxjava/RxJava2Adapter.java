@@ -370,7 +370,7 @@ public abstract class RxJava2Adapter {
             }
         }
         
-        static final class FluxAsFlowableSubscriber<T> implements Subscriber<T>, 
+        static final class FluxAsFlowableSubscriber<T> implements CoreSubscriber<T>,
         io.reactivex.internal.fuseable.QueueSubscription<T> {
             
             final Subscriber<? super T> actual;
@@ -675,7 +675,7 @@ public abstract class RxJava2Adapter {
             source.subscribe(new MonoSubscriber<T>(observer));
         }
         
-        static final class MonoSubscriber<T> implements Subscriber<T>, Disposable {
+        static final class MonoSubscriber<T> implements CoreSubscriber<T>, Disposable {
             final MaybeObserver<? super T> actual;
             
             Subscription s;

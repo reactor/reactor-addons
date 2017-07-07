@@ -30,8 +30,8 @@ import ch.qos.logback.core.spi.ContextAwareBase;
 import ch.qos.logback.core.spi.FilterAttachableImpl;
 import ch.qos.logback.core.spi.FilterReply;
 import org.reactivestreams.Processor;
-import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import reactor.core.CoreSubscriber;
 import reactor.core.publisher.WorkQueueProcessor;
 
 /**
@@ -46,8 +46,7 @@ import reactor.core.publisher.WorkQueueProcessor;
 public class AsyncAppender
   extends ContextAwareBase
   implements Appender<ILoggingEvent>,
-  AppenderAttachable<ILoggingEvent>,
-  Subscriber<ILoggingEvent> {
+  AppenderAttachable<ILoggingEvent>, CoreSubscriber<ILoggingEvent> {
 
 	private final AppenderAttachableImpl<ILoggingEvent>    aai      = new AppenderAttachableImpl<ILoggingEvent>();
 	private final FilterAttachableImpl<ILoggingEvent>      fai      = new FilterAttachableImpl<ILoggingEvent>();
