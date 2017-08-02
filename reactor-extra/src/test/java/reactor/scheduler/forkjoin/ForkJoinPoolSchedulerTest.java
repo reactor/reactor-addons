@@ -65,20 +65,20 @@ public class ForkJoinPoolSchedulerTest extends AbstractSchedulerTest {
 	public void scheduledDoesntReject() {
 		Scheduler s = scheduler();
 
-		assertThat(s.schedule(() -> {
-		}, 100, TimeUnit.MILLISECONDS)).describedAs("direct delayed scheduling")
-		                               .isNotSameAs(Scheduler.REJECTED);
-		assertThat(s.schedulePeriodically(() -> {
-		}, 100, 100, TimeUnit.MILLISECONDS)).describedAs("direct periodic scheduling")
-		                                    .isNotSameAs(Scheduler.REJECTED);
+		assertThat(s.schedule(() -> {}, 100, TimeUnit.MILLISECONDS))
+				.describedAs("direct delayed scheduling")
+				.isNotNull();
+		assertThat(s.schedulePeriodically(() -> {}, 100, 100, TimeUnit.MILLISECONDS))
+				.describedAs("direct periodic scheduling")
+				.isNotNull();
 
 		Scheduler.Worker w = s.createWorker();
-		assertThat(w.schedule(() -> {
-		}, 100, TimeUnit.MILLISECONDS)).describedAs("worker delayed scheduling")
-		                               .isNotSameAs(Scheduler.REJECTED);
-		assertThat(w.schedulePeriodically(() -> {
-		}, 100, 100, TimeUnit.MILLISECONDS)).describedAs("worker periodic scheduling")
-		                                    .isNotSameAs(Scheduler.REJECTED);
+		assertThat(w.schedule(() -> {}, 100, TimeUnit.MILLISECONDS))
+				.describedAs("worker delayed scheduling")
+				.isNotNull();
+		assertThat(w.schedulePeriodically(() -> {}, 100, 100, TimeUnit.MILLISECONDS))
+				.describedAs("worker periodic scheduling")
+				.isNotNull();
 	}
 
 	@Test
