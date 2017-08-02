@@ -54,7 +54,7 @@ public final class SwtScheduler implements Scheduler {
         if (!display.isDisposed()) {
             display.asyncExec(a);
         } else {
-            return REJECTED;
+            throw Exceptions.failWithRejected();
         }
 
         return a;
@@ -73,7 +73,7 @@ public final class SwtScheduler implements Scheduler {
             
             return a;
         }
-        return REJECTED;
+        throw Exceptions.failWithRejected();
 	}
 	
 	@Override
@@ -94,7 +94,7 @@ public final class SwtScheduler implements Scheduler {
     	    return a;
         }
         
-        return REJECTED;
+        throw Exceptions.failWithRejected();
 	}
 	
 	@Override
@@ -129,7 +129,7 @@ public final class SwtScheduler implements Scheduler {
 	            return a;
 	        }
 	        
-			return REJECTED;
+			throw Exceptions.failWithRejected();
 		}
 
 		@Override
@@ -146,7 +146,7 @@ public final class SwtScheduler implements Scheduler {
                 return a;
             }
 			
-            return REJECTED;
+            throw Exceptions.failWithRejected();
 		}
 		
 		@Override
@@ -166,7 +166,7 @@ public final class SwtScheduler implements Scheduler {
 	            return a;
 	        }
 	        
-	        return REJECTED;
+	        throw Exceptions.failWithRejected();
 		}
 
 		/**

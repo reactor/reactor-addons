@@ -148,7 +148,7 @@ public final class SwingScheduler implements Scheduler {
     	        
     	        return a;
 		    }
-		    return REJECTED;
+		    throw Exceptions.failWithRejected();
 		}
 
 		@Override
@@ -158,7 +158,7 @@ public final class SwingScheduler implements Scheduler {
             }
 
             if (unsubscribed) {
-                return REJECTED;
+                throw Exceptions.failWithRejected();
             }
 
             Timer timer = new Timer((int)unit.toMillis(delayTime), null);
@@ -166,7 +166,7 @@ public final class SwingScheduler implements Scheduler {
             
             synchronized (this) {
                 if (unsubscribed) {
-                    return REJECTED;
+	                throw Exceptions.failWithRejected();
                 }
                 tasks.add(timer);
             }
@@ -188,7 +188,7 @@ public final class SwingScheduler implements Scheduler {
 
             if (unsubscribed) {
                 timer.stop();
-                return REJECTED;
+                throw Exceptions.failWithRejected();
             }
             
             return () -> {
@@ -200,7 +200,7 @@ public final class SwingScheduler implements Scheduler {
 		@Override
 		public Disposable schedulePeriodically(Runnable task, long initialDelay, long period, TimeUnit unit) {
 		    if (unsubscribed) {
-                return REJECTED;
+                throw Exceptions.failWithRejected();
             }
 
             Timer timer = new Timer((int)unit.toMillis(period), null);
@@ -208,7 +208,7 @@ public final class SwingScheduler implements Scheduler {
             
             synchronized (this) {
                 if (unsubscribed) {
-                    return REJECTED;
+                    throw Exceptions.failWithRejected();
                 }
                 tasks.add(timer);
             }
@@ -228,7 +228,7 @@ public final class SwingScheduler implements Scheduler {
 
             if (unsubscribed) {
                 timer.stop();
-                return REJECTED;
+                throw Exceptions.failWithRejected();
             }
             
             return () -> {

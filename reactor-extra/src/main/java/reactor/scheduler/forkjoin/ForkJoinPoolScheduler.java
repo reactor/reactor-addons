@@ -178,12 +178,7 @@ public final class ForkJoinPoolScheduler implements Scheduler {
 
 	@Override
 	public Disposable schedule(Runnable runnable) {
-		try {
-			return new DisposableForkJoinTask(pool.submit(runnable));
-		}
-		catch (RejectedExecutionException ignored) {
-			return REJECTED;
-		}
+		return new DisposableForkJoinTask(pool.submit(runnable));
 	}
 
 	@Override
@@ -192,11 +187,7 @@ public final class ForkJoinPoolScheduler implements Scheduler {
 			return schedule(task);
 		}
 		TrampolinedTask trampolinedTask = new TrampolinedTask(pool, task, NO_PARENT);
-		Disposable scheduled = scheduler.schedule(trampolinedTask, delay, unit);
-		if(scheduled == Scheduler.REJECTED) {
-			return scheduled;
-		}
-		return new CompositeDisposable(scheduled, trampolinedTask);
+		return new CompositeDisposable(scheduler.schedule(trampolinedTask, delay, unit), trampolinedTask);
 	}
 
 	@Override
@@ -205,14 +196,11 @@ public final class ForkJoinPoolScheduler implements Scheduler {
 			long period,
 			TimeUnit unit) {
 		TrampolinedTask trampolinedTask = new TrampolinedTask(pool, task, NO_PARENT);
-		Disposable scheduled = scheduler.schedulePeriodically(trampolinedTask,
+
+		return new CompositeDisposable(scheduler.schedulePeriodically(trampolinedTask,
 				initialDelay,
 				period,
-				unit);
-		if(scheduled == Scheduler.REJECTED) {
-			return scheduled;
-		}
-		return new CompositeDisposable(scheduled, trampolinedTask);
+				unit), trampolinedTask);
 	}
 
 	private void uncaughtException(Thread t, Throwable e) {
@@ -335,7 +323,7 @@ public final class ForkJoinPoolScheduler implements Scheduler {
 		@Override
 		public Disposable schedule(Runnable task) {
 			if (shutdown) {
-				return REJECTED;
+				throw Exceptions.failWithRejected();
 			}
 
 			DisposableWorkerTask workerTask = new DisposableWorkerTask(task, isDisposed);
@@ -346,7 +334,7 @@ public final class ForkJoinPoolScheduler implements Scheduler {
 			catch (RejectedExecutionException ignored) {
 				// dispose the task since it made it into the queue
 				workerTask.dispose();
-				return REJECTED;
+				throw ignored;
 			}
 
 			return workerTask;
@@ -359,16 +347,12 @@ public final class ForkJoinPoolScheduler implements Scheduler {
 			}
 
 			if (shutdown) {
-				return REJECTED;
+				throw Exceptions.failWithRejected();
 			}
 
 			TrampolinedTask trampolinedTask =
 					new TrampolinedTask(workerExecutor, task, isDisposed);
-			Disposable scheduled = scheduler.schedule(trampolinedTask, delay, unit);
-			if(scheduled == Scheduler.REJECTED) {
-				return scheduled;
-			}
-			return new CompositeDisposable(scheduled, trampolinedTask);
+			return new CompositeDisposable(scheduler.schedule(trampolinedTask, delay, unit), trampolinedTask);
 		}
 
 		@Override
@@ -377,20 +361,16 @@ public final class ForkJoinPoolScheduler implements Scheduler {
 				long period,
 				TimeUnit unit) {
 			if (shutdown) {
-				return REJECTED;
+				throw Exceptions.failWithRejected();
 			}
 
 			TrampolinedTask trampolinedTask =
 					new TrampolinedTask(workerExecutor, task, isDisposed);
 
-			Disposable scheduled = scheduler.schedulePeriodically(trampolinedTask,
+			return new CompositeDisposable(scheduler.schedulePeriodically(trampolinedTask,
 					initialDelay,
 					period,
-					unit);
-			if(scheduled == Scheduler.REJECTED) {
-				return scheduled;
-			}
-			return new CompositeDisposable(scheduled, trampolinedTask);
+					unit), trampolinedTask);
 		}
 
 		private void execute(Runnable command) {

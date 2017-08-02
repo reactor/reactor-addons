@@ -91,7 +91,7 @@ public class ActorScheduler implements reactor.core.scheduler.Scheduler {
             synchronized (this) {
                 HashSet<WorkerRunnable> set = tasks;
                 if (set == null) {
-                    return REJECTED;
+                    throw Exceptions.failWithRejected();
                 }
                 set.add(wr);
             }
