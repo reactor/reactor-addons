@@ -27,6 +27,7 @@ import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
 import reactor.core.scheduler.Scheduler;
+import reactor.util.context.Context;
 
 /** 
  * Scheduler that runs tasks on Swing's event dispatch thread. 
@@ -65,7 +66,7 @@ public final class SwingScheduler implements Scheduler {
                 task.run();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
-	            Operators.onErrorDropped(ex);
+	            Operators.onErrorDropped(ex, Context.empty());
             }
         });
         timer.start();
@@ -83,7 +84,7 @@ public final class SwingScheduler implements Scheduler {
             } catch (Throwable ex) {
                 timer.stop();
                 Exceptions.throwIfFatal(ex);
-	            Operators.onErrorDropped(ex);
+	            Operators.onErrorDropped(ex, Context.empty());
             }
         });
         timer.start();
@@ -177,7 +178,7 @@ public final class SwingScheduler implements Scheduler {
                         action.run();
                     } catch (Throwable ex) {
                         Exceptions.throwIfFatal(ex);
-	                    Operators.onErrorDropped(ex);
+	                    Operators.onErrorDropped(ex, Context.empty());
                     }
                 } finally {
                     remove(timer);
@@ -220,7 +221,7 @@ public final class SwingScheduler implements Scheduler {
                     timer.stop();
                     remove(timer);
                     Exceptions.throwIfFatal(ex);
-	                Operators.onErrorDropped(ex);
+	                Operators.onErrorDropped(ex, Context.empty());
                 }
             });
             
@@ -256,7 +257,7 @@ public final class SwingScheduler implements Scheduler {
                     action.run();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-	                Operators.onErrorDropped(ex);
+	                Operators.onErrorDropped(ex, Context.empty());
                 }
             }
         }
