@@ -42,7 +42,7 @@ abstract class MathSubscriber<T, R> extends Operators.MonoSubscriber<T, R> {
 	@Override
 	public void onNext(T t) {
 		if (done) {
-			Operators.onNextDropped(t);
+			Operators.onNextDropped(t, actual.currentContext());
 			return;
 		}
 
@@ -52,7 +52,7 @@ abstract class MathSubscriber<T, R> extends Operators.MonoSubscriber<T, R> {
 		catch (Throwable ex) {
 			reset();
 			done = true;
-			actual.onError(Operators.onOperatorError(s, ex, t));
+			actual.onError(Operators.onOperatorError(s, ex, t, actual.currentContext()));
 			return;
 		}
 	}
@@ -60,7 +60,7 @@ abstract class MathSubscriber<T, R> extends Operators.MonoSubscriber<T, R> {
 	@Override
 	public void onError(Throwable t) {
 		if (done) {
-			Operators.onErrorDropped(t);
+			Operators.onErrorDropped(t, actual.currentContext());
 			return;
 		}
 		done = true;

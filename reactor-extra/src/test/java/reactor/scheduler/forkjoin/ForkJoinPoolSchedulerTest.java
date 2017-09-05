@@ -92,7 +92,7 @@ public class ForkJoinPoolSchedulerTest extends AbstractSchedulerTest {
 				StepVerifier.create(Mono.delay(Duration.ofMillis(100), s)
 				                        .log()
 				                        .doOnSubscribe(sub -> start.set(System.nanoTime()))
-				                        .doOnTerminate((v, e) -> end.set(System.nanoTime())))
+				                        .doOnSuccessOrError((v, e) -> end.set(System.nanoTime())))
 				            .expectSubscription()
 				            .expectNext(0L)
 				            .verifyComplete();

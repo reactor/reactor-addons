@@ -25,6 +25,7 @@ import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
 import reactor.core.scheduler.Scheduler;
+import reactor.util.context.Context;
 
 /** 
  * Scheduler that runs tasks on Swt's event dispatch thread. 
@@ -194,7 +195,7 @@ public final class SwtScheduler implements Scheduler {
 				        action.run();
 				    } catch (Throwable ex) {
 				        Exceptions.throwIfFatal(ex);
-					    Operators.onErrorDropped(ex);
+					    Operators.onErrorDropped(ex, Context.empty());
 				    }
 				}
 			}
@@ -224,7 +225,7 @@ public final class SwtScheduler implements Scheduler {
                     action.run();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
-	                Operators.onErrorDropped(ex);
+	                Operators.onErrorDropped(ex, Context.empty());
                 }
             }
         }
@@ -266,7 +267,7 @@ public final class SwtScheduler implements Scheduler {
                 task.run();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
-	            Operators.onErrorDropped(ex);
+	            Operators.onErrorDropped(ex, Context.empty());
                 return;
             }
             
@@ -325,7 +326,7 @@ public final class SwtScheduler implements Scheduler {
                 task.run();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
-	            Operators.onErrorDropped(ex);
+	            Operators.onErrorDropped(ex, Context.empty());
                 return;
             }
 

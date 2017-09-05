@@ -27,6 +27,7 @@ import akka.actor.UntypedActor;
 import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Operators;
+import reactor.util.context.Context;
 
 /**
  * A Scheduler implementation that given an ActorSystem, creates a single Actor and
@@ -201,7 +202,7 @@ public class ActorScheduler implements reactor.core.scheduler.Scheduler {
                 r.run();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
-                Operators.onErrorDropped(ex);
+                Operators.onErrorDropped(ex, Context.empty());
             }
         }
     }
