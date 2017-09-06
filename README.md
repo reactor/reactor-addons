@@ -36,15 +36,16 @@ This should cause the submodules to be compiled and the tests to be run. To inst
 
 ### Maven Artifacts
 
-Snapshot Maven artifacts are provided in the SpringSource snapshot repositories. To add this repo to your Gradle build, specify the URL like the following:
+Snapshot and pre-release Maven artifacts are provided in the SpringSource snapshot repositories.
+To add this repo to your Gradle build, specify the URL like the following:
 
     ext {
-      reactorVersion = '3.1.0.BUILD-SNAPSHOT'
+      reactorVersion = '3.1.0.RC1'
     }
 
     repositories {
       //maven { url 'http://repo.spring.io/release' }
-      //maven { url 'http://repo.spring.io/milestone' }
+      maven { url 'http://repo.spring.io/milestone' }
       maven { url 'http://repo.spring.io/snapshot' }
       mavenCentral()
     }
