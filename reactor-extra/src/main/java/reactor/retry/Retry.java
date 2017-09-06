@@ -145,7 +145,7 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 
 	/**
 	 * Retry function that retries n times.
-	 * @param n number of retries
+	 * @param maxRetries number of retries
 	 * @return Retry function for n retries
 	 */
 	Retry<T> retryMax(int maxRetries);

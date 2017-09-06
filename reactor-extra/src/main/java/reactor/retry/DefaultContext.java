@@ -53,22 +53,27 @@ public class DefaultContext<T> implements RetryContext<T>, RepeatContext<T> {
 		this.exception = exception;
 	}
 
+	@Override
 	public T applicationContext() {
 		return applicationContext;
 	}
 
+	@Override
 	public long iteration() {
 		return iteration;
 	}
 
+	@Override
 	public Long companionValue() {
 		return repeatCompanionValue;
 	}
 
+	@Override
 	public Throwable exception() {
 		return exception;
 	}
 
+	@Override
 	public Duration backoff() {
 		return backoff == null ? null : backoff.delay;
 	}
