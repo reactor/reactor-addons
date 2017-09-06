@@ -82,10 +82,6 @@ configure(rootProject) {
 	from("$buildDir/asciidoc/pdf/reactor-addons-reference-guide-${version}.pdf") { into ("docs/") }
 	from("$buildDir/asciidoc/html5/index.html") { into("docs/") }
 	from("$buildDir/asciidoc/html5/images") { into("images/") }
-
-	artifacts {
-	  archives docsZip
-	}
   }
 
 }

@@ -268,4 +268,4 @@ def getPlatform() {
   throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch)
 }
 
-assemble.dependsOn docsZip
+assemble.dependsOn asciidoctor
