@@ -17,11 +17,40 @@
 package reactor.function;
 
 import org.junit.Test;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 import reactor.util.function.Tuples;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public final class TupleUtilsTest {
+
+    private class Customer {
+        final String fName;
+        final String lName;
+        final String address;
+
+        private Customer(String fName, String lName, String address) {
+            this.fName = fName;
+            this.lName = lName;
+            this.address = address;
+        }
+    }
+
+    @Test
+    public void customer() {
+        StepVerifier.create(Flux
+                .just(Tuples.of("John", "Doe", "NYC"))
+                .map(TupleUtils.function(Customer::new))
+        )
+                    .assertNext(c -> assertThat(c)
+                            .isInstanceOf(Customer.class)
+                            .hasFieldOrPropertyWithValue("fName", "John")
+                            .hasFieldOrPropertyWithValue("lName", "Doe")
+                            .hasFieldOrPropertyWithValue("address", "NYC")
+                    )
+                    .verifyComplete();
+    }
 
     @Test
     public void consumer2() {

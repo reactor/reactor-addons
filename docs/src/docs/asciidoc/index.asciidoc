@@ -1,28 +1,17 @@
 = Reactor Guide
-Stephane Maldini;
-:appversion: 3.0.2.BUILD-SNAPSHOT (wiki)
+Stephane Maldini <https://twitter.com/smaldini[@smaldini]>; Simon Baslé <https://twitter.com/simonbasle[@simonbasle]>
+:appversion: 3.1.0.M2
 ifndef::host-github[:ext-relative: {outfilesuffix}]
 {appversion}
 :doctype: book
 :icons: font
+:toc:
+:sectnums:
+:sectanchors:
+:linkattrs:
 
-ifdef::backend-html5[]
-++++
-include::nav.html[]
-++++
+include::reactor-extra.adoc[leveloffset=1]
+ifeval::["{backend}" == "html5"]
+https://github.com/reactor/reactor-addons/edit/master/docs/src/docs/asciidoc/reactor-extra.adoc[Suggest Edit^, title="Suggest an edit to the above section via github", role="fa fa-edit"]
+to "<<reactor-extra>>"
 endif::[]
-
-include::20to25.adoc[]
-
-[[reactor-bus]]
-= *reactor-bus*
-include::event-bus.adoc[]
-
-[[reactor-extensions]]
-= *Extensions*
-include::spring.adoc[]
-
-[[reactor-spring]]
-include::spring.adoc[]
-
-include::groovy.adoc[]

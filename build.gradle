@@ -247,7 +247,6 @@ task release {
 }
 
 
-
 def getPlatform() {
   String osname = System.properties['os.name']
   String osarch = System.properties['os.arch']
@@ -268,3 +267,5 @@ def getPlatform() {
   }
   throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch)
 }
+
+assemble.dependsOn docsZip

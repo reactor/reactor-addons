@@ -15,7 +15,6 @@
  */
 configure(subprojects) { project ->
 	apply plugin: "java"
-	apply plugin: 'org.asciidoctor.convert'
 
   javadoc {
 	dependsOn jar
@@ -48,30 +47,45 @@ configure(subprojects) { project ->
 	}
   }
 
-
-
-	asciidoctor {
-		sources {
-			include "index.asciidoc"
-		}
-		outputDir file("$buildDir/asciidoc")
-		backends = ['html5', 'pdf']
-		logDocuments = true
-		options = [
-				doctype: 'book'
-		]
-		attributes docinfo: '',
-				toc2: '',
-				'compat-mode': '',
-				stylesdir: "stylesheets/",
-				stylesheet: 'golo.css',
-				'source-highlighter': 'coderay'
-
-		doLast {
-			file("$outputDir/pdf/index.pdf").renameTo("$outputDir/pdf/reference-guide.pdf")
-		}
-
-	}
-
 }
 
+configure(rootProject) {
+  apply plugin: 'org.asciidoctor.convert'
+
+  asciidoctor {
+	sourceDir = file('docs/src/docs/asciidoc')
+	sources {
+	  include "index.asciidoc"
+	}
+	outputDir file("$buildDir/asciidoc")
+	backends = ['html5']
+	logDocuments = true
+	options = [
+			doctype: 'book'
+	]
+	attributes docinfo: '',
+			toc2: '',
+			'compat-mode': '',
+			'allow-uri-read': '',
+			stylesdir: "stylesheets/",
+			stylesheet: 'reactor.css',
+			appversion: version,
+			'source-highlighter': 'coderay'
+
+	doLast {
+	  file("$outputDir/pdf/index.pdf").renameTo ("$outputDir/pdf/reactor-addons-reference-guide-${version}.pdf")
+	}
+  }
+
+  task docsZip(type: Zip, dependsOn: asciidoctor) {
+	baseName = 'reactor-addons-docs'
+	from("$buildDir/asciidoc/pdf/reactor-addons-reference-guide-${version}.pdf") { into ("docs/") }
+	from("$buildDir/asciidoc/html5/index.html") { into("docs/") }
+	from("$buildDir/asciidoc/html5/images") { into("images/") }
+
+	artifacts {
+	  archives docsZip
+	}
+  }
+
+}
