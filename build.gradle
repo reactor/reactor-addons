@@ -21,13 +21,8 @@ buildscript {
   dependencies {
 	classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7',
 			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE',
-			'com.github.jengelman.gradle.plugins:shadow:1.2.3',
-			'org.asciidoctor:asciidoctorj-pdf:1.5.0-alpha.8'
+			'com.github.jengelman.gradle.plugins:shadow:1.2.3'
   }
-}
-
-plugins {
-  id 'org.asciidoctor.convert' version '1.5.2'
 }
 
 description = 'Reactive fast data framework for the JVM'
@@ -267,5 +262,3 @@ def getPlatform() {
   }
   throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch)
 }
-
-assemble.dependsOn asciidoctor
