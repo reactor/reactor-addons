@@ -94,7 +94,10 @@ class RepeatExtensionsTests {
         assertThat(repeats)
                 .startsWith(100)
                 .hasSize(4)
-                .doesNotContainAnyElementsOf(repeatFirstPass.minus(100))
+
+        assertThat(repeats.minus(repeatFirstPass))
+                .describedAs("second pass has at least one different random delay")
+                .isNotEmpty
     }
 
 
@@ -132,6 +135,10 @@ class RepeatExtensionsTests {
         assertThat(repeats)
                 .startsWith(100)
                 .hasSize(4)
-                .doesNotContainAnyElementsOf(repeatFirstPass.minus(100))
+                .hasSize(4)
+
+        assertThat(repeats.minus(repeatFirstPass))
+                .describedAs("second pass has at least one different random delay")
+                .isNotEmpty
     }
 }
