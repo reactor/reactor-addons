@@ -40,7 +40,7 @@ class MathFluxExtensionsTests {
     @Test
     fun shortArrayIntSum() {
         shortArrayOf(32_000, 8_000) //sum overflows a Short
-                .intSumToMono()
+                .sumIntToMono()
                 .test()
                 .expectNext(40_000)
                 .verifyComplete()
@@ -58,7 +58,7 @@ class MathFluxExtensionsTests {
     @Test
     fun shortArrayAverageFloat() {
         shortArrayOf(10, 11)
-                .floatAverageToMono()
+                .averageFloatToMono()
                 .test()
                 .expectNext(10.5f)
                 .verifyComplete()
@@ -96,7 +96,7 @@ class MathFluxExtensionsTests {
     @Test
     fun intArrayIntSumWrapsAround() {
         intArrayOf(Int.MAX_VALUE, 1) //sum overflows an Int
-                .intSumToMono()
+                .sumIntToMono()
                 .test()
                 .expectNext(Int.MIN_VALUE)
                 .verifyComplete()
@@ -114,7 +114,7 @@ class MathFluxExtensionsTests {
     @Test
     fun intArrayAverageFloat() {
         intArrayOf(10, 11)
-                .floatAverageToMono()
+                .averageFloatToMono()
                 .test()
                 .expectNext(10.5f)
                 .verifyComplete()
@@ -152,7 +152,7 @@ class MathFluxExtensionsTests {
     @Test
     fun longArrayIntSumWrapsAround() {
         longArrayOf(Int.MAX_VALUE.toLong(), 1L)
-                .intSumToMono()
+                .sumIntToMono()
                 .test()
                 .expectNext(Int.MIN_VALUE)
                 .verifyComplete()
@@ -170,7 +170,7 @@ class MathFluxExtensionsTests {
     @Test
     fun longAverageFloat() {
         longArrayOf(10L, 11L)
-                .floatAverageToMono()
+                .averageFloatToMono()
                 .test()
                 .expectNext(10.5f)
                 .verifyComplete()
@@ -208,7 +208,7 @@ class MathFluxExtensionsTests {
     @Test
     fun floatArrayFloatSumCaps() {
         floatArrayOf(Float.MAX_VALUE, 1.0f)
-                .floatSumToMono()
+                .sumFloatToMono()
                 .test()
                 .expectNext(Float.MAX_VALUE)
                 .verifyComplete()
@@ -226,7 +226,7 @@ class MathFluxExtensionsTests {
     @Test
     fun floatAverageFloat() {
         floatArrayOf(10f, 11f)
-                .floatAverageToMono()
+                .averageFloatToMono()
                 .test()
                 .expectNext(10.5f)
                 .verifyComplete()
@@ -266,7 +266,7 @@ class MathFluxExtensionsTests {
     @Test
     fun doubleArrayFloatSumCaps() {
         doubleArrayOf(Float.MAX_VALUE.toDouble(), 1.0)
-                .floatSumToMono()
+                .sumFloatToMono()
                 .test()
                 .expectNext(Float.MAX_VALUE)
                 .verifyComplete()
@@ -284,7 +284,7 @@ class MathFluxExtensionsTests {
     @Test
     fun doubleAverageFloat() {
         doubleArrayOf(10.0, 11.0)
-                .floatAverageToMono()
+                .averageFloatToMono()
                 .test()
                 .expectNext(10.5f)
                 .verifyComplete()
@@ -335,9 +335,9 @@ class MathFluxExtensionsTests {
         val doubles: List<Double> = listOf(1.6, 2.6)
 
         Flux.concat(
-                longs.doubleSumToMono(),
-                floats.doubleSumToMono(),
-                doubles.doubleSumToMono())
+                longs.sumDoubleToMono(),
+                floats.sumDoubleToMono(),
+                doubles.sumDoubleToMono())
                 .test()
                 .expectNext(6.0)
                 .expectNext(4.0).`as`("floats")
@@ -446,7 +446,7 @@ class MathFluxExtensionsTests {
 
     @Test
     fun doubleSumMappedCollection() {
-        userList.mapDoubleSumToMono { it -> it.age }
+        userList.mapSumDoubleToMono { it -> it.age }
                 .test()
                 .expectNext(99.0)
                 .verifyComplete()

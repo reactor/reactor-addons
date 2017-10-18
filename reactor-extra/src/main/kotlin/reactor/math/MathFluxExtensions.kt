@@ -21,7 +21,7 @@ fun ShortArray.sumToMono(): Mono<Long> = MathFlux.sumLong(this.toFlux())
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun ShortArray.intSumToMono(): Mono<Int> = MathFlux.sumInt(this.toFlux())
+fun ShortArray.sumIntToMono(): Mono<Int> = MathFlux.sumInt(this.toFlux())
 /**
  * Extension to compute the average of values in a [ShortArray] into a [Mono] of [Double].
  *
@@ -35,7 +35,7 @@ fun ShortArray.averageToMono(): Mono<Double> = MathFlux.averageDouble(this.toFlu
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun ShortArray.floatAverageToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
+fun ShortArray.averageFloatToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
 /**
  * Extension to find the highest value in a [ShortArray] and return is as a [Mono]
  * of [Short].
@@ -70,7 +70,7 @@ fun IntArray.sumToMono(): Mono<Long> = MathFlux.sumLong(this.toFlux())
  * @since 3.1.1
  */
 //TODO should cap instead, see
-fun IntArray.intSumToMono(): Mono<Int> = MathFlux.sumInt(this.toFlux())
+fun IntArray.sumIntToMono(): Mono<Int> = MathFlux.sumInt(this.toFlux())
 /**
  * Extension to compute the average of values in a [IntArray] into a [Mono] of [Double].
  *
@@ -84,7 +84,7 @@ fun IntArray.averageToMono(): Mono<Double> = MathFlux.averageDouble(this.toFlux(
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun IntArray.floatAverageToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
+fun IntArray.averageFloatToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
 /**
  * Extension to find the highest value in a [IntArray] and return is as a [Mono]
  * of [Int].
@@ -120,7 +120,7 @@ fun LongArray.sumToMono(): Mono<Long> = MathFlux.sumLong(this.toFlux())
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun LongArray.intSumToMono(): Mono<Int> = MathFlux.sumInt(this.toFlux())
+fun LongArray.sumIntToMono(): Mono<Int> = MathFlux.sumInt(this.toFlux())
 /**
  * Extension to compute the average of values in a [LongArray] into a [Mono] of [Double].
  *
@@ -137,7 +137,7 @@ fun LongArray.averageToMono(): Mono<Double> = MathFlux.averageDouble(this.toFlux
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun LongArray.floatAverageToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
+fun LongArray.averageFloatToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
 /**
  * Extension to find the highest value in a [LongArray] and return is as a [Mono]
  * of [Long].
@@ -171,7 +171,7 @@ fun FloatArray.sumToMono(): Mono<Double> = MathFlux.sumDouble(this.toFlux())
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun FloatArray.floatSumToMono(): Mono<Float> = MathFlux.sumFloat(this.toFlux())
+fun FloatArray.sumFloatToMono(): Mono<Float> = MathFlux.sumFloat(this.toFlux())
 /**
  * Extension to compute the average of values in a [FloatArray] into a [Mono] of [Double].
  *
@@ -189,7 +189,7 @@ fun FloatArray.averageToMono(): Mono<Double> = MathFlux.averageDouble(this.toFlu
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun FloatArray.floatAverageToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
+fun FloatArray.averageFloatToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
 /**
  * Extension to find the highest value in a [FloatArray] and return is as a [Mono]
  * of [Float].
@@ -225,7 +225,7 @@ fun DoubleArray.sumToMono(): Mono<Double> = MathFlux.sumDouble(this.toFlux())
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun DoubleArray.floatSumToMono(): Mono<Float> = MathFlux.sumFloat(this.toFlux())
+fun DoubleArray.sumFloatToMono(): Mono<Float> = MathFlux.sumFloat(this.toFlux())
 /**
  * Extension to compute the average of values in a [DoubleArray] into a [Mono] of [Double].
  *
@@ -242,7 +242,7 @@ fun DoubleArray.averageToMono(): Mono<Double> = MathFlux.averageDouble(this.toFl
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun DoubleArray.floatAverageToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
+fun DoubleArray.averageFloatToMono(): Mono<Float> = MathFlux.averageFloat(this.toFlux())
 /**
  * Extension to find the highest value in a [DoubleArray] and return is as a [Mono]
  * of [Double].
@@ -285,7 +285,7 @@ fun <T: Number> Collection<T>.sumToMono(): Mono<Long> = MathFlux.sumLong(this.to
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun <T: Number> Collection<T>.doubleSumToMono(): Mono<Double> = MathFlux.sumDouble(this.toFlux())
+fun <T: Number> Collection<T>.sumDoubleToMono(): Mono<Double> = MathFlux.sumDouble(this.toFlux())
 /**
  * Extension to compute the average of values in a [Collection] of [Number] into a [Mono]
  * of [Double].
@@ -408,7 +408,7 @@ fun <T> Collection<T>.mapSumToMono(mapper: (T) -> Number): Mono<Long>
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun <T> Collection<T>.mapDoubleSumToMono(mapper: (T) -> Number): Mono<Double>
+fun <T> Collection<T>.mapSumDoubleToMono(mapper: (T) -> Number): Mono<Double>
     = MathFlux.sumDouble(this.toFlux(), Function(mapper))
 /**
  * Extension to map arbitrary values in a [Collection] to [Number]s and return
