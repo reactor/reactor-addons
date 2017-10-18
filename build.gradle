@@ -249,7 +249,7 @@ project('reactor-extra') {
 
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
-	compile "org.jetbrains.kotlin:kotlin-stdlib-jre8"
+	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
   }
 }
 
