@@ -2,6 +2,7 @@ package reactor.math
 
 import org.junit.Test
 import reactor.core.publisher.Flux
+import reactor.core.publisher.toFlux
 import reactor.test.test
 
 /**
@@ -16,299 +17,352 @@ class MathFluxExtensionsTests {
                 User(80, "grandpa"),
                 User(1, "baby"))
 
-        val userArray = arrayOf(User(18, "bob"),
-                User(80, "grandpa"),
-                User(1, "baby"))
-
         val comparator: Comparator<User> = Comparator({ u1: User, u2:User -> u1.age - u2.age})
 
         val comparableList = listOf("AA", "A", "BB", "B", "AB")
-        val comparableArray = arrayOf("AA", "A", "BB", "B", "AB")
     }
 
-//== ShortArray ==
-
+    //== sum ==
     @Test
-    fun shortArraySum() {
+    fun sumShorts() {
         shortArrayOf(32_000, 8_000) //sum overflows a Short
-                .sumToMono()
+                .toFlux()
+                .sum()
                 .test()
                 .expectNext(40_000)
                 .verifyComplete()
     }
 
     @Test
-    fun shortArrayIntSum() {
-        shortArrayOf(32_000, 8_000) //sum overflows a Short
-                .sumIntToMono()
-                .test()
-                .expectNext(40_000)
-                .verifyComplete()
-    }
-
-    @Test
-    fun shortArrayAverage() {
-        shortArrayOf(10, 11)
-                .averageToMono()
-                .test()
-                .expectNext(10.5)
-                .verifyComplete()
-    }
-
-    @Test
-    fun shortArrayAverageFloat() {
-        shortArrayOf(10, 11)
-                .averageFloatToMono()
-                .test()
-                .expectNext(10.5f)
-                .verifyComplete()
-    }
-
-    @Test
-    fun shortArrayMin() {
-        shortArrayOf(12, 8, 16)
-                .minToMono()
-                .test()
-                .expectNext(8)
-                .verifyComplete()
-    }
-
-    @Test
-    fun shortArrayMax() {
-        shortArrayOf(12, 16, 8)
-                .maxToMono()
-                .test()
-                .expectNext(16)
-                .verifyComplete()
-    }
-
-//== IntArray ==
-
-    @Test
-    fun intArraySum() {
+    fun sumInts() {
         intArrayOf(2_000_000_000, 200_000_000) //sum overflows an Int
-                .sumToMono()
+                .toFlux()
+                .sum()
                 .test()
                 .expectNext(2_200_000_000)
                 .verifyComplete()
     }
 
     @Test
-    fun intArrayIntSumWrapsAround() {
-        intArrayOf(Int.MAX_VALUE, 1) //sum overflows an Int
-                .sumIntToMono()
-                .test()
-                .expectNext(Int.MIN_VALUE)
-                .verifyComplete()
-    }
-
-    @Test
-    fun intArrayAverage() {
-        intArrayOf(10, 11)
-                .averageToMono()
-                .test()
-                .expectNext(10.5)
-                .verifyComplete()
-    }
-
-    @Test
-    fun intArrayAverageFloat() {
-        intArrayOf(10, 11)
-                .averageFloatToMono()
-                .test()
-                .expectNext(10.5f)
-                .verifyComplete()
-    }
-
-    @Test
-    fun intArrayMin() {
-        intArrayOf(12, 8, Int.MIN_VALUE, 16)
-                .minToMono()
-                .test()
-                .expectNext(Int.MIN_VALUE)
-                .verifyComplete()
-    }
-
-    @Test
-    fun intArrayMax() {
-        intArrayOf(12, Int.MAX_VALUE, 16, 8)
-                .maxToMono()
-                .test()
-                .expectNext(Int.MAX_VALUE)
-                .verifyComplete()
-    }
-
-//== LongArray ==
-
-    @Test
-    fun longArraySum() {
+    fun sumLongs() {
         longArrayOf(3_000_000_000, 2_000_000_000)
-                .sumToMono()
+                .toFlux()
+                .sum()
                 .test()
                 .expectNext(5_000_000_000)
                 .verifyComplete()
     }
 
     @Test
-    fun longArrayIntSumWrapsAround() {
-        longArrayOf(Int.MAX_VALUE.toLong(), 1L)
-                .sumIntToMono()
-                .test()
-                .expectNext(Int.MIN_VALUE)
-                .verifyComplete()
-    }
-
-    @Test
-    fun longArrayAverage() {
-        longArrayOf(10L, 11L)
-                .averageToMono()
-                .test()
-                .expectNext(10.5)
-                .verifyComplete()
-    }
-
-    @Test
-    fun longAverageFloat() {
-        longArrayOf(10L, 11L)
-                .averageFloatToMono()
-                .test()
-                .expectNext(10.5f)
-                .verifyComplete()
-    }
-
-    @Test
-    fun longArrayMin() {
-        longArrayOf(12, 8, Long.MIN_VALUE, 16)
-                .minToMono()
-                .test()
-                .expectNext(Long.MIN_VALUE)
-                .verifyComplete()
-    }
-
-    @Test
-    fun longArrayMax() {
-        longArrayOf(12, Long.MAX_VALUE, 16, 8)
-                .maxToMono()
-                .test()
-                .expectNext(Long.MAX_VALUE)
-                .verifyComplete()
-    }
-
-//== FloatArray ==
-
-    @Test
-    fun floatArraySum() {
+    fun sumFloatsPrecisionLoss() {
         floatArrayOf(3.5f, 1.5f)
-                .sumToMono()
+                .toFlux()
+                .sum()
                 .test()
-                .expectNext(5.0)
+                .expectNext(4)
                 .verifyComplete()
     }
 
     @Test
-    fun floatArrayFloatSumCaps() {
-        floatArrayOf(Float.MAX_VALUE, 1.0f)
-                .sumFloatToMono()
-                .test()
-                .expectNext(Float.MAX_VALUE)
-                .verifyComplete()
-    }
-
-    @Test
-    fun floatArrayAverage() {
-        floatArrayOf(10f, 11f)
-                .averageToMono()
-                .test()
-                .expectNext(10.5)
-                .verifyComplete()
-    }
-
-    @Test
-    fun floatAverageFloat() {
-        floatArrayOf(10f, 11f)
-                .averageFloatToMono()
-                .test()
-                .expectNext(10.5f)
-                .verifyComplete()
-    }
-
-    @Test
-    fun floatArrayMin() {
-        floatArrayOf(12.3f, 15f, 12.2f, 12.4f)
-                .minToMono()
-                .test()
-                .expectNext(12.2f)
-                .verifyComplete()
-    }
-
-    @Test
-    fun floatArrayMax() {
-        floatArrayOf(12.3f, 15f, 12.2f, 12.4f)
-                .maxToMono()
-                .test()
-                .expectNext(15f)
-                .verifyComplete()
-    }
-
-
-
-//== DoubleArray ==
-
-    @Test
-    fun doubleArraySum() {
+    fun sumDoublesPrecisionLoss() {
         doubleArrayOf(3.5, 1.5)
-                .sumToMono()
+                .toFlux()
+                .sum()
+                .test()
+                .expectNext(4)
+                .verifyComplete()
+    }
+
+    @Test
+    fun sumMapped() {
+        userList.toFlux()
+                .sum { it.age }
+                .test()
+                .expectNext(99)
+                .verifyComplete()
+    }
+
+    //== sumDouble ==
+    @Test
+    fun sumDoubleShorts() {
+        shortArrayOf(32_000, 8_000) //sum overflows a Short
+                .toFlux()
+                .sumDouble()
+                .test()
+                .expectNext(40_000.0)
+                .verifyComplete()
+    }
+
+    @Test
+    fun sumDoubleInts() {
+        intArrayOf(2_000_000_000, 200_000_000) //sum overflows an Int
+                .toFlux()
+                .sumDouble()
+                .test()
+                .expectNext(2_200_000_000.0)
+                .verifyComplete()
+    }
+
+    @Test
+    fun sumDoubleLongs() {
+        longArrayOf(3_000_000_000, 2_000_000_000)
+                .toFlux()
+                .sumDouble()
+                .test()
+                .expectNext(5_000_000_000.0)
+                .verifyComplete()
+    }
+
+    @Test
+    fun sumDoubleFloats() {
+        floatArrayOf(3.5f, 1.5f)
+                .toFlux()
+                .sumDouble()
                 .test()
                 .expectNext(5.0)
                 .verifyComplete()
     }
 
     @Test
-    fun doubleArrayFloatSumCaps() {
-        doubleArrayOf(Float.MAX_VALUE.toDouble(), 1.0)
-                .sumFloatToMono()
+    fun sumDoubleDoubles() {
+        doubleArrayOf(3.5, 1.5)
+                .toFlux()
+                .sumDouble()
                 .test()
-                .expectNext(Float.MAX_VALUE)
+                .expectNext(5.0)
                 .verifyComplete()
     }
 
     @Test
-    fun doubleArrayAverage() {
-        doubleArrayOf(10.0, 11.0)
-                .averageToMono()
+    fun sumDoubleMapped() {
+        userList.toFlux()
+                .sumDouble { it.age }
+                .test()
+                .expectNext(99.0)
+                .verifyComplete()
+    }
+
+    //== average ==
+    @Test
+    fun averageShorts() {
+        shortArrayOf(10, 11)
+                .toFlux()
+                .average()
                 .test()
                 .expectNext(10.5)
                 .verifyComplete()
     }
 
     @Test
-    fun doubleAverageFloat() {
+    fun averageInts() {
+        intArrayOf(10, 11)
+                .toFlux()
+                .average()
+                .test()
+                .expectNext(10.5)
+                .verifyComplete()
+    }
+
+    @Test
+    fun averageLongs() {
+        longArrayOf(10, 11)
+                .toFlux()
+                .average()
+                .test()
+                .expectNext(10.5)
+                .verifyComplete()
+    }
+
+    @Test
+    fun averageFloats() {
+        floatArrayOf(10f, 11f)
+                .toFlux()
+                .average()
+                .test()
+                .expectNext(10.5)
+                .verifyComplete()
+    }
+
+    @Test
+    fun averageDoubles() {
         doubleArrayOf(10.0, 11.0)
-                .averageFloatToMono()
+                .toFlux()
+                .average()
                 .test()
-                .expectNext(10.5f)
+                .expectNext(10.5)
                 .verifyComplete()
     }
 
     @Test
-    fun doubleArrayMin() {
-        doubleArrayOf(12.3, 15.0, 12.2, 12.4)
-                .minToMono()
+    fun averageMapped() {
+        userList.toFlux()
+                .average { it.age }
                 .test()
-                .expectNext(12.2)
+                .expectNext(33.0)
+                .verifyComplete()
+    }
+
+    //== min ==
+    @Test
+    fun minShorts() {
+        shortArrayOf(12, 8, 16)
+                .toFlux()
+                .min()
+                .test()
+                .expectNext(8)
                 .verifyComplete()
     }
 
     @Test
-    fun doubleArrayMax() {
-        doubleArrayOf(12.3, 15.0, 12.2, 12.4)
-                .maxToMono()
+    fun minInts() {
+        intArrayOf(12, 8, 16)
+                .toFlux()
+                .min()
                 .test()
-                .expectNext(15.0)
+                .expectNext(8)
                 .verifyComplete()
     }
 
-// == collection of numbers ==
+    @Test
+    fun minLongs() {
+        longArrayOf(12, 8, 16)
+                .toFlux()
+                .min()
+                .test()
+                .expectNext(8)
+                .verifyComplete()
+    }
+
+    @Test
+    fun minFloats() {
+        floatArrayOf(12f, 8.1f, 16f, 8.2f)
+                .toFlux()
+                .min()
+                .test()
+                .expectNext(8.1f)
+                .verifyComplete()
+    }
+
+    @Test
+    fun minDoubles() {
+        doubleArrayOf(12.0, 8.1, 16.0, 8.2)
+                .toFlux()
+                .min()
+                .test()
+                .expectNext(8.1)
+                .verifyComplete()
+    }
+
+    @Test
+    fun minComparables() {
+        comparableList.toFlux()
+                .min()
+                .test()
+                .expectNext("A")
+                .verifyComplete()
+    }
+
+    @Test
+    fun minComparator() {
+        userList.toFlux()
+                .min(comparator)
+                .map { it.name }
+                .test()
+                .expectNext("baby")
+                .verifyComplete()
+    }
+
+    @Test
+    fun minComparatorLambdaInverted() {
+        userList.toFlux()
+                .min { a, b -> b.age - a.age }
+                .map { it.name }
+                .test()
+                .expectNext("grandpa")
+                .verifyComplete()
+    }
+
+    //== max ==
+    @Test
+    fun maxShorts() {
+        shortArrayOf(12, 8, 16)
+                .toFlux()
+                .max()
+                .test()
+                .expectNext(16)
+                .verifyComplete()
+    }
+
+    @Test
+    fun maxInts() {
+        intArrayOf(12, 8, 16)
+                .toFlux()
+                .max()
+                .test()
+                .expectNext(16)
+                .verifyComplete()
+    }
+
+    @Test
+    fun maxLongs() {
+        longArrayOf(12, 8, 16)
+                .toFlux()
+                .max()
+                .test()
+                .expectNext(16)
+                .verifyComplete()
+    }
+
+    @Test
+    fun maxFloats() {
+        floatArrayOf(12f, 8.1f, 16f, 8.2f)
+                .toFlux()
+                .max()
+                .test()
+                .expectNext(16f)
+                .verifyComplete()
+    }
+
+    @Test
+    fun maxDoubles() {
+        doubleArrayOf(12.0, 8.1, 16.0, 8.2)
+                .toFlux()
+                .max()
+                .test()
+                .expectNext(16.0)
+                .verifyComplete()
+    }
+
+    @Test
+    fun maxComparables() {
+        comparableList.toFlux()
+                .max()
+                .test()
+                .expectNext("BB")
+                .verifyComplete()
+    }
+
+    @Test
+    fun maxComparator() {
+        userList.toFlux()
+                .max(comparator)
+                .map { it.name }
+                .test()
+                .expectNext("grandpa")
+                .verifyComplete()
+    }
+
+    @Test
+    fun maxComparatorLambdaInverted() {
+        userList.toFlux()
+                .max { a, b -> b.age - a.age }
+                .map { it.name }
+                .test()
+                .expectNext("baby")
+                .verifyComplete()
+    }
+
+//// == collection of numbers ==
 
     @Test
     fun numberCollectionSum() {
@@ -317,9 +371,9 @@ class MathFluxExtensionsTests {
         val doubles: List<Double> = listOf(1.6, 2.6)
 
         Flux.concat(
-                longs.sumToMono(),
-                floats.sumToMono(),
-                doubles.sumToMono())
+                longs.toFlux().sum(),
+                floats.toFlux().sum(),
+                doubles.toFlux().sum())
                 .test()
                 .expectNext(6L)
                 .expectNext(3L).`as`("floats rounded down")
@@ -335,128 +389,13 @@ class MathFluxExtensionsTests {
         val doubles: List<Double> = listOf(1.6, 2.6)
 
         Flux.concat(
-                longs.sumDoubleToMono(),
-                floats.sumDoubleToMono(),
-                doubles.sumDoubleToMono())
+                longs.toFlux().sumDouble(),
+                floats.toFlux().sumDouble(),
+                doubles.toFlux().sumDouble())
                 .test()
                 .expectNext(6.0)
                 .expectNext(4.0).`as`("floats")
                 .expectNext(4.2).`as`("doubles")
-                .verifyComplete()
-    }
-
-    @Test
-    fun numberCollectionAverage() {
-        val longs: List<Long> = listOf(10L, 11L, 12L)
-        val floats: List<Float> = listOf(10f, 11f, 12f)
-        val doubles: List<Double> = listOf(10.0, 11.0, 12.0)
-
-        Flux.concat(
-                longs.averageToMono(),
-                floats.averageToMono(),
-                doubles.averageToMono())
-                .test()
-                .expectNext(11.0).`as`("longs")
-                .expectNext(11.0).`as`("floats")
-                .expectNext(11.0).`as`("doubles")
-                .verifyComplete()
-    }
-
-// == collection and arrays of comparables ==
-
-    @Test
-    fun minComparableCollection() {
-        comparableList.minToMono()
-                .test()
-                .expectNext("A")
-                .verifyComplete()
-    }
-
-    @Test
-    fun maxComparableCollection() {
-        comparableList.maxToMono()
-                .test()
-                .expectNext("BB")
-                .verifyComplete()
-    }
-
-    @Test
-    fun minComparableArray() {
-        comparableArray.minToMono()
-                .test()
-                .expectNext("A")
-                .verifyComplete()
-    }
-
-    @Test
-    fun maxComparableArray() {
-        comparableArray.maxToMono()
-                .test()
-                .expectNext("BB")
-                .verifyComplete()
-    }
-
-// == collection and arrays with comparators ==
-
-    @Test
-    fun minCollectionWithComparator() {
-        userList.minToMono(comparator)
-                .map { it.name }
-                .test()
-                .expectNext("baby")
-                .verifyComplete()
-    }
-
-    @Test
-    fun maxCollectionWithComparator() {
-        userList.maxToMono(comparator)
-                .map { it.name }
-                .test()
-                .expectNext("grandpa")
-                .verifyComplete()
-    }
-
-    @Test
-    fun minArrayWithComparator() {
-        userArray.minToMono(comparator)
-                .map { it.name }
-                .test()
-                .expectNext("baby")
-                .verifyComplete()
-    }
-
-    @Test
-    fun maxArrayWithComparator() {
-        userArray.maxToMono(comparator)
-                .map { it.name }
-                .test()
-                .expectNext("grandpa")
-                .verifyComplete()
-    }
-
-// == collection with mapping to Number ==
-
-    @Test
-    fun sumMappedCollection() {
-        userList.mapSumToMono { it -> it.age }
-                .test()
-                .expectNext(99)
-                .verifyComplete()
-    }
-
-    @Test
-    fun doubleSumMappedCollection() {
-        userList.mapSumDoubleToMono { it -> it.age }
-                .test()
-                .expectNext(99.0)
-                .verifyComplete()
-    }
-
-    @Test
-    fun averageMappedCollection() {
-        userList.mapAverageToMono { it -> it.age }
-                .test()
-                .expectNext(33.0)
                 .verifyComplete()
     }
 
