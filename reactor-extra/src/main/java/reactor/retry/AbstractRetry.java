@@ -32,7 +32,12 @@ public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher
 
 	static final Logger log = Loggers.getLogger(AbstractRetry.class);
 
-	static final BackoffDelay RETRY_EXHAUSTED = new BackoffDelay(Duration.ofSeconds(-1));
+	static final BackoffDelay RETRY_EXHAUSTED = new BackoffDelay(Duration.ofSeconds(-1)) {
+		@Override
+		public String toString() {
+			return "{EXHAUSTED}";
+		}
+	};
 
 	final int maxIterations;
 	final Duration timeout;

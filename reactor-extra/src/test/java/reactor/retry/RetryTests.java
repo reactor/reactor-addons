@@ -339,4 +339,9 @@ public class RetryTests {
 	static boolean isRetryExhausted(Throwable e, Class<? extends Throwable> cause) {
 		return e instanceof RetryExhaustedException && cause.isInstance(e.getCause());
 	}
+
+	@Test
+	public void retryToString() {
+		System.out.println(Retry.any().noBackoff().retryMax(2).toString());
+	}
 }

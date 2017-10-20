@@ -25,7 +25,17 @@ import java.util.function.Function;
  */
 public interface Backoff extends Function<Context<?>, BackoffDelay> {
 
-	public static final Backoff ZERO_BACKOFF = context -> BackoffDelay.ZERO;
+	Backoff ZERO_BACKOFF = new Backoff() {
+		@Override
+		public BackoffDelay apply(Context<?> context) {
+			return BackoffDelay.ZERO;
+		}
+
+		@Override
+		public String toString() {
+			return "Backoff{ZERO}";
+		}
+	};
 
 	/**
 	 * Backoff function with no backoff delay
@@ -40,8 +50,18 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 	 * @param backoffInterval backoff interval
 	 * @return Backoff function with fixed backoff delay
 	 */
-	static Backoff fixed(Duration backoffInterval) {
-		return context -> new BackoffDelay(backoffInterval);
+	static Backoff fixed(final Duration backoffInterval) {
+		return new Backoff() {
+			@Override
+			public BackoffDelay apply(Context<?> context) {
+				return new BackoffDelay(backoffInterval);
+			}
+
+			@Override
+			public String toString() {
+				return "Backoff{fixed=" + backoffInterval.toMillis() + "ms}";
+			}
+		};
 	}
 
 	/**
@@ -68,17 +88,39 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 		if (maxBackoffInterval.compareTo(firstBackoff) <= 0)
 			throw new IllegalArgumentException("maxBackoff must be >= firstBackoff");
 		if (!basedOnPreviousValue) {
-			return context -> {
-				Duration nextBackoff = firstBackoff.multipliedBy((long) Math.pow(factor, (context.iteration() - 1)));
-				return new BackoffDelay(firstBackoff, maxBackoffInterval, nextBackoff);
+			return new Backoff() {
+				@Override
+				public BackoffDelay apply(Context<?> context) {
+					Duration nextBackoff = firstBackoff.multipliedBy((long) Math.pow(factor, (context.iteration() - 1)));
+					return new BackoffDelay(firstBackoff, maxBackoffInterval, nextBackoff);
+				}
+
+				@Override
+				public String toString() {
+					return String.format("Backoff{exponential,min=%sms,max=%s,factor=%s,basedOnPreviousValue=false}",
+							firstBackoff.toMillis(),
+							maxBackoff == null ? "NONE" : maxBackoff.toMillis() + "ms",
+							factor);
+				}
 			};
 		}
 		else {
-			return context -> {
-				Duration prevBackoff = context.backoff() == null ? Duration.ZERO : context.backoff();
-				Duration nextBackoff = prevBackoff.multipliedBy(factor);
-				nextBackoff = nextBackoff.compareTo(firstBackoff) < 0 ? firstBackoff : nextBackoff;
-				return new BackoffDelay(firstBackoff, maxBackoff, nextBackoff);
+			return new Backoff() {
+				@Override
+				public BackoffDelay apply(Context<?> context) {
+					Duration prevBackoff = context.backoff() == null ? Duration.ZERO : context.backoff();
+					Duration nextBackoff = prevBackoff.multipliedBy(factor);
+					nextBackoff = nextBackoff.compareTo(firstBackoff) < 0 ? firstBackoff : nextBackoff;
+					return new BackoffDelay(firstBackoff, maxBackoff, nextBackoff);
+				}
+
+				@Override
+				public String toString() {
+					return String.format("Backoff{exponential,min=%sms,max=%s,factor=%s,basedOnPreviousValue=true}",
+							firstBackoff.toMillis(),
+							maxBackoff == null ? "NONE" : maxBackoff.toMillis() + "ms",
+							factor);
+				}
 			};
 		}
 	}

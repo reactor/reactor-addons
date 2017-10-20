@@ -20,7 +20,12 @@ import java.time.Duration;
 
 public class BackoffDelay {
 
-	static final BackoffDelay ZERO = new BackoffDelay(Duration.ZERO);
+	static final BackoffDelay ZERO = new BackoffDelay(Duration.ZERO) {
+		@Override
+		public String toString() {
+			return "{ZERO}";
+		}
+	};
 
 	final Duration min;
 	final Duration max;
@@ -48,4 +53,13 @@ public class BackoffDelay {
 		return delay;
 	}
 
+	@Override
+	public String toString() {
+		if (min == max && max == delay) {
+			return "{" + delay.toMillis() + "ms}";
+		}
+		else {
+			return "{" + delay.toMillis() + "ms/" + max.toMillis() + "ms}";
+		}
+	}
 }

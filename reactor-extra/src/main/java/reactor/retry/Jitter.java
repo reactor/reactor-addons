@@ -26,12 +26,40 @@ import java.util.function.Function;
  */
 public interface Jitter extends Function<BackoffDelay, Duration> {
 
+	Jitter NO_JITTER = new Jitter() {
+		@Override
+		public Duration apply(BackoffDelay delay) {
+			return delay.delay();
+		}
+
+		@Override
+		public String toString() {
+			return "Jitter{NONE}";
+		}
+	};
+
+	Jitter RANDOM_JITTER = new Jitter() {
+		@Override
+		public Duration apply(BackoffDelay backoff) {
+			ThreadLocalRandom random = ThreadLocalRandom.current();
+			long backoffMs = backoff.delay().toMillis();
+			long minBackoffMs = backoff.min.toMillis();
+			long jitterBackoffMs = backoffMs == minBackoffMs ? minBackoffMs : random.nextLong(minBackoffMs, backoffMs);
+			return Duration.ofMillis(jitterBackoffMs);
+		}
+
+		@Override
+		public String toString() {
+			return "Jitter{RANDOM}";
+		}
+	};
+
 	/**
 	 * Jitter function that is a no-op.
 	 * @return Jitter function that does not apply any jitter
 	 */
 	static Jitter noJitter() {
-		return backoff -> backoff.delay();
+		return NO_JITTER;
 	}
 
 	/**
@@ -40,12 +68,6 @@ public interface Jitter extends Function<BackoffDelay, Duration> {
 	 * @return Jitter function to randomize backoff delay
 	 */
 	static Jitter random() {
-		ThreadLocalRandom random = ThreadLocalRandom.current();
-		return backoff -> {
-			long backoffMs = backoff.delay().toMillis();
-			long minBackoffMs = backoff.min.toMillis();
-			long jitterBackoffMs = backoffMs == minBackoffMs ? minBackoffMs : random.nextLong(minBackoffMs, backoffMs);
-			return Duration.ofMillis(jitterBackoffMs);
-		};
+		return RANDOM_JITTER;
 	}
 }
