@@ -84,25 +84,25 @@ public class AsyncAppenderTests {
 		chronicleLog.getLoggerContext().stop();
 	}
 
-	//@Test
+	@Test
 	public void clockSyncAppender() throws InterruptedException {
 		long m = benchmarkThread(syncLog, timeout);
 		System.out.println("sync: " + (m / timeout) + "/sec");
 	}
 
-	//@Test
+	@Test
 	public void clockAsyncAppender() throws InterruptedException {
 		long n = benchmarkThread(asyncLog, timeout);
 		System.out.println("async: " + (n / timeout) + "/sec");
 	}
 
-	//@Test
+	@Test
 	public void clockChronicleAppender() throws InterruptedException {
 		long n = benchmarkThread(chronicleLog, timeout);
 		System.out.println("chronicle: " + (n / timeout) + "/sec");
 	}
 
-	//@Test
+	@Test
 	public void clockAllAppenders() throws InterruptedException {
 		clockSyncAppender();
 		clockAsyncAppender();
