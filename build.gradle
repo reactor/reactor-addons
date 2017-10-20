@@ -149,8 +149,10 @@ configure(subprojects) { project ->
 	systemProperty("testGroups", project.properties.get("testGroups"))
 	scanForTestClasses = false
 	include '**/*Tests.*'
+	include '**/*Test.*'
 	include '**/*Spec.*'
 	exclude '**/*Abstract*.*'
+	exclude '**/dummy/Test.*'
   }
 
   repositories {
