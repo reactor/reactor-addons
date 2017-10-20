@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Pivotal Software Inc., Inc. All Rights Reserved.
+ * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public class AsyncAppenderTests {
 	}
 
 	@Test
-	public void clockAsyncAppender() throws InterruptedException {
+	public void clockAsyncAppender() throws Exception {
 		long n = benchmarkThread(asyncLog, timeout);
 		System.out.println("async: " + (n / timeout) + "/sec");
 	}
@@ -103,7 +103,7 @@ public class AsyncAppenderTests {
 	}
 
 	@Test
-	public void clockAllAppenders() throws InterruptedException {
+	public void clockAllAppenders() throws Exception {
 		clockSyncAppender();
 		clockAsyncAppender();
 		clockChronicleAppender();
