@@ -128,5 +128,11 @@ public class DefaultRepeat<T> extends AbstractRetry<T, Long> implements Repeat<T
 			return nextBackoff;
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "Repeat{times=" + this.maxIterations + ",backoff=" + backoff + ",jitter=" +
+				jitter + "}";
+	}
 }
 

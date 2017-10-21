@@ -135,4 +135,10 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 			return retryMono(nextBackoff.delay());
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "Retry{max=" + this.maxIterations + ",backoff=" + backoff + ",jitter=" +
+				jitter + "}";
+	}
 }
