@@ -29,31 +29,33 @@ import ch.qos.logback.core.spi.AppenderAttachableImpl;
 import ch.qos.logback.core.spi.ContextAwareBase;
 import ch.qos.logback.core.spi.FilterAttachableImpl;
 import ch.qos.logback.core.spi.FilterReply;
-import org.reactivestreams.Processor;
 import org.reactivestreams.Subscription;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.WorkQueueProcessor;
 
 /**
- * A Logback {@literal Appender} implementation that uses a Reactor {@link reactor.core.publisher.TopicProcessor}
- * internally
- * to queue events to a single-writer thread. This implementation doesn't do any actually appending itself, it just
- * delegates to a "real" appender but it uses the efficient queueing mechanism of the {@literal RingBuffer} to do so.
+ * A Logback {@literal Appender} implementation that uses a Reactor {@link
+ * reactor.core.publisher.TopicProcessor} internally to queue events to a single-writer
+ * thread. This implementation doesn't do any actually appending itself, it just delegates
+ * to a "real" appender but it uses the efficient queueing mechanism of the {@literal
+ * RingBuffer} to do so.
  *
  * @author Jon Brisbin
  * @author Stephane Maldini
  */
-public class AsyncAppender
-  extends ContextAwareBase
-  implements Appender<ILoggingEvent>,
-  AppenderAttachable<ILoggingEvent>, CoreSubscriber<ILoggingEvent> {
+public class AsyncAppender extends ContextAwareBase
+		implements Appender<ILoggingEvent>, AppenderAttachable<ILoggingEvent>,
+		           CoreSubscriber<ILoggingEvent> {
 
-	private final AppenderAttachableImpl<ILoggingEvent>    aai      = new AppenderAttachableImpl<ILoggingEvent>();
-	private final FilterAttachableImpl<ILoggingEvent>      fai      = new FilterAttachableImpl<ILoggingEvent>();
-	private final AtomicReference<Appender<ILoggingEvent>> delegate = new AtomicReference<Appender<ILoggingEvent>>();
+	private final AppenderAttachableImpl<ILoggingEvent>    aai      =
+			new AppenderAttachableImpl<ILoggingEvent>();
+	private final FilterAttachableImpl<ILoggingEvent>      fai      =
+			new FilterAttachableImpl<ILoggingEvent>();
+	private final AtomicReference<Appender<ILoggingEvent>> delegate =
+			new AtomicReference<Appender<ILoggingEvent>>();
 
-	private String                                  name;
-	private Processor<ILoggingEvent, ILoggingEvent> processor;
+	private String                            name;
+	private WorkQueueProcessor<ILoggingEvent> processor;
 
 	private int     backlog           = 1024 * 1024;
 	private boolean includeCallerData = false;
@@ -101,7 +103,8 @@ public class AsyncAppender
 		}
 		try {
 			queueLoggingEvent(evt);
-		} catch (Throwable t) {
+		}
+		catch (Throwable t) {
 			addError(t.getMessage(), t);
 		}
 	}
@@ -110,11 +113,10 @@ public class AsyncAppender
 	public void start() {
 		startDelegateAppender();
 
-		processor = WorkQueueProcessor.<ILoggingEvent>builder()
-		                              .name("logger")
-		                              .bufferSize(backlog)
-		                              .autoCancel(false)
-		                              .build();
+		processor = WorkQueueProcessor.<ILoggingEvent>builder().name("logger")
+		                                                       .bufferSize(backlog)
+		                                                       .autoCancel(false)
+		                                                       .build();
 		processor.subscribe(this);
 	}
 
@@ -122,9 +124,11 @@ public class AsyncAppender
 	public void onSubscribe(Subscription s) {
 		try {
 			doStart();
-		} catch (Throwable t) {
+		}
+		catch (Throwable t) {
 			addError(t.getMessage(), t);
-		} finally {
+		}
+		finally {
 			started = true;
 			s.request(Long.MAX_VALUE);
 		}
@@ -144,13 +148,14 @@ public class AsyncAppender
 	public void onComplete() {
 		try {
 			doStop();
-			if (null != delegate.get()) {
-				delegate.get().stop();
-			}
+			delegate.getAndSet(null)
+			        .stop();
 			aai.detachAndStopAllAppenders();
-		} catch (Throwable t) {
+		}
+		catch (Throwable t) {
 			addError(t.getMessage(), t);
-		} finally {
+		}
+		finally {
 			started = false;
 		}
 	}
@@ -191,7 +196,8 @@ public class AsyncAppender
 	public void addAppender(Appender<ILoggingEvent> newAppender) {
 		if (delegate.compareAndSet(null, newAppender)) {
 			aai.addAppender(newAppender);
-		} else {
+		}
+		else {
 			throw new IllegalArgumentException(delegate.get() + " already attached.");
 		}
 	}
@@ -213,7 +219,7 @@ public class AsyncAppender
 
 	@Override
 	public void detachAndStopAllAppenders() {
-		aai.detachAndStopAllAppenders();
+		processor.onComplete();
 	}
 
 	@Override
