@@ -147,10 +147,12 @@ public class AsyncAppender extends ContextAwareBase
 	@Override
 	public void onComplete() {
 		try {
-			doStop();
-			delegate.getAndSet(null)
-			        .stop();
-			aai.detachAndStopAllAppenders();
+			Appender<ILoggingEvent> appender = delegate.getAndSet(null);
+			if (appender != null){
+				doStop();
+				appender.stop();
+				aai.detachAndStopAllAppenders();
+			}
 		}
 		catch (Throwable t) {
 			addError(t.getMessage(), t);
@@ -219,7 +221,7 @@ public class AsyncAppender extends ContextAwareBase
 
 	@Override
 	public void detachAndStopAllAppenders() {
-		processor.onComplete();
+		aai.detachAndStopAllAppenders();
 	}
 
 	@Override
