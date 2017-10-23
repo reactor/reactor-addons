@@ -4,7 +4,7 @@
 
 [![Join the chat at https://gitter.im/reactor/reactor](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/reactor/reactor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Latest addons](https://maven-badges.herokuapp.com/maven-central/io.projectreactor.addons/reactor-test/badge.svg?style=plastic)](http://mvnrepository.com/artifact/io.projectreactor.addons/reactor-extra)
+[![Latest addons](https://maven-badges.herokuapp.com/maven-central/io.projectreactor.addons/reactor-extra/badge.svg?style=plastic)](http://mvnrepository.com/artifact/io.projectreactor.addons/reactor-extra)
 
 # Addons List
 
