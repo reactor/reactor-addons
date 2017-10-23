@@ -138,10 +138,6 @@ configure(subprojects) { project ->
 
   sourceSets.test.resources.srcDirs = ["src/test/resources", "src/test/java"]
 
-  configurations.all {
-	exclude group: 'commons-logging', module: 'commons-logging'
-  }
-
   project.tasks.withType(Test).all {
 	systemProperty("java.awt.headless", "true")
 	systemProperty("reactor.trace.cancel", "true")
@@ -176,7 +172,6 @@ configure(subprojects) { project ->
 
 	// Logging
 	optional "org.slf4j:slf4j-api:$slf4jVersion"
-
 
 	// Testing
 	testCompile 'junit:junit:4.12',
@@ -251,7 +246,7 @@ project('reactor-extra') {
 
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
-	optional("org.jetbrains.kotlin:kotlin-stdlib")
+	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
   }
 }
 
