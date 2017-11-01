@@ -40,7 +40,7 @@ Snapshot and pre-release Maven artifacts are provided in the SpringSource snapsh
 To add this repo to your Gradle build, specify the URL like the following:
 
     ext {
-      reactorVersion = '3.1.1.RELEASE'
+      reactorAddonsVersion = '3.1.2.RELEASE'
     }
 
     repositories {
@@ -52,7 +52,7 @@ To add this repo to your Gradle build, specify the URL like the following:
 
     dependencies {
       // Reactor Adapter (RxJava2, Akka Actors scheduler and more)
-      // compile "io.projectreactor.addons:reactor-adapter:$reactorVersion"
+      // compile "io.projectreactor.addons:reactor-adapter:$reactorAddonsVersion"
     }
 
 
