@@ -33,7 +33,8 @@ public class ReactorMathTests {
 		int count = 10;
 		int sum = sum(count);
 		verifyResult(MathFlux.sumInt(intFlux(count)), sum);
-		verifyResult(MathFlux.sumInt(Flux.just(Integer.MAX_VALUE, Integer.MAX_VALUE)), Integer.MAX_VALUE * 2);
+		//caps
+		verifyResult(MathFlux.sumInt(Flux.just(Integer.MAX_VALUE, Integer.MAX_VALUE)), Integer.MAX_VALUE);
 		verifyResult(MathFlux.sumInt(shortFlux(count), i -> i), sum);
 		verifyResult(MathFlux.sumInt(stringFlux(count), s -> Integer.parseInt(s)), sum);
 
@@ -61,7 +62,8 @@ public class ReactorMathTests {
 		int count = 10;
 		long sum = sum(count);
 		verifyResult(MathFlux.sumLong(longFlux(count)), sum);
-		verifyResult(MathFlux.sumLong(Flux.just(Long.MAX_VALUE, Long.MAX_VALUE)), Long.MAX_VALUE * 2);
+		//caps
+		verifyResult(MathFlux.sumLong(Flux.just(Long.MAX_VALUE, Long.MAX_VALUE)), Long.MAX_VALUE);
 		verifyResult(MathFlux.sumLong(doubleFlux(count), i -> i), sum);
 		verifyResult(MathFlux.sumLong(stringFlux(count), s -> Long.parseLong(s)), sum);
 
@@ -226,6 +228,48 @@ public class ReactorMathTests {
 	public void monoMin() {
 		verifyResult(MathFlux.min(Mono.just(2.5)), 2.5);
 		verifyResult(MathFlux.min(Mono.just("123"), new StringLengthComparator()), "123");
+	}
+
+	@Test
+	public void sumFloatOverflow() {
+		verifyResult(MathFlux.sumFloat(Flux.just(Float.MAX_VALUE, 1.0f)),
+				Float.MAX_VALUE);
+	}
+
+	@Test
+	public void sumDoubleOverflow() {
+		verifyResult(MathFlux.sumDouble(Flux.just(Double.MAX_VALUE, 1.0)),
+				Double.MAX_VALUE);
+	}
+
+	@Test
+	public void averageFloatOverflow() {
+		verifyResult(MathFlux.averageFloat(Flux.just(Float.MAX_VALUE, 1.0f)),
+				Float.MAX_VALUE / 2.0f);
+	}
+
+	@Test
+	public void averageDoubleOverflow() {
+		verifyResult(MathFlux.averageDouble(Flux.just(Double.MAX_VALUE, 1.0)),
+				Double.MAX_VALUE / 2.0);
+	}
+
+	@Test
+	public void sumLongOverflow() {
+		verifyResult(MathFlux.sumLong(Flux.just(Long.MAX_VALUE, 1L)),
+				Long.MAX_VALUE);
+	}
+
+	@Test
+	public void sumIntOverflow() {
+		verifyResult(MathFlux.sumInt(Flux.just(Integer.MAX_VALUE, 1)),
+				Integer.MAX_VALUE);
+	}
+
+	@Test
+	public void sumIntUnderflow() {
+		verifyResult(MathFlux.sumInt(Flux.just(Integer.MIN_VALUE, -1)),
+				Integer.MIN_VALUE);
 	}
 
 	@Test

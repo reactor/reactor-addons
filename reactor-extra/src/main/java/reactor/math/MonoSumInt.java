@@ -58,8 +58,22 @@ final class MonoSumInt<T> extends MonoFromFluxOperator<T, Integer> implements Fu
 		@Override
 		protected void updateResult(T newValue) {
 			int intValue = mapping.apply(newValue).intValue();
-			sum = hasValue ? sum + intValue : intValue;
-			hasValue = true;
+			if (hasValue) {
+				boolean sumPositive = sum >= 0;
+				sum = sum + intValue;
+				//overflow
+				if (sumPositive && intValue >= 0 && sum < 0) {
+					sum = Integer.MAX_VALUE;
+				}
+				//underflow
+				else if (!sumPositive && intValue < 0 && sum > 0) {
+					sum = Integer.MIN_VALUE;
+				}
+			}
+			else {
+				sum = intValue;
+				hasValue = true;
+			}
 		}
 
 		@Override

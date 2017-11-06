@@ -58,8 +58,22 @@ final class MonoSumLong<T> extends MonoFromFluxOperator<T, Long> implements Fuse
 		@Override
 		protected void updateResult(T newValue) {
 			long longValue = mapping.apply(newValue).longValue();
-			sum = hasValue ? sum + longValue : longValue;
-			hasValue = true;
+			if (hasValue) {
+				boolean sumPositive = sum >= 0;
+				sum = sum + longValue;
+				//overflow
+				if (sumPositive && longValue >= 0 && sum < 0) {
+					sum = Long.MAX_VALUE;
+				}
+				//underflow
+				else if (!sumPositive && longValue < 0 && sum > 0) {
+					sum = Long.MIN_VALUE;
+				}
+			}
+			else {
+				sum = longValue;
+				hasValue = true;
+			}
 		}
 
 		@Override
