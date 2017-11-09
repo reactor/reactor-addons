@@ -55,8 +55,9 @@ ext {
   mockitoVersion = '1.10.19'
   spockVersion = '1.0-groovy-2.4'
 
-  javadocLinks = ["http://docs.oracle.com/javase/7/docs/api/",
-				  "http://docs.oracle.com/javaee/6/api/",
+  javadocLinks = ["http://projectreactor.io/docs/core/${reactorCoreVersion}/api/",
+		  		  "https://docs.oracle.com/javase/7/docs/api/",
+				  "https://docs.oracle.com/javaee/6/api/",
 				  "http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
 				  "http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
 				  "http://www.reactive-streams.org/reactive-streams-1.0.1-javadoc/"] as
