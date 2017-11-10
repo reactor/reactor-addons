@@ -1,119 +1,55 @@
 package reactor.cache;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @SuppressWarnings("unchecked")
 public class Cache {
 
-	public static <T> KeyExtractorRequired<T> from(Publisher<T> upstream) {
-		return new Builder(upstream);
+	public static <T> FluxCache.KeyExtractorRequired<T> from(Flux<T> upstream) {
+		return new FluxCacheBuilder(upstream);
 	}
 
-	private static final class Builder
-			implements KeyExtractorRequired, CacheRequired, ValueExtractorRequired,
-			           DownstreamRequired, MergeRequired {
+	public static <T> MonoCache.KeyExtractorRequired<T> from(Mono<T> upstream) {
+		return new MonoCacheBuilder(upstream);
+	}
 
-		private final Publisher upstream;
-		private       Map       cacheMap;
-		private       Function  downstreamFunction;
-		private       Function  keyExtractor;
-		private       Function  valueExtractor;
+	public interface MonoCache {
 
-		private Builder(Publisher upstream) {
-			this.upstream = upstream;
+		interface KeyExtractorRequired<In> extends CacheRequired<In> {
+
+			<Key> CacheRequired<Key> by(Function<? super In, ? extends Key> extractor);
 		}
 
-		@Override
-		public CacheRequired key(Function keyExtractor) {
-			this.keyExtractor = keyExtractor;
-			return this;
+		interface CacheRequired<Key> {
+
+			<Out> DownstreamRequired<Key, Out> in(Map<? super Key, ? super Out> cacheMap);
 		}
 
-		@Override
-		public ValueExtractorRequired in(Map cacheMap) {
-			this.cacheMap = cacheMap;
-			return this;
-		}
+		interface DownstreamRequired<Key, Out> {
 
-		@Override
-		public DownstreamRequired extract(Function valueExtractor) {
-			this.valueExtractor = valueExtractor;
-			return this;
-		}
-
-		@Override
-		public MergeRequired or(Function downstreamFunction) {
-			this.downstreamFunction = downstreamFunction;
-			return this;
-		}
-
-		@Override
-		public Flux orMono(Function downstreamFunction) {
-			this.downstreamFunction = downstreamFunction;
-			return apply(() -> null, (a, n) -> n);
-		}
-
-		@Override
-		public Flux merge(Supplier supplier, BiFunction merger) {
-			return apply(supplier, merger);
-		}
-
-		private Flux apply(Supplier supplier, BiFunction merger) {
-			return Flux.from(upstream)
-			           .flatMap(in -> {
-				           Object key = keyExtractor.apply(in);
-
-				           Object cachedOut = cacheMap.get(key);
-
-				           if (cachedOut != null) {
-					           return valueExtractor.apply(cachedOut);
-				           }
-				           else {
-					           return Flux.from((Publisher) downstreamFunction.apply(key))
-					                      .doOnNext(n -> {
-						                      Object state = cacheMap.computeIfAbsent(key,
-								                      k -> supplier.get());
-
-						                      cacheMap.put(key, merger.apply(state, n));
-					                      });
-				           }
-			           });
+			Mono<Out> computeIfEmpty(Function<? super Key, Mono<? extends Out>> downstreamFunction);
 		}
 	}
 
-	public interface KeyExtractorRequired<In> {
+	public interface FluxCache {
 
-		<Key> CacheRequired<Key> key(Function<? super In, ? extends Key> extractor);
-	}
+		interface KeyExtractorRequired<In> extends CacheRequired<In> {
 
-	public interface CacheRequired<Key> {
+			<Key> CacheRequired<Key> by(Function<? super In, ? extends Key> extractor);
+		}
 
-		<Value> ValueExtractorRequired<Key, Value> in(Map<? super Key, ? super Value>
-				cacheMap);
-	}
+		interface CacheRequired<Key> {
 
-	public interface ValueExtractorRequired<Key, Value> {
+			<Out> DownstreamRequired<Key, Out> in(Map<? super Key, ? super Out> cacheMap);
+		}
 
-		<Out> DownstreamRequired<Key, Out> extract(Function<? super Value, Publisher<? extends Out>> extractor);
-	}
+		interface DownstreamRequired<Key, Out> {
 
-	public interface DownstreamRequired<Key, Out> {
-
-		MergeRequired<Out> or(Function<? super Key, Publisher<? extends Out>> downstreamFunction);
-
-		Flux<Out> orMono(Function<? super Key, Mono<? extends Out>> downstreamFunction);
-	}
-
-	public interface MergeRequired<Out> {
-
-		<Collector> Flux<Out> merge(Supplier<? super Collector> supplier,
-				BiFunction<Collector, Out, Collector> merger);
+			Flux<Out> computeIfEmpty(Function<? super Key, Mono<? extends Out>> downstreamFunction);
+		}
 	}
 }
