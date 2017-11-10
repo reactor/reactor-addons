@@ -17,6 +17,20 @@ public class Cache {
 		return new MonoCacheBuilder(upstream);
 	}
 
+	public static <T> CacheRequired<T> cache(Mono<? extends T> mono) {
+		return new SimpleCacheBuilder(mono);
+	}
+
+	public interface CacheRequired<Out> {
+
+		<Key> KeyRequired<Key, Out> in(Map<? super Key, ? super Out> cacheMap);
+	}
+
+	public interface KeyRequired<Key, Out> {
+
+		Mono<Out> by(Key key);
+	}
+
 	public interface MonoCache {
 
 		interface KeyExtractorRequired<In> extends CacheRequired<In> {

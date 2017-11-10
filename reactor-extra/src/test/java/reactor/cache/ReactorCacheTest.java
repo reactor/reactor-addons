@@ -15,6 +15,25 @@ import reactor.test.StepVerifier;
 public class ReactorCacheTest {
 
 	@Test
+	public void simpleFluxCache() {
+		Flux<Integer> source = Flux.just(4567, 6789);
+		Map<String, List<Integer>> cacheStore = new HashMap<>();
+		StepVerifier.withVirtualTime(() -> Cache.cache(source.delaySubscription(Duration.ofMillis(
+				1000))
+		                                                     .collectList())
+		                                        .in(cacheStore)
+		                                        .by("test"))
+		            .expectSubscription()
+		            .expectNoEvent(Duration.ofMillis(1000))
+		            .expectNext(Arrays.asList(4567, 6789))
+		            .expectComplete()
+		            .verify();
+
+		Assert.assertTrue(cacheStore.containsKey("test"));
+		Assert.assertEquals(1, cacheStore.size());
+	}
+
+	@Test
 	public void fluxCache() {
 		Flux<Integer> upstream = Flux.just(4567);
 		Map<String, List<String>> cacheStore = new HashMap<>();
