@@ -33,7 +33,9 @@ import reactor.core.publisher.Mono;
 public final class MathFlux {
 
 	/**
-	 * Computes the integer sum of items in the source.
+	 * Computes the integer sum of items in the source. Note that in case of an overflow,
+	 * this method won't return a negative sum but rather cap at {@link Integer#MAX_VALUE}
+	 * (or {@link Integer#MIN_VALUE} for an underflow).
 	 *
 	 * @param source the numerical source
 	 *
@@ -45,7 +47,9 @@ public final class MathFlux {
 
 	/**
 	 * Computes the integer sum of items in the source, which are mapped to numerical values
-	 * using the provided mapping.
+	 * using the provided mapping. Note that in case of an overflow,
+	 * this method won't return a negative sum but rather cap at {@link Integer#MAX_VALUE}
+	 * (or {@link Integer#MIN_VALUE} for an underflow).
 	 *
 	 * @param source the source items
 	 * @param mapping a function to map source items to numerical values
@@ -57,7 +61,9 @@ public final class MathFlux {
 	}
 
 	/**
-	 * Computes the long sum of items in the source.
+	 * Computes the long sum of items in the source. Note that in case of an overflow,
+	 * this method won't return a negative sum but rather cap at {@link Long#MAX_VALUE}
+	 * (or {@link Long#MIN_VALUE} for an underflow).
 	 *
 	 * @param source the numerical source
 	 *
@@ -69,7 +75,9 @@ public final class MathFlux {
 
 	/**
 	 * Computes the long sum of items in the source, which are mapped to numerical values
-	 * using the provided mapping.
+	 * using the provided mapping. Note that in case of an overflow,
+	 * this method won't return a negative sum but rather cap at {@link Long#MAX_VALUE}
+	 * (or {@link Long#MIN_VALUE} for an underflow).
 	 *
 	 * @param source the source items
 	 * @param mapping a function to map source items to numerical values
