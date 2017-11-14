@@ -40,18 +40,15 @@ import reactor.util.annotation.NonNull;
  * @author Oleh Dokuka
  */
 
-public class Cache {
-
-	private static final Object NULL_HOLDER = new Object();
+public class CacheHelper {
 
 	/**
-	 * Current method may be used to drain the value from the cache-map by given key and
-	 * transform the result to {@link Mono<Value>}. In the case of empty value the value
-	 * will be calculated from the alternative source. Note, if the alternative source
-	 * returns empty result, it will be consider as the result and for all subsequent
-	 * requests with the identical key will be returned {@link Mono#empty()). The similar
-	 * behaviours is for the case when alternative source completed with error, thus for
-	 * all subsequent identical keys will be emitted {@link Mono#error(Throwable)}
+	 * Restore a {@link Mono<Value>} from the cache-map given a provided key. If no value
+	 * is in the cache, it will be calculated from the original source which is set up in
+	 * the next step. Note that if the source completes empty, this result will be cached
+	 * and all subsequent requests with the same key will return {@link Mono#empty()). The
+	 * behaviour is similar for erroring sources, except cache hits would then return
+	 * {@link Mono#error(Throwable)}.
 	 *
 	 * @param cache {@link Map} wrapper of a cache
 	 * @param key mapped key
@@ -61,34 +58,21 @@ public class Cache {
 	 * @return Lazy "Or" Builder
 	 */
 	@NonNull
-	public static <Key, Value> Or<Value> hydrateFrom(@NonNull Map<Key, Value> cache,
+	public static <Key, Value> Or<Value> hydrateFrom(@NonNull Map<Key, Signal<? extends Value>> cache,
 			@NonNull Key key) {
 		return other -> {
-			Value cached = cache.get(key);
+			Signal<? extends Value> cached = cache.get(key);
 
 			if (cached == null) {
 				return other.materialize()
-				            .doOnNext(value -> cache.put(key, get(value)))
+				            .doOnNext(value -> cache.put(key, value))
 				            .dematerialize();
 			}
-			else if (cached == NULL_HOLDER) {
-				return Mono.empty();
-			}
-			else if (cached instanceof ErrorHolder) {
-				return Mono.error(((ErrorHolder) cached).e);
-			}
 			else {
-				return Mono.just(cached);
+				return Mono.just(cached)
+				           .dematerialize();
 			}
 		};
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <Value> Value get(Signal<? extends Value> signal) {
-		Value value = signal.get();
-
-		return signal.hasError() ? (Value) new ErrorHolder(signal.getThrowable()) :
-				value == null ? (Value) NULL_HOLDER : value;
 	}
 
 	public interface Or<Value> {
@@ -102,14 +86,5 @@ public class Cache {
 		 */
 		@NonNull
 		Mono<Value> or(Mono<? extends Value> other);
-	}
-
-	private static class ErrorHolder {
-
-		private final Throwable e;
-
-		private ErrorHolder(Throwable e) {
-			this.e = e;
-		}
 	}
 }
