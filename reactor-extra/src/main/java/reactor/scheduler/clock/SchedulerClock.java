@@ -117,7 +117,7 @@ public class SchedulerClock extends Clock {
 	public Instant instant() {
 		long nano = scheduler.now(TimeUnit.NANOSECONDS);
 		long secs = Math.floorDiv(nano, NANOS_PER_SECOND);
-		int nos = (int) Math.floorMod(nano, NANOS_PER_SECOND);
+		long nos = Math.floorMod(nano, NANOS_PER_SECOND);
 
 		return Instant.ofEpochSecond(secs, nos);
 	}
