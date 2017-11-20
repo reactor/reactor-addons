@@ -43,8 +43,18 @@ import reactor.util.annotation.NonNull;
  *         Assert.assertTrue(beforeAdvance.isBefore(afterAdvance));
  *     </code>
  * </pre>
+ * <p>
+ *
+ * @author Oleh Dokuka
+ * @author Peter Royal
+ * @since 3.1.4
  */
 public class SchedulerClock extends Clock {
+
+	/**
+	 * Nanos per second.
+	 */
+	private static final long NANOS_PER_SECOND = 1000_000_000L;
 
 	private final Scheduler scheduler;
 	private final ZoneId    zone;
@@ -55,11 +65,13 @@ public class SchedulerClock extends Clock {
 	}
 
 	@Override
+	@NonNull
 	public ZoneId getZone() {
 		return zone;
 	}
 
 	@Override
+	@NonNull
 	public SchedulerClock withZone(ZoneId zone) {
 		return new SchedulerClock(scheduler, zone);
 	}
@@ -69,6 +81,7 @@ public class SchedulerClock extends Clock {
 	 *
 	 * @return {@link Scheduler} instance
 	 */
+	@NonNull
 	public Scheduler getScheduler() {
 		return scheduler;
 	}
@@ -79,6 +92,7 @@ public class SchedulerClock extends Clock {
 	 *
 	 * @return {@link SchedulerClock} instance
 	 */
+	@NonNull
 	public SchedulerClock withScheduler(Scheduler scheduler) {
 		return new SchedulerClock(scheduler, zone);
 	}
@@ -88,9 +102,24 @@ public class SchedulerClock extends Clock {
 		return scheduler.now(TimeUnit.MILLISECONDS);
 	}
 
+	/**
+	 * Gets the current instant of the clock.
+	 * <p>
+	 * This returns an instant representing the current instant as defined by the clock.
+	 * <p>
+	 * Note: If scheduler does not support time in nanoseconds the returned {@link
+	 * Instant} will be limited by milliseconds
+	 *
+	 * @return the current instant from this clock, not null
+	 */
 	@Override
+	@NonNull
 	public Instant instant() {
-		return Instant.ofEpochMilli(millis());
+		long nano = scheduler.now(TimeUnit.NANOSECONDS);
+		long secs = Math.floorDiv(nano, NANOS_PER_SECOND);
+		int nos = (int) Math.floorMod(nano, NANOS_PER_SECOND);
+
+		return Instant.ofEpochSecond(secs, nos);
 	}
 
 	@Override
@@ -132,6 +161,7 @@ public class SchedulerClock extends Clock {
 	 *
 	 * @return new {@link SchedulerClock}
 	 */
+	@NonNull
 	public static SchedulerClock of(@NonNull Scheduler scheduler) {
 		return new SchedulerClock(scheduler, ZoneId.systemDefault());
 	}
@@ -144,6 +174,7 @@ public class SchedulerClock extends Clock {
 	 *
 	 * @return new {@link SchedulerClock}
 	 */
+	@NonNull
 	public static SchedulerClock of(@NonNull Scheduler scheduler,
 			@NonNull ZoneId zoneId) {
 		return new SchedulerClock(scheduler, zoneId);
