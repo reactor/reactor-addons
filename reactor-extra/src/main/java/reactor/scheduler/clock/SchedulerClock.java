@@ -24,6 +24,26 @@ import java.util.concurrent.TimeUnit;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.annotation.NonNull;
 
+/**
+ * Clock adapter around {@link Scheduler}. That adoption gives batter integration with
+ * Java 8 DateTime API.
+ * <p>
+ * This feature may be useful for testing purpose, especially for integration with {@link
+ * reactor.test.scheduler.VirtualTimeScheduler}. For example:
+ * <p>
+ * <pre>
+ *     <code>
+ *         VirtualTimeScheduler scheduler = VirtualTimeScheduler.create();
+ *         SchedulerClock clock = SchedulerClock.of(scheduler);
+ *
+ *         ZonedDateTime beforeAdvance = ZonedDateTime.now(clock);
+ *         scheduler.advanceTimeBy(Duration.ofSeconds(1));
+ *         ZonedDateTime afterAdvance = ZonedDateTime.now(clock);
+ *
+ *         Assert.assertTrue(beforeAdvance.isBefore(afterAdvance));
+ *     </code>
+ * </pre>
+ */
 public class SchedulerClock extends Clock {
 
 	private final Scheduler scheduler;
@@ -44,10 +64,21 @@ public class SchedulerClock extends Clock {
 		return new SchedulerClock(scheduler, zone);
 	}
 
+	/**
+	 * Return wrapped Scheduler instance
+	 *
+	 * @return {@link Scheduler} instance
+	 */
 	public Scheduler getScheduler() {
 		return scheduler;
 	}
 
+	/**
+	 * Builder method that returns new instance of {@link SchedulerClock} which is
+	 * constructed from old {@link ZoneId} and passed {@link Scheduler} instance
+	 *
+	 * @return {@link SchedulerClock} instance
+	 */
 	public SchedulerClock withScheduler(Scheduler scheduler) {
 		return new SchedulerClock(scheduler, zone);
 	}
@@ -93,10 +124,26 @@ public class SchedulerClock extends Clock {
 		return "SchedulerClock{" + "scheduler=" + scheduler + ", zone=" + zone + '}';
 	}
 
+	/**
+	 * Create instance of {@link SchedulerClock} from given {@link Scheduler} and system
+	 * default {@link ZoneId#systemDefault()}
+	 *
+	 * @param scheduler {@link Scheduler} instance
+	 *
+	 * @return new {@link SchedulerClock}
+	 */
 	public static SchedulerClock of(@NonNull Scheduler scheduler) {
 		return new SchedulerClock(scheduler, ZoneId.systemDefault());
 	}
 
+	/**
+	 * Create instance of {@link SchedulerClock} from given {@link Scheduler} and {@link
+	 * ZoneId}
+	 *
+	 * @param scheduler {@link Scheduler} instance
+	 *
+	 * @return new {@link SchedulerClock}
+	 */
 	public static SchedulerClock of(@NonNull Scheduler scheduler,
 			@NonNull ZoneId zoneId) {
 		return new SchedulerClock(scheduler, zoneId);
