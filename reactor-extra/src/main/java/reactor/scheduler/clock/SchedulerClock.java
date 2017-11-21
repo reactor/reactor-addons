@@ -25,7 +25,7 @@ import reactor.core.scheduler.Scheduler;
 import reactor.util.annotation.NonNull;
 
 /**
- * Clock adapter around {@link Scheduler}. That adoption gives batter integration with
+ * Clock adapter around {@link Scheduler}. That adoption gives better integration with
  * Java 8 DateTime API.
  * <p>
  * This feature may be useful for testing purpose, especially for integration with {@link
