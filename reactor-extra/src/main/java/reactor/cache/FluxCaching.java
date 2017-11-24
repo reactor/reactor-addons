@@ -69,32 +69,32 @@ public class FluxCaching {
 	 *
 	 * @return The next {@link FluxCacheBuilderMapMiss builder step} to use to set up the source
 	 */
-	public static <KEY, VALUE> FluxCacheBuilderMapMiss<VALUE> lookupFlux(Map<KEY, ? super List<? super Signal<VALUE>>> cacheMap, KEY key) {
+	public static <KEY, VALUE> FluxCacheBuilderMapMiss<VALUE> lookupFlux(
+			Map<KEY, ? super List> cacheMap, KEY key, Class<VALUE> valueClass) {
 		return otherSupplier ->
 				Flux.defer(() -> {
 					Object fromCache = cacheMap.get(key);
 					if (fromCache == null) {
 						return otherSupplier.get()
 						                    .materialize()
-						                    .cast(Object.class)
 						                    .collectList()
 						                    .doOnNext(signals -> cacheMap.put(key, signals))
 						                    .flatMapIterable(Function.identity())
 						                    .dematerialize();
 					}
-					else if (fromCache instanceof Iterable) {
+					else if (fromCache instanceof List) {
 						try {
 							@SuppressWarnings("unchecked")
-							Iterable<Signal<VALUE>> fromCacheSignals = (Iterable<Signal<VALUE>>) fromCache;
+							List<Signal<VALUE>> fromCacheSignals = (List<Signal<VALUE>>) fromCache;
 							return Flux.fromIterable(fromCacheSignals)
 							           .dematerialize();
 						}
 						catch (Throwable cause) {
-							return Flux.error(new IllegalArgumentException("Content of cache for key " + key + " cannot be cast to Iterable<Signal>", cause));
+							return Flux.error(new IllegalArgumentException("Content of cache for key " + key + " cannot be cast to List<Signal>", cause));
 						}
 					}
 					else {
-						return Flux.error(new IllegalArgumentException("Content of cache for key " + key + " is not an Iterable"));
+						return Flux.error(new IllegalArgumentException("Content of cache for key " + key + " is not a List"));
 					}
 				});
 	}
