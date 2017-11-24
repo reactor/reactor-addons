@@ -28,8 +28,8 @@ import reactor.util.annotation.NonNull;
  * Clock adapter around {@link Scheduler}. That adoption gives better integration with
  * Java 8 DateTime API.
  * <p>
- * This feature may be useful for testing purpose, especially for integration with {@link
- * reactor.test.scheduler.VirtualTimeScheduler}. For example:
+ * This feature may be useful for testing purpose, especially for integration with {@code
+ * VirtualTimeScheduler}. For example:
  * <p>
  * <pre>
  *     <code>
