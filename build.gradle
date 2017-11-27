@@ -22,8 +22,7 @@ buildscript {
   dependencies {
 	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}",
 			'org.springframework.build.gradle:propdeps-plugin:0.0.7',
-			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE',
-			'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE'
   }
 }
 
@@ -205,7 +204,6 @@ project('reactor-logback') {
   description = 'Async Logback appender implementation'
 
   apply plugin: 'application'
-  apply plugin: 'com.github.johnrengelman.shadow'
 
   mainClassName = "reactor.logback.DurableLogUtility"
 
@@ -213,14 +211,6 @@ project('reactor-logback') {
 	compile "ch.qos.logback:logback-classic:$logbackVersion",
 			"net.openhft:chronicle:$openHftChronicleVersion",
 			"commons-cli:commons-cli:1.2"
-  }
-
-  shadowJar {
-	dependencies {
-	  include(dependency("net.openhft:chronicle:$openHftChronicleVersion"))
-	  include(dependency("commons-cli:commons-cli:1.2"))
-	  //include(project(":reactor-core"))
-	}
   }
 }
 
@@ -235,6 +225,8 @@ project('reactor-adapter') {
 
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.1"
   }
+
+
 }
 
 project('reactor-extra') {
