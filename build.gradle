@@ -15,7 +15,7 @@
  */
 
 buildscript {
-  ext.kotlinVersion = '1.1.60'
+  ext.kotlinVersion = '1.1.61'
   repositories {
 	maven { url "http://repo.spring.io/plugins-release" }
   }
