@@ -37,7 +37,7 @@ import reactor.core.publisher.Signal;
  *                                       .refreshAfterWrite(1, TimeUnit.MINUTES)
  *                                       .build(key -> createExpensiveGraph(key));
  *
- *    keyStream.concatMap(key -> Cache.lookupMono(graphs.asMap(), key)
+ *    keyStream.concatMap(key -> CacheMono.lookup(graphs.asMap(), key)
  *                                    .onCacheMissResume(repository.findOneById(key))
  * </code></pre>
  * </p>
@@ -45,7 +45,7 @@ import reactor.core.publisher.Signal;
  * @author Oleh Dokuka
  * @author Simon Baslé
  */
-public class MonoCaching {
+public class CacheMono {
 
 	/**
 	 * Restore a {@link Mono Mono&lt;VALUE&gt;} from the cache-map given a provided key. If no value
@@ -66,7 +66,7 @@ public class MonoCaching {
 	 *
 	 * @return The next {@link MonoCacheBuilderMapMiss builder step} to use to set up the source
 	 */
-	public static <KEY, VALUE> MonoCacheBuilderMapMiss<VALUE> lookupMono(Map<KEY, ? super Signal<? extends VALUE>> cacheMap, KEY key) {
+	public static <KEY, VALUE> MonoCacheBuilderMapMiss<VALUE> lookup(Map<KEY, ? super Signal<? extends VALUE>> cacheMap, KEY key) {
 		return otherSupplier -> Mono.defer(() ->
 				Mono.justOrEmpty(cacheMap.get(key))
 				    .switchIfEmpty(otherSupplier.get().materialize()
@@ -94,7 +94,7 @@ public class MonoCaching {
 	 *
 	 * @return The next {@link MonoCacheBuilderCacheMiss builder step} to use to set up the source
 	 */
-	public static <KEY, VALUE> MonoCacheBuilderCacheMiss<KEY, VALUE> lookupMono(MonoCacheReader<KEY, VALUE> reader, KEY key) {
+	public static <KEY, VALUE> MonoCacheBuilderCacheMiss<KEY, VALUE> lookup(MonoCacheReader<KEY, VALUE> reader, KEY key) {
 		return otherSupplier -> writer -> Mono.defer(() ->
 				reader.apply(key)
 				  .switchIfEmpty(otherSupplier.get()
@@ -113,17 +113,17 @@ public class MonoCaching {
 	 * source. <p> Example adapter around {@link Map} usage:
 	 * <pre><code>
 	 * Map<Integer, Signal<? extends String>> cache = new HashMap<>();
-	 * Function<Integer, Mono<String>> flatMap = key -> CacheHelper
-	 *                                                   .lookupMono(reader(cache), key)
+	 * Function<Integer, Mono<String>> flatMap = key -> CacheMono
+	 *                                                   .lookup(reader(cache), key)
 	 *                                                   .onCacheMissResume(source)
 	 *                                                   .andWriteWith(writer(cache));
 	 *
 	 *
-	 * private static <Key, Value> CacheHelper.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
+	 * private static <Key, Value> CacheMono.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
 	 *    return key -> Mono.justOrEmpty(cache.get(key));
 	 * }
 	 *
-	 * private static <Key, Value> CacheHelper.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
+	 * private static <Key, Value> CacheMono.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
 	 *    return (key, value) -> {
 	 *        cache.put(key, value);
 	 *        return Mono.just(value);
@@ -149,17 +149,17 @@ public class MonoCaching {
 	 * <p> Example adapter around {@link Map} usage:
 	 * <pre><code>
 	 * Map<Integer, Signal<? extends String>> cache = new HashMap<>();
-	 * Function<Integer, Mono<String>> flatMap = key -> CacheHelper
-	 *                                                   .lookupMono(reader(cache), key)
+	 * Function<Integer, Mono<String>> flatMap = key -> CacheMono
+	 *                                                   .lookup(reader(cache), key)
 	 *                                                   .onCacheMissResume(source)
 	 *                                                   .andWriteWith(writer(cache));
 	 *
 	 *
-	 * private static <Key, Value> CacheHelper.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
+	 * private static <Key, Value> CacheMono.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
 	 *    return key -> Mono.justOrEmpty(cache.get(key));
 	 * }
 	 *
-	 * private static <Key, Value> CacheHelper.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
+	 * private static <Key, Value> CacheMono.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
 	 *    return (key, value) -> Mono.fromRunnable(() -> cache.put(key, value));
 	 * }
 	 * </code></pre>
@@ -182,7 +182,6 @@ public class MonoCaching {
 	 * @param <KEY> Key type
 	 * @param <VALUE> Value type
 	 */
-	@FunctionalInterface
 	interface MonoCacheBuilderCacheMiss<KEY, VALUE> {
 
 		/**
@@ -215,7 +214,6 @@ public class MonoCaching {
 	 * @param <KEY> Key type
 	 * @param <VALUE> Value type
 	 */
-	@FunctionalInterface
 	interface MonoCacheBuilderCacheWriter<KEY, VALUE> {
 
 		/**
@@ -237,7 +235,6 @@ public class MonoCaching {
 	 *
 	 * @param <VALUE> type
 	 */
-	@FunctionalInterface
 	interface MonoCacheBuilderMapMiss<VALUE> {
 
 		/**

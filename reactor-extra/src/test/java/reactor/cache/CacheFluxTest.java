@@ -17,14 +17,14 @@ import reactor.test.publisher.PublisherProbe;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FluxCachingTest {
+public class CacheFluxTest {
 
 
-	private FluxCaching.FluxCacheReader<String, Integer> reader(Map<String, List> data) {
+	private CacheFlux.FluxCacheReader<String, Integer> reader(Map<String, List> data) {
 		return k -> Mono.justOrEmpty((List<Signal<Integer>>) data.get(k));
 	}
 
-	private FluxCaching.FluxCacheWriter<String, Integer> writer(Map<String, List> data) {
+	private CacheFlux.FluxCacheWriter<String, Integer> writer(Map<String, List> data) {
 		return ((k, signals) -> Mono.fromRunnable(() -> data.put(k, signals)));
 	}
 
@@ -33,8 +33,8 @@ public class FluxCachingTest {
 	public void fluxCacheFromMapMiss() {
 		Map<String, List> data = new HashMap<>();
 
-		Flux<Integer> test = FluxCaching.lookupFlux(data, "foo", Integer.class)
-				.onCacheMissResume(Flux.just(1, 2, 3));
+		Flux<Integer> test = CacheFlux.lookup(data, "foo", Integer.class)
+		                              .onCacheMissResume(Flux.just(1, 2, 3));
 
 		StepVerifier.create(test)
 		            .expectNext(1, 2, 3)
@@ -54,8 +54,8 @@ public class FluxCachingTest {
 		Map<String, List> data = new HashMap<>();
 		data.put("foo", Arrays.asList(Signal.next(4), Signal.next(5), Signal.next(6), Signal.complete()));
 
-		Flux<Integer> test = FluxCaching.lookupFlux(data, "foo", Integer.class)
-				.onCacheMissResume(probe.flux());
+		Flux<Integer> test = CacheFlux.lookup(data, "foo", Integer.class)
+		                              .onCacheMissResume(probe.flux());
 
 		StepVerifier.create(test)
 		            .expectNext(4, 5, 6)
@@ -72,8 +72,8 @@ public class FluxCachingTest {
 		Map<String, List> data = new HashMap<>();
 		data.put("foo", Arrays.asList(Signal.next(4), Signal.next(5), Signal.next(6), Signal.error(new IllegalStateException("boom"))));
 
-		Flux<Integer> test = FluxCaching.lookupFlux(data, "foo", Integer.class)
-				.onCacheMissResume(probe.flux());
+		Flux<Integer> test = CacheFlux.lookup(data, "foo", Integer.class)
+		                              .onCacheMissResume(probe.flux());
 
 		StepVerifier.create(test)
 		            .expectNext(4, 5, 6)
@@ -90,8 +90,8 @@ public class FluxCachingTest {
 		Map<String, List> data = new HashMap<>();
 		data.put("foo", Collections.singletonList(Signal.complete()));
 
-		Flux<Integer> test = FluxCaching.lookupFlux(data, "foo", Integer.class)
-				.onCacheMissResume(probe.flux());
+		Flux<Integer> test = CacheFlux.lookup(data, "foo", Integer.class)
+		                              .onCacheMissResume(probe.flux());
 
 		StepVerifier.create(test)
 		            .verifyComplete();
@@ -109,8 +109,8 @@ public class FluxCachingTest {
 			return Flux.error(new IllegalStateException("shouldn't go there"));
 		}));
 
-		Flux<Integer> test = FluxCaching.lookupFlux(data, "foo", Integer.class)
-				.onCacheMissResume(probe.flux());
+		Flux<Integer> test = CacheFlux.lookup(data, "foo", Integer.class)
+		                              .onCacheMissResume(probe.flux());
 
 		assertThat(test.collectList().block()).containsExactly(1, 2);
 
@@ -128,9 +128,9 @@ public class FluxCachingTest {
 	public void fluxCacheFromWriterMiss() {
 		Map<String, List> data = new HashMap<>();
 
-		Flux<Integer> test = FluxCaching.lookupFlux(reader(data), "foo")
-				.onCacheMissResume(Flux.just(1, 2, 3))
-				.andWriteWith(writer(data));
+		Flux<Integer> test = CacheFlux.lookup(reader(data), "foo")
+		                              .onCacheMissResume(Flux.just(1, 2, 3))
+		                              .andWriteWith(writer(data));
 
 		StepVerifier.create(test)
 		            .expectNext(1, 2, 3)
@@ -150,9 +150,9 @@ public class FluxCachingTest {
 		Map<String, List> data = new HashMap<>();
 		data.put("foo", Arrays.asList(Signal.next(4), Signal.next(5), Signal.next(6), Signal.complete()));
 
-		Flux<Integer> test = FluxCaching.lookupFlux(reader(data), "foo")
-				.onCacheMissResume(probe.flux())
-				.andWriteWith(writer(data));
+		Flux<Integer> test = CacheFlux.lookup(reader(data), "foo")
+		                              .onCacheMissResume(probe.flux())
+		                              .andWriteWith(writer(data));
 
 		StepVerifier.create(test)
 		            .expectNext(4, 5, 6)
@@ -169,9 +169,9 @@ public class FluxCachingTest {
 		Map<String, List> data = new HashMap<>();
 		data.put("foo", Arrays.asList(Signal.next(4), Signal.next(5), Signal.next(6), Signal.error(new IllegalStateException("boom"))));
 
-		Flux<Integer> test = FluxCaching.lookupFlux(reader(data), "foo")
-				.onCacheMissResume(probe.flux())
-				.andWriteWith(writer(data));
+		Flux<Integer> test = CacheFlux.lookup(reader(data), "foo")
+		                              .onCacheMissResume(probe.flux())
+		                              .andWriteWith(writer(data));
 
 		StepVerifier.create(test)
 		            .expectNext(4, 5, 6)
@@ -188,9 +188,9 @@ public class FluxCachingTest {
 		Map<String, List> data = new HashMap<>();
 		data.put("foo", Collections.singletonList(Signal.complete()));
 
-		Flux<Integer> test = FluxCaching.lookupFlux(reader(data), "foo")
-				.onCacheMissResume(probe.flux())
-				.andWriteWith(writer(data));
+		Flux<Integer> test = CacheFlux.lookup(reader(data), "foo")
+		                              .onCacheMissResume(probe.flux())
+		                              .andWriteWith(writer(data));
 
 		StepVerifier.create(test)
 		            .verifyComplete();
@@ -208,9 +208,9 @@ public class FluxCachingTest {
 			return Flux.error(new IllegalStateException("shouldn't go there"));
 		}));
 
-		Flux<Integer> test = FluxCaching.lookupFlux(reader(data), "foo")
-				.onCacheMissResume(probe.flux())
-				.andWriteWith(writer(data));
+		Flux<Integer> test = CacheFlux.lookup(reader(data), "foo")
+		                              .onCacheMissResume(probe.flux())
+		                              .andWriteWith(writer(data));
 
 		assertThat(test.collectList().block()).containsExactly(1, 2);
 
@@ -231,9 +231,9 @@ public class FluxCachingTest {
 		Map<String, List> data = new HashMap<>();
 		Supplier<Flux<Integer>> sourceSupplier = () -> Flux.just(aLong.intValue());
 
-		Flux<Integer> test = FluxCaching.lookupFlux(reader(data), "foo")
-		                                .onCacheMissResume(sourceSupplier)
-		                                .andWriteWith(writer(data));
+		Flux<Integer> test = CacheFlux.lookup(reader(data), "foo")
+		                              .onCacheMissResume(sourceSupplier)
+		                              .andWriteWith(writer(data));
 
 		aLong.set(3L);
 
@@ -247,9 +247,9 @@ public class FluxCachingTest {
 		AtomicLong aLong = new AtomicLong();
 		Map<String, List> data = new HashMap<>();
 
-		Flux<Integer> test = FluxCaching.lookupFlux(reader(data), "foo")
-		                                .onCacheMissResume(Flux.just(aLong.intValue()))
-		                                .andWriteWith(writer(data));
+		Flux<Integer> test = CacheFlux.lookup(reader(data), "foo")
+		                              .onCacheMissResume(Flux.just(aLong.intValue()))
+		                              .andWriteWith(writer(data));
 
 		aLong.set(3L);
 
@@ -264,8 +264,8 @@ public class FluxCachingTest {
 		Map<String, List> data = new HashMap<>();
 		Supplier<Flux<Integer>> sourceSupplier = () -> Flux.just(aLong.intValue());
 
-		Flux<Integer> test = FluxCaching.lookupFlux(data, "foo", Integer.class)
-		                                .onCacheMissResume(sourceSupplier);
+		Flux<Integer> test = CacheFlux.lookup(data, "foo", Integer.class)
+		                              .onCacheMissResume(sourceSupplier);
 
 		aLong.set(3L);
 
@@ -279,8 +279,8 @@ public class FluxCachingTest {
 		AtomicLong aLong = new AtomicLong();
 		Map<String, List> data = new HashMap<>();
 
-		Flux<Integer> test = FluxCaching.lookupFlux(data, "foo", Integer.class)
-		                                .onCacheMissResume(Flux.just(aLong.intValue()));
+		Flux<Integer> test = CacheFlux.lookup(data, "foo", Integer.class)
+		                              .onCacheMissResume(Flux.just(aLong.intValue()));
 
 		aLong.set(3L);
 
@@ -294,8 +294,8 @@ public class FluxCachingTest {
 		Map<Object, List> cacheMap = new HashMap<>();
 		Object key1 = new Object();
 
-		Flux<Integer> test = FluxCaching.lookupFlux(cacheMap, key1, Integer.class)
-		           .onCacheMissResume(Flux.range(1, 5));
+		Flux<Integer> test = CacheFlux.lookup(cacheMap, key1, Integer.class)
+		                              .onCacheMissResume(Flux.range(1, 5));
 
 		StepVerifier.create(test)
 		            .expectNext(1, 2,3, 4, 5)
@@ -309,8 +309,8 @@ public class FluxCachingTest {
 		Map<Object, Object> cacheMap = new HashMap<>();
 		Object key1 = new Object();
 
-		Flux<Integer> test = FluxCaching.lookupFlux(cacheMap, key1, Integer.class)
-		           .onCacheMissResume(Flux.range(1, 5));
+		Flux<Integer> test = CacheFlux.lookup(cacheMap, key1, Integer.class)
+		                              .onCacheMissResume(Flux.range(1, 5));
 
 		StepVerifier.create(test)
 		            .expectNext(1, 2, 3, 4, 5)

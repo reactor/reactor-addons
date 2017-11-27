@@ -38,7 +38,7 @@ import reactor.core.publisher.Signal;
  *                                       .refreshAfterWrite(1, TimeUnit.MINUTES)
  *                                       .build(key -> createExpensiveGraph(key));
  *
- *    keyStream.concatMap(key -> FluxCaching.lookupFlux(graphs.asMap(), key)
+ *    keyStream.concatMap(key -> CacheFlux.lookup(graphs.asMap(), key)
  *                                    .onCacheMissResume(repository.findOneById(key))
  * </code></pre>
  * </p>
@@ -46,7 +46,7 @@ import reactor.core.publisher.Signal;
  * @author Oleh Dokuka
  * @author Simon Baslé
  */
-public class FluxCaching {
+public class CacheFlux {
 
 
 	/**
@@ -69,7 +69,7 @@ public class FluxCaching {
 	 *
 	 * @return The next {@link FluxCacheBuilderMapMiss builder step} to use to set up the source
 	 */
-	public static <KEY, VALUE> FluxCacheBuilderMapMiss<VALUE> lookupFlux(
+	public static <KEY, VALUE> FluxCacheBuilderMapMiss<VALUE> lookup(
 			Map<KEY, ? super List> cacheMap, KEY key, Class<VALUE> valueClass) {
 		return otherSupplier ->
 				Flux.defer(() -> {
@@ -119,7 +119,7 @@ public class FluxCaching {
 	 *
 	 * @return The next {@link FluxCacheBuilderCacheMiss builder step} used to set up the source
 	 */
-	public static <KEY, VALUE> FluxCacheBuilderCacheMiss<KEY, VALUE> lookupFlux(FluxCacheReader<KEY, VALUE> reader, KEY key) {
+	public static <KEY, VALUE> FluxCacheBuilderCacheMiss<KEY, VALUE> lookup(FluxCacheReader<KEY, VALUE> reader, KEY key) {
 		return otherSupplier -> writer ->
 				Flux.defer(() ->
 						reader.apply(key)
@@ -170,7 +170,6 @@ public class FluxCaching {
 	 * @param <KEY> Key type
 	 * @param <VALUE> Value type
 	 */
-	@FunctionalInterface
 	interface FluxCacheBuilderCacheMiss<KEY, VALUE> {
 
 		/**
@@ -202,7 +201,6 @@ public class FluxCaching {
 	 * @param <KEY> Key type
 	 * @param <VALUE> Value type
 	 */
-	@FunctionalInterface
 	interface FluxCacheBuilderCacheWriter<KEY, VALUE> {
 
 		/**
@@ -224,7 +222,6 @@ public class FluxCaching {
 	 *
 	 * @param <VALUE> type
 	 */
-	@FunctionalInterface
 	interface FluxCacheBuilderMapMiss<VALUE> {
 
 		/**

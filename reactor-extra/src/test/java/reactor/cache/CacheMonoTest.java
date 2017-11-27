@@ -1,10 +1,7 @@
 package reactor.cache;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -20,15 +17,15 @@ import reactor.test.publisher.PublisherProbe;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MonoCachingTest {
+public class CacheMonoTest {
 
 	@Test
 	public void shouldCacheValueInMap() {
 		Flux<Integer> source = Flux.just(1, 2, 3, 4);
 		Map<Integer, Signal<? extends String>> cache = new HashMap<>();
 		Function<Integer, Mono<String>> flatMap =
-				key -> MonoCaching.lookupMono(cache, key)
-				                  .onCacheMissResume(Mono.just(key)
+				key -> CacheMono.lookup(cache, key)
+				                .onCacheMissResume(Mono.just(key)
 				                                         .transform(delay()));
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap))
@@ -53,10 +50,10 @@ public class MonoCachingTest {
 		Map<Integer, Signal<? extends String>> cache = new HashMap<>();
 
 		Function<Integer, Mono<String>> flatMap =
-				key -> MonoCaching.lookupMono(reader(cache), key)
-				                  .onCacheMissResume(Mono.just(key)
+				key -> CacheMono.lookup(reader(cache), key)
+				                .onCacheMissResume(Mono.just(key)
 				                                         .transform(delay()))
-				                  .andWriteWith(writer(cache));
+				                .andWriteWith(writer(cache));
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap))
 		            .expectSubscription()
@@ -82,8 +79,8 @@ public class MonoCachingTest {
 		cache.put(1, Signal.next("2"));
 
 		Function<Integer, Mono<String>> flatMap =
-				key -> MonoCaching.lookupMono(cache, key)
-				                  .onCacheMissResume(Mono.just(key)
+				key -> CacheMono.lookup(cache, key)
+				                .onCacheMissResume(Mono.just(key)
 				                                         .transform(delay()));
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap))
@@ -105,10 +102,10 @@ public class MonoCachingTest {
 		cache.put(1, Signal.next("2"));
 
 		Function<Integer, Mono<String>> flatMap =
-				key -> MonoCaching.lookupMono(reader(cache), key)
-				                  .onCacheMissResume(Mono.just(key)
+				key -> CacheMono.lookup(reader(cache), key)
+				                .onCacheMissResume(Mono.just(key)
 				                                         .transform(delay()))
-				                  .andWriteWith(writer(cache));
+				                .andWriteWith(writer(cache));
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap))
 		            .expectSubscription()
@@ -127,8 +124,8 @@ public class MonoCachingTest {
 		Map<Integer, Signal<? extends String>> cache = new HashMap<>();
 
 		Function<Integer, Mono<String>> flatMap =
-				key -> MonoCaching.lookupMono(cache, key)
-				                  .onCacheMissResume(Mono.just("")
+				key -> CacheMono.lookup(cache, key)
+				                .onCacheMissResume(Mono.just("")
 				                                         .transform(delay())
 				                                         .flatMap(v -> Mono.empty()));
 
@@ -153,11 +150,11 @@ public class MonoCachingTest {
 		Map<Integer, Signal<? extends String>> cache = new HashMap<>();
 
 		Function<Integer, Mono<String>> flatMap =
-				key -> MonoCaching.lookupMono(reader(cache), key)
-				                  .onCacheMissResume(Mono.just("")
+				key -> CacheMono.lookup(reader(cache), key)
+				                .onCacheMissResume(Mono.just("")
 				                                         .transform(delay())
 				                                         .flatMap(v -> Mono.empty()))
-				                  .andWriteWith(writer(cache));
+				                .andWriteWith(writer(cache));
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap)
 		                                         .materialize()
@@ -181,8 +178,8 @@ public class MonoCachingTest {
 		NullPointerException npe = new NullPointerException();
 
 		Function<Integer, Mono<String>> flatMap =
-				key -> MonoCaching.lookupMono(cache, key)
-				                  .onCacheMissResume(Mono.just("")
+				key -> CacheMono.lookup(cache, key)
+				                .onCacheMissResume(Mono.just("")
 				                                         .transform(delay())
 				                                         .flatMap(v -> Mono.error(npe)));
 
@@ -208,11 +205,11 @@ public class MonoCachingTest {
 		NullPointerException npe = new NullPointerException();
 
 		Function<Integer, Mono<String>> flatMap =
-				key -> MonoCaching.lookupMono(reader(cache), key)
-				                  .onCacheMissResume(Mono.just("")
+				key -> CacheMono.lookup(reader(cache), key)
+				                .onCacheMissResume(Mono.just("")
 				                                         .transform(delay())
 				                                         .flatMap(v -> Mono.error(npe)))
-				                  .andWriteWith(writer(cache));
+				                .andWriteWith(writer(cache));
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap)
 		                                         .materialize()
@@ -237,8 +234,8 @@ public class MonoCachingTest {
 			return Mono.error(new IllegalStateException("shouldn't go there"));
 		}));
 
-		Mono<Integer> test = MonoCaching.lookupMono(data, "foo")
-		                                .onCacheMissResume(probe.mono());
+		Mono<Integer> test = CacheMono.lookup(data, "foo")
+		                              .onCacheMissResume(probe.mono());
 
 		assertThat(test.block()).isEqualTo(1);
 
@@ -259,9 +256,9 @@ public class MonoCachingTest {
 			return Mono.error(new IllegalStateException("shouldn't go there"));
 		}));
 
-		Mono<Integer> test = MonoCaching.lookupMono(reader(data), "foo")
-		                                .onCacheMissResume(probe.mono())
-		                                .andWriteWith(writer(data));
+		Mono<Integer> test = CacheMono.lookup(reader(data), "foo")
+		                              .onCacheMissResume(probe.mono())
+		                              .andWriteWith(writer(data));
 
 		assertThat(test.block()).isEqualTo(1);
 
@@ -280,9 +277,9 @@ public class MonoCachingTest {
 		Map<String, Signal<? extends Integer>> data = new HashMap<>();
 		Supplier<Mono<Integer>> sourceSupplier = () -> Mono.just(aLong.intValue());
 
-		Mono<Integer> test = MonoCaching.lookupMono(reader(data), "foo")
-		                                .onCacheMissResume(sourceSupplier)
-		                                .andWriteWith(writer(data));
+		Mono<Integer> test = CacheMono.lookup(reader(data), "foo")
+		                              .onCacheMissResume(sourceSupplier)
+		                              .andWriteWith(writer(data));
 
 		aLong.set(3L);
 
@@ -296,9 +293,9 @@ public class MonoCachingTest {
 		AtomicLong aLong = new AtomicLong();
 		Map<String, Signal<? extends Integer>> data = new HashMap<>();
 
-		Mono<Integer> test = MonoCaching.lookupMono(reader(data), "foo")
-		                                .onCacheMissResume(Mono.just(aLong.intValue()))
-		                                .andWriteWith(writer(data));
+		Mono<Integer> test = CacheMono.lookup(reader(data), "foo")
+		                              .onCacheMissResume(Mono.just(aLong.intValue()))
+		                              .andWriteWith(writer(data));
 
 		aLong.set(3L);
 
@@ -313,8 +310,8 @@ public class MonoCachingTest {
 		Map<String, Signal<? extends Integer>> data = new HashMap<>();
 		Supplier<Mono<Integer>> sourceSupplier = () -> Mono.just(aLong.intValue());
 
-		Mono<Integer> test = MonoCaching.lookupMono(data, "foo")
-		                                .onCacheMissResume(sourceSupplier);
+		Mono<Integer> test = CacheMono.lookup(data, "foo")
+		                              .onCacheMissResume(sourceSupplier);
 
 		aLong.set(3L);
 
@@ -328,8 +325,8 @@ public class MonoCachingTest {
 		AtomicLong aLong = new AtomicLong();
 		Map<String, Signal<? extends Integer>> data = new HashMap<>();
 
-		Mono<Integer> test = MonoCaching.lookupMono(data, "foo")
-		                                .onCacheMissResume(Mono.just(aLong.intValue()));
+		Mono<Integer> test = CacheMono.lookup(data, "foo")
+		                              .onCacheMissResume(Mono.just(aLong.intValue()));
 
 		aLong.set(3L);
 
@@ -338,11 +335,11 @@ public class MonoCachingTest {
 		            .verifyComplete();
 	}
 
-	private static <Key, Value> MonoCaching.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
+	private static <Key, Value> CacheMono.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
 		return key -> Mono.justOrEmpty(cache.get(key));
 	}
 
-	private static <Key, Value> MonoCaching.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
+	private static <Key, Value> CacheMono.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
 		return (key, value) -> Mono.fromRunnable(() -> cache.put(key, value));
 	}
 
