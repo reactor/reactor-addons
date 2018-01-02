@@ -59,7 +59,7 @@ ext {
 				  "https://docs.oracle.com/javaee/6/api/",
 				  "http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
 				  "http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
-				  "http://www.reactive-streams.org/reactive-streams-1.0.1-javadoc/"] as
+				  "http://www.reactive-streams.org/reactive-streams-1.0.2-javadoc/"] as
 		  String[]
 }
 
@@ -223,7 +223,7 @@ project('reactor-adapter') {
 
 	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
 
-	testCompile "org.reactivestreams:reactive-streams-tck:1.0.1"
+	testCompile "org.reactivestreams:reactive-streams-tck:1.0.2"
   }
 
 
