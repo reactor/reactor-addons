@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import org.reactivestreams.Subscription;
 import reactor.core.CoreSubscriber;
+import reactor.core.Fuseable;
 import reactor.core.Scannable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Operators;
@@ -31,12 +32,22 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 
 	@Override
 	public void subscribe(CoreSubscriber<? super ByteBuffer> actual) {
-		actual.onSubscribe(new FileReaderSubscription(
-				actual,
-				file,
-				bufferCapacity,
-				scheduler.createWorker()
-		));
+		try {
+			if(actual instanceof Fuseable.ConditionalSubscriber) {
+				actual.onSubscribe(new ConditionalFileReaderSubscription(actual,
+						file,
+						bufferCapacity,
+						scheduler.createWorker()));
+			} else {
+				actual.onSubscribe(new FileReaderSubscription(actual,
+						file,
+						bufferCapacity,
+						scheduler.createWorker()));
+			}
+		}
+		catch (IOException e) {
+			Operators.error(actual, e);
+		}
 	}
 
 	static abstract class AbstractFileReaderSubscription
@@ -48,8 +59,6 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 		final Path             file;
 		final int              capacity;
 		final Scheduler.Worker worker;
-
-		Throwable error;
 
 		volatile boolean cancelled;
 		volatile boolean done;
@@ -67,22 +76,12 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 		AbstractFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
 				Path file,
 				int capacity,
-				Scheduler.Worker worker) {
+				Scheduler.Worker worker) throws IOException {
 			this.actual = actual;
 			this.file = file;
 			this.capacity = capacity;
 			this.worker = worker;
-
-			FileChannel channel;
-
-			try {
-				channel = FileChannel.open(file);
-			}
-			catch (IOException e) {
-				channel = null;
-			}
-
-			this.channel = channel;
+			this.channel = FileChannel.open(file);
 		}
 
 		@Nullable
@@ -127,7 +126,11 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 				final CoreSubscriber<? super ByteBuffer> a = actual;
 				int missed = 1;
 
-				for (; ; ) {
+				for (;;) {
+					if (cancelled || done) {
+						return;
+					}
+
 					slowPath();
 
 					if (cancelled || done) {
@@ -188,46 +191,27 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 			}
 		}
 
-		abstract void fastPath();
-
-		abstract void slowPath();
-	}
-
-	static final class FileReaderSubscription extends AbstractFileReaderSubscription {
-
-		FileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
-				int capacity,
-				Scheduler.Worker worker) {
-			super(actual, file, capacity, worker);
-		}
-
-		@Override
 		void fastPath() {
 			final CoreSubscriber<? super ByteBuffer> s = actual;
-			int read = 0;
+			int read;
 
 			for(;;) {
 				ByteBuffer buffer = ByteBuffer.allocate(capacity);
 
 				try {
 					read = channel.read(buffer);
-
-					if(read > -1) {
-						if(read != capacity) {
-							buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
-						}
-
-						if (cancelled) {
-							return;
-						}
-
-						s.onNext(buffer);
-					}
 				}
 				catch (IOException e) {
 					doError(s, e);
 					return;
+				}
+
+				if(read > -1) {
+					if(read != capacity) {
+						buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
+					}
+
+					s.onNext(buffer);
 				}
 
 				if (cancelled) {
@@ -240,10 +224,22 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 			}
 		}
 
+		abstract void slowPath();
+	}
+
+	static final class FileReaderSubscription extends AbstractFileReaderSubscription {
+
+		FileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
+				Path file,
+				int capacity,
+				Scheduler.Worker worker) throws IOException {
+			super(actual, file, capacity, worker);
+		}
+
 		@Override
 		void slowPath() {
 			final CoreSubscriber<? super ByteBuffer> s = actual;
-			int read = 0;
+			int read;
 			long n = requested;
 			long e = 0L;
 
@@ -254,22 +250,20 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 
 					try {
 						read = channel.read(buffer);
-
-						if(read > -1) {
-							if(read != capacity) {
-								buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
-							}
-
-							if (cancelled) {
-								return;
-							}
-
-							s.onNext(buffer);
-						}
 					}
 					catch (IOException t) {
 						doError(s, t);
+						return;
 					}
+
+					if(read > -1) {
+						if(read != capacity) {
+							buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
+						}
+
+						s.onNext(buffer);
+					}
+
 
 					if (cancelled) {
 						return;
@@ -296,4 +290,71 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 		}
 	}
 
+	static final class ConditionalFileReaderSubscription extends AbstractFileReaderSubscription {
+
+		ConditionalFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
+				Path file,
+				int capacity,
+				Scheduler.Worker worker) throws IOException {
+			super(actual, file, capacity, worker);
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		void slowPath() {
+			final CoreSubscriber<? super ByteBuffer> s = actual;
+			final Fuseable.ConditionalSubscriber<? super ByteBuffer> c = (Fuseable.ConditionalSubscriber<? super ByteBuffer>) s;
+			int read = 0;
+			long n = requested;
+			long e = 0L;
+
+			for(;;) {
+
+				while (e != n) {
+					ByteBuffer buffer = ByteBuffer.allocate(capacity);
+
+					try {
+						read = channel.read(buffer);
+					}
+					catch (IOException t) {
+						doError(s, t);
+						return;
+					}
+
+					boolean b = false;
+
+					if(read > -1) {
+						if(read != capacity) {
+							buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
+						}
+
+						b = c.tryOnNext(buffer);
+					}
+
+					if (cancelled) {
+						return;
+					}
+
+					if (read == -1) {
+						doComplete(s);
+						return;
+					}
+
+					if (b) {
+						e++;
+					}
+				}
+
+				n = requested;
+
+				if (n == e) {
+					n = REQUESTED.addAndGet(this, -e);
+					if (n == 0L) {
+						return;
+					}
+					e = 0L;
+				}
+			}
+		}
+	}
 }
