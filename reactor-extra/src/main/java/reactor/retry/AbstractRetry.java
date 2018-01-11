@@ -66,17 +66,21 @@ public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher
 
 	BackoffDelay calculateBackoff(Context<T> retryContext, Instant timeoutInstant) {
 		BackoffDelay nextBackoff = backoff.apply(retryContext);
-		Duration backoff = jitter.apply(nextBackoff);
 		Duration minBackoff = nextBackoff.min;
 		Duration maxBackoff = nextBackoff.max;
+		Duration backoff = nextBackoff.delay;
 		if (maxBackoff != null)
 			backoff = backoff.compareTo(maxBackoff) < 0 ? backoff : maxBackoff;
 		if (minBackoff != null)
 			backoff = backoff.compareTo(minBackoff) > 0 ? backoff : minBackoff;
-		if (retryContext.iteration() > maxIterations || Instant.now().plus(backoff).isAfter(timeoutInstant))
+
+		BackoffDelay sanitizedBackoff = new BackoffDelay(minBackoff, maxBackoff, backoff);
+		Duration jitteredBackoff = jitter.apply(sanitizedBackoff);
+
+		if (retryContext.iteration() > maxIterations || Instant.now().plus(jitteredBackoff).isAfter(timeoutInstant))
 			return RETRY_EXHAUSTED;
 		else
-			return new BackoffDelay(minBackoff, maxBackoff, backoff);
+			return new BackoffDelay(minBackoff, maxBackoff, jitteredBackoff);
 	}
 
 	Publisher<Long> retryMono(Duration delay) {

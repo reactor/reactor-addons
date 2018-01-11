@@ -69,15 +69,9 @@ class RepeatExtensionsTests {
 
         StepVerifier.withVirtualTime { flux }
                 .expectNext(0, 1)
-                .expectNoEvent(Duration.ofMillis(90))
-                .thenAwait(Duration.ofMillis(50))
-                .expectNext(0, 1)
-                .thenAwait(Duration.ofMillis(500))
-                .expectNext(0, 1)
-                .thenAwait(Duration.ofMillis(500))
-                .expectNext(0, 1)
-                .thenAwait(Duration.ofMillis(500))
-                .expectNext(0, 1)
+                .expectNoEvent(Duration.ofMillis(100))
+                .thenAwait(Duration.ofHours(1))
+                .expectNext(0, 1, 0, 1, 0, 1, 0, 1)
                 .verifyComplete()
 
         val repeatFirstPass = repeats.toList()
@@ -88,12 +82,20 @@ class RepeatExtensionsTests {
                 .verifyComplete()
 
         assertThat(repeatFirstPass)
+                .describedAs("first pass")
                 .hasSize(4)
-                .startsWith(100)
+        
+        assertThat(repeatFirstPass[0])
+                .describedAs("first pass first element")
+                .isBetween(100, 150)
 
         assertThat(repeats)
-                .startsWith(100)
+                .describedAs("second pass")
                 .hasSize(4)
+        
+        assertThat(repeats[0])
+                .describedAs("second pass first element")
+                .isBetween(100, 150)
 
         assertThat(repeats.minus(repeatFirstPass))
                 .describedAs("second pass has at least one different random delay")
@@ -105,37 +107,44 @@ class RepeatExtensionsTests {
     fun monoRepeatRandomBackoff() {
         val repeats = mutableListOf<Long>()
 
-        val flux = Mono.just(0)
-                .repeatRandomBackoff(4, Duration.ofMillis(100),
-                        Duration.ofMillis(2000)) { repeats.add(it.backoff().toMillis()) }
-
-        StepVerifier.withVirtualTime { flux }
+        StepVerifier.withVirtualTime { Mono.just(0)
+                .repeatRandomBackoff(4, Duration.ofMillis(100), Duration.ofMillis(2000)) { repeats.add(it.backoff().toMillis()) }
+                .elapsed()
+                .map { it.t2 }
+        }
                 .expectNext(0)
-                .thenAwait(Duration.ofMillis(100))
-                .expectNext(0)
-                .thenAwait(Duration.ofMillis(2000))
-                .expectNext(0)
-                .thenAwait(Duration.ofMillis(2000))
-                .expectNext(0)
-                .thenAwait(Duration.ofMillis(2000))
-                .expectNext(0)
+                .expectNoEvent(Duration.ofMillis(100))
+                .thenAwait(Duration.ofHours(1))
+                .expectNextCount(4)
                 .verifyComplete()
 
         val repeatFirstPass = repeats.toList()
         repeats.clear()
-        StepVerifier.withVirtualTime { flux }
+        StepVerifier.withVirtualTime { Mono.just(0)
+                .repeatRandomBackoff(4, Duration.ofMillis(100), Duration.ofMillis(2000)) { repeats.add(it.backoff().toMillis()) }
+                .elapsed()
+                .map { it.t2 }
+        }
                 .thenAwait(Duration.ofHours(1))
                 .expectNext(0,0,0,0,0)
                 .verifyComplete()
 
+
         assertThat(repeatFirstPass)
+                .describedAs("first pass")
                 .hasSize(4)
-                .startsWith(100)
+
+        assertThat(repeatFirstPass[0])
+                .describedAs("first pass first element")
+                .isBetween(100, 150)
 
         assertThat(repeats)
-                .startsWith(100)
+                .describedAs("second pass")
                 .hasSize(4)
-                .hasSize(4)
+
+        assertThat(repeats[0])
+                .describedAs("second pass first element")
+                .isBetween(100, 150)
 
         assertThat(repeats.minus(repeatFirstPass))
                 .describedAs("second pass has at least one different random delay")

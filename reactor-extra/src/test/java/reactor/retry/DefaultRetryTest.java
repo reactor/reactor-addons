@@ -39,7 +39,7 @@ public class DefaultRetryTest {
 		                  .jitter(Jitter.random());
 
 		assertThat(test.toString())
-				.isEqualTo("Retry{max=3,backoff=" + backoff + ",jitter=Jitter{RANDOM}}");
+				.isEqualTo("Retry{max=3,backoff=" + backoff + ",jitter=Jitter{RANDOM-0.5}}");
 	}
 
 }
