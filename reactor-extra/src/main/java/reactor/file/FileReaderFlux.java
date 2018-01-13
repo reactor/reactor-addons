@@ -13,12 +13,11 @@ import org.reactivestreams.Subscription;
 import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
 import reactor.core.Scannable;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Operators;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.annotation.Nullable;
 
-public class FileReaderFlux extends Flux<ByteBuffer> {
+public class FileReaderFlux extends FileFlux {
 
 	private final Path      file;
 	private final int       bufferCapacity;
@@ -33,12 +32,13 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 	@Override
 	public void subscribe(CoreSubscriber<? super ByteBuffer> actual) {
 		try {
-			if(actual instanceof Fuseable.ConditionalSubscriber) {
+			if (actual instanceof Fuseable.ConditionalSubscriber) {
 				actual.onSubscribe(new ConditionalFileReaderSubscription(actual,
 						file,
 						bufferCapacity,
 						scheduler.createWorker()));
-			} else {
+			}
+			else {
 				actual.onSubscribe(new FileReaderSubscription(actual,
 						file,
 						bufferCapacity,
@@ -61,17 +61,27 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 		final Scheduler.Worker worker;
 
 		volatile boolean cancelled;
-		volatile boolean done;
+
+		volatile int terminated;
+		@SuppressWarnings("rawtypes")
+		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription>
+				TERMINATED =
+				AtomicIntegerFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class,
+						"terminated");
 
 		volatile long requested;
 		@SuppressWarnings("rawtypes")
-		static final AtomicLongFieldUpdater<FileReaderFlux.AbstractFileReaderSubscription> REQUESTED =
-				AtomicLongFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class, "requested");
+		static final AtomicLongFieldUpdater<FileReaderFlux.AbstractFileReaderSubscription>
+				REQUESTED =
+				AtomicLongFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class,
+						"requested");
 
 		volatile int wip;
 		@SuppressWarnings("rawtypes")
-		static final AtomicIntegerFieldUpdater<FileReaderFlux.AbstractFileReaderSubscription> WIP =
-				AtomicIntegerFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class, "wip");
+		static final AtomicIntegerFieldUpdater<FileReaderFlux.AbstractFileReaderSubscription>
+				WIP =
+				AtomicIntegerFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class,
+						"wip");
 
 		AbstractFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
 				Path file,
@@ -103,8 +113,15 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 				return;
 			}
 
-			cancelled = true;
-			worker.dispose();
+			try {
+				channel.close();
+
+				cancelled = true;
+				worker.dispose();
+			}
+			catch (IOException e) {
+				doError(actual, e);
+			}
 		}
 
 		@Override
@@ -126,14 +143,14 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 				final CoreSubscriber<? super ByteBuffer> a = actual;
 				int missed = 1;
 
-				for (;;) {
-					if (cancelled || done) {
+				for (; ; ) {
+					if (isCancelledOrTerminated()) {
 						return;
 					}
 
 					slowPath();
 
-					if (cancelled || done) {
+					if (isCancelledOrTerminated()) {
 						return;
 					}
 
@@ -160,16 +177,18 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 				worker.schedule(this);
 			}
 			catch (RejectedExecutionException ree) {
-				actual.onError(Operators.onRejectedExecution(ree, actual.currentContext()));
+				actual.onError(Operators.onRejectedExecution(ree,
+						actual.currentContext()));
 			}
 		}
 
 		void doComplete(CoreSubscriber<?> a) {
 			try {
 				channel.close();
-				done = true;
-				a.onComplete();
-				worker.dispose();
+				if (TERMINATED.compareAndSet(this, 0, 1)) {
+					a.onComplete();
+					worker.dispose();
+				}
 			}
 			catch (IOException e) {
 				doError(a, e);
@@ -178,51 +197,26 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 
 		void doError(CoreSubscriber<?> a, Throwable e) {
 			try {
-				a.onError(e);
-				if(channel.isOpen()) {
+				if (channel.isOpen()) {
 					channel.close();
 				}
 			}
-			catch (IOException e1) {
-				Operators.onErrorDropped(e1, a.currentContext());
+			catch (IOException t) {
+				Operators.onErrorDropped(t, a.currentContext());
 			}
 			finally {
-				worker.dispose();
-			}
-		}
-
-		void fastPath() {
-			final CoreSubscriber<? super ByteBuffer> s = actual;
-			int read;
-
-			for(;;) {
-				ByteBuffer buffer = ByteBuffer.allocate(capacity);
-
-				try {
-					read = channel.read(buffer);
-				}
-				catch (IOException e) {
-					doError(s, e);
-					return;
-				}
-
-				if(read > -1) {
-					if(read != capacity) {
-						buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
-					}
-
-					s.onNext(buffer);
-				}
-
-				if (cancelled) {
-					return;
-				}
-
-				if (read == -1) {
-					doComplete(s);
+				if (TERMINATED.compareAndSet(this, 0, 1)) {
+					a.onError(e);
+					worker.dispose();
 				}
 			}
 		}
+
+		boolean isCancelledOrTerminated() {
+			return cancelled || terminated == 1;
+		}
+
+		abstract void fastPath();
 
 		abstract void slowPath();
 	}
@@ -237,13 +231,47 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 		}
 
 		@Override
+		void fastPath() {
+			final CoreSubscriber<? super ByteBuffer> s = actual;
+			int read;
+
+			for (; ; ) {
+				ByteBuffer buffer = ByteBuffer.allocate(capacity);
+
+				try {
+					read = channel.read(buffer);
+				}
+				catch (IOException e) {
+					doError(s, e);
+					return;
+				}
+
+				if (read > -1) {
+					if (read != capacity) {
+						buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
+					}
+
+					s.onNext(buffer);
+				}
+
+				if (cancelled) {
+					return;
+				}
+
+				if (read < capacity) {
+					doComplete(s);
+				}
+			}
+		}
+
+		@Override
 		void slowPath() {
 			final CoreSubscriber<? super ByteBuffer> s = actual;
 			int read;
 			long n = requested;
 			long e = 0L;
 
-			for(;;) {
+			for (; ; ) {
 
 				while (e != n) {
 					ByteBuffer buffer = ByteBuffer.allocate(capacity);
@@ -256,20 +284,19 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 						return;
 					}
 
-					if(read > -1) {
-						if(read != capacity) {
+					if (read > -1) {
+						if (read != capacity) {
 							buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
 						}
 
 						s.onNext(buffer);
 					}
 
-
 					if (cancelled) {
 						return;
 					}
 
-					if (read == -1) {
+					if (read < capacity) {
 						doComplete(s);
 						return;
 					}
@@ -290,7 +317,8 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 		}
 	}
 
-	static final class ConditionalFileReaderSubscription extends AbstractFileReaderSubscription {
+	static final class ConditionalFileReaderSubscription
+			extends AbstractFileReaderSubscription {
 
 		ConditionalFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
 				Path file,
@@ -301,14 +329,51 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 
 		@Override
 		@SuppressWarnings("unchecked")
+		void fastPath() {
+			final CoreSubscriber<? super ByteBuffer> s = actual;
+			final Fuseable.ConditionalSubscriber<? super  ByteBuffer> c = (Fuseable.ConditionalSubscriber<? super ByteBuffer>) s;
+			int read;
+
+			for (;;) {
+				ByteBuffer buffer = ByteBuffer.allocate(capacity);
+
+				try {
+					read = channel.read(buffer);
+				}
+				catch (IOException e) {
+					doError(s, e);
+					return;
+				}
+
+				if (read > -1) {
+					if (read != capacity) {
+						buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
+					}
+
+					c.tryOnNext(buffer);
+				}
+
+				if (cancelled) {
+					return;
+				}
+
+				if (read < capacity) {
+					doComplete(s);
+				}
+			}
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
 		void slowPath() {
 			final CoreSubscriber<? super ByteBuffer> s = actual;
-			final Fuseable.ConditionalSubscriber<? super ByteBuffer> c = (Fuseable.ConditionalSubscriber<? super ByteBuffer>) s;
-			int read = 0;
+			final Fuseable.ConditionalSubscriber<? super ByteBuffer> c =
+					(Fuseable.ConditionalSubscriber<? super ByteBuffer>) s;
+			int read;
 			long n = requested;
 			long e = 0L;
 
-			for(;;) {
+			for (;;) {
 
 				while (e != n) {
 					ByteBuffer buffer = ByteBuffer.allocate(capacity);
@@ -323,8 +388,8 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 
 					boolean b = false;
 
-					if(read > -1) {
-						if(read != capacity) {
+					if (read > -1) {
+						if (read != capacity) {
 							buffer = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read));
 						}
 
@@ -335,7 +400,7 @@ public class FileReaderFlux extends Flux<ByteBuffer> {
 						return;
 					}
 
-					if (read == -1) {
+					if (read < capacity) {
 						doComplete(s);
 						return;
 					}
