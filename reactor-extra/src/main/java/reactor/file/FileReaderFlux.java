@@ -143,7 +143,7 @@ public class FileReaderFlux extends FileFlux {
 				final CoreSubscriber<? super ByteBuffer> a = actual;
 				int missed = 1;
 
-				for (; ; ) {
+				for (;;) {
 					if (isCancelledOrTerminated()) {
 						return;
 					}
@@ -235,7 +235,7 @@ public class FileReaderFlux extends FileFlux {
 			final CoreSubscriber<? super ByteBuffer> s = actual;
 			int read;
 
-			for (; ; ) {
+			for (;;) {
 				ByteBuffer buffer = ByteBuffer.allocate(capacity);
 
 				try {
@@ -260,6 +260,7 @@ public class FileReaderFlux extends FileFlux {
 
 				if (read < capacity) {
 					doComplete(s);
+					return;
 				}
 			}
 		}
@@ -271,7 +272,7 @@ public class FileReaderFlux extends FileFlux {
 			long n = requested;
 			long e = 0L;
 
-			for (; ; ) {
+			for (;;) {
 
 				while (e != n) {
 					ByteBuffer buffer = ByteBuffer.allocate(capacity);
@@ -359,6 +360,7 @@ public class FileReaderFlux extends FileFlux {
 
 				if (read < capacity) {
 					doComplete(s);
+					return;
 				}
 			}
 		}
