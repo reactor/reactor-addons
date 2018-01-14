@@ -64,24 +64,18 @@ public class FileReaderFlux extends FileFlux {
 
 		volatile int terminated;
 		@SuppressWarnings("rawtypes")
-		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription>
-				TERMINATED =
-				AtomicIntegerFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class,
-						"terminated");
+		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription> TERMINATED =
+				AtomicIntegerFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class, "terminated");
 
 		volatile long requested;
 		@SuppressWarnings("rawtypes")
-		static final AtomicLongFieldUpdater<FileReaderFlux.AbstractFileReaderSubscription>
-				REQUESTED =
-				AtomicLongFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class,
-						"requested");
+		static final AtomicLongFieldUpdater<FileReaderFlux.AbstractFileReaderSubscription> REQUESTED =
+				AtomicLongFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class, "requested");
 
 		volatile int wip;
 		@SuppressWarnings("rawtypes")
-		static final AtomicIntegerFieldUpdater<FileReaderFlux.AbstractFileReaderSubscription>
-				WIP =
-				AtomicIntegerFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class,
-						"wip");
+		static final AtomicIntegerFieldUpdater<FileReaderFlux.AbstractFileReaderSubscription> WIP =
+				AtomicIntegerFieldUpdater.newUpdater(FileReaderFlux.AbstractFileReaderSubscription.class, "wip");
 
 		AbstractFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
 				Path file,
@@ -140,7 +134,6 @@ public class FileReaderFlux extends FileFlux {
 				fastPath();
 			}
 			else {
-				final CoreSubscriber<? super ByteBuffer> a = actual;
 				int missed = 1;
 
 				for (;;) {
@@ -177,8 +170,8 @@ public class FileReaderFlux extends FileFlux {
 				worker.schedule(this);
 			}
 			catch (RejectedExecutionException ree) {
-				actual.onError(Operators.onRejectedExecution(ree,
-						actual.currentContext()));
+				CoreSubscriber<? super ByteBuffer> actual = this.actual;
+				doError(actual, Operators.onRejectedExecution(ree, actual.currentContext()));
 			}
 		}
 

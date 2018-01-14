@@ -19,7 +19,7 @@ public abstract class FileFlux extends Flux<ByteBuffer> {
 		return new FileReaderFlux(path, bufferCapacity, scheduler);
 	}
 
-	public FileFlux lines() {
+	public Flux<ByteBuffer> lines() {
 		return null;
 	}
 }
