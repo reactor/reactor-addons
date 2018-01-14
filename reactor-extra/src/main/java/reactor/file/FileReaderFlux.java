@@ -56,7 +56,6 @@ public class FileReaderFlux extends FileFlux {
 		final CoreSubscriber<? super ByteBuffer> actual;
 
 		final FileChannel      channel;
-		final Path             file;
 		final int              capacity;
 		final Scheduler.Worker worker;
 
@@ -82,7 +81,6 @@ public class FileReaderFlux extends FileFlux {
 				int capacity,
 				Scheduler.Worker worker) throws IOException {
 			this.actual = actual;
-			this.file = file;
 			this.capacity = capacity;
 			this.worker = worker;
 			this.channel = FileChannel.open(file);
