@@ -37,7 +37,7 @@ public class DefaultRepeatTest {
 		                  .jitter(Jitter.random());
 
 		assertThat(test.toString())
-				.isEqualTo("Repeat{times=3,backoff=" + backoff + ",jitter=Jitter{RANDOM}}");
+				.isEqualTo("Repeat{times=3,backoff=" + backoff + ",jitter=Jitter{RANDOM-0.5}}");
 	}
 
 }

@@ -57,10 +57,7 @@ public class RetryTestUtils {
 		int randomValues = 0;
 		for (Context<?> context : retries) {
 			long backoffMs = context.backoff().toMillis();
-			if (prevMs == 0)
-				assertEquals(firstMs, backoffMs);
-			else
-				assertTrue("Unexpected delay " + backoffMs, backoffMs >= firstMs && backoffMs <= maxMs);
+			assertTrue("Unexpected delay " + backoffMs, backoffMs >= firstMs && backoffMs <= maxMs);
 			if (backoffMs != firstMs && backoffMs != prevMs)
 				randomValues++;
 			prevMs = backoffMs;

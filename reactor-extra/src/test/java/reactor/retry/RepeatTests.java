@@ -17,22 +17,23 @@
 package reactor.retry;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+import reactor.util.function.Tuple2;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.*;
 
 public class RepeatTests {
 
@@ -188,20 +189,26 @@ public class RepeatTests {
 
 	@Test
 	public void fluxRepeatRandomBackoff() {
-		Repeat<?> repeat = Repeat.times(4).randomBackoff(Duration.ofMillis(100), Duration.ofMillis(500)).doOnRepeat(onRepeat());
-		Flux<Integer> flux = Flux.range(0, 2).repeatWhen(repeat);
+		Repeat<?> repeat = Repeat.times(4)
+		                         .randomBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
+		                         .doOnRepeat(onRepeat());
 
-		StepVerifier.withVirtualTime(() -> flux)
-					.expectNext(0, 1)
-					.expectNoEvent(Duration.ofMillis(90))
-					.thenAwait(Duration.ofMillis(50))
-					.expectNext(0, 1)
-					.thenAwait(Duration.ofMillis(500))
-					.expectNext(0, 1)
-					.thenAwait(Duration.ofMillis(500))
-					.expectNext(0, 1)
-					.thenAwait(Duration.ofMillis(500))
-					.expectNext(0, 1)
+		StepVerifier.withVirtualTime(() -> Flux.range(0, 2)
+		                                       .repeatWhen(repeat)
+		                                       .elapsed()
+		                                       .filter(t2 -> t2.getT2() == 0)
+		                                       .map(Tuple2::getT1))
+		            .recordWith(ArrayList::new)
+		            .expectNoEvent(Duration.ofMillis(100)) //even with jitter, can't go under min
+		            .thenAwait(Duration.ofHours(2)) //quickly go to end of sequence
+		            .expectNextCount(5)
+		            .consumeRecordedWith(l -> assertThat(l).hasSize(5)
+		                                                   .startsWith(0L)
+		                                                   .containsAll(repeats
+				                                                   .stream()
+				                                                   .map(c -> c.backoff().toMillis())
+				                                                   .collect(Collectors.toList())
+		                                                   ))
 					.verifyComplete();
 
 		assertRepeats(2L, 2L, 2L, 2L);
@@ -212,18 +219,22 @@ public class RepeatTests {
 	@Test
 	public void monoRepeatRandomBackoff() {
 		Repeat<?> repeat = Repeat.times(4).randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000)).doOnRepeat(onRepeat());
-		Flux<Integer> flux = Mono.just(0).repeatWhen(repeat);
 
-		StepVerifier.withVirtualTime(() -> flux)
-					.expectNext(0)
-					.thenAwait(Duration.ofMillis(100))
-					.expectNext(0)
-					.thenAwait(Duration.ofMillis(2000))
-					.expectNext(0)
-					.thenAwait(Duration.ofMillis(2000))
-					.expectNext(0)
-					.thenAwait(Duration.ofMillis(2000))
-					.expectNext(0)
+		StepVerifier.withVirtualTime(() -> Mono.just(0)
+		                                       .repeatWhen(repeat)
+		                                       .elapsed()
+		                                       .map(Tuple2::getT1))
+					.recordWith(ArrayList::new)
+					.expectNoEvent(Duration.ofMillis(100)) //even with jitter, can't go under min
+					.thenAwait(Duration.ofHours(2)) //quickly go to end of sequence
+					.expectNextCount(5)
+					.consumeRecordedWith(l -> assertThat(l).hasSize(5)
+					                                       .startsWith(0L)
+					                                       .containsAll(repeats
+							                                       .stream()
+							                                       .map(c -> c.backoff().toMillis())
+							                                       .collect(Collectors.toList())
+					                                       ))
 					.verifyComplete();
 		assertRepeats(1L, 1L, 1L, 1L);
 		RetryTestUtils.assertRandomDelays(repeats, 100, 2000);

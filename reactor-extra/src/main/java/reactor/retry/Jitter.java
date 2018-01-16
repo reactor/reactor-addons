@@ -38,21 +38,7 @@ public interface Jitter extends Function<BackoffDelay, Duration> {
 		}
 	};
 
-	Jitter RANDOM_JITTER = new Jitter() {
-		@Override
-		public Duration apply(BackoffDelay backoff) {
-			ThreadLocalRandom random = ThreadLocalRandom.current();
-			long backoffMs = backoff.delay().toMillis();
-			long minBackoffMs = backoff.min.toMillis();
-			long jitterBackoffMs = backoffMs == minBackoffMs ? minBackoffMs : random.nextLong(minBackoffMs, backoffMs);
-			return Duration.ofMillis(jitterBackoffMs);
-		}
-
-		@Override
-		public String toString() {
-			return "Jitter{RANDOM}";
-		}
-	};
+	Jitter RANDOM_JITTER = new RandomJitter(0.5);
 
 	/**
 	 * Jitter function that is a no-op.
@@ -63,11 +49,22 @@ public interface Jitter extends Function<BackoffDelay, Duration> {
 	}
 
 	/**
-	 * Jitter function that applies a random jitter to choose a random backoff
-	 * delay between {@link BackoffDelay#minDelay()} and {@link BackoffDelay#delay()}.
+	 * Jitter function that applies a random jitter with a factor of 0.5, generating a
+	 * backoff between {@code [d - d*0.5; d + d*0.5]} (but still within the limits of
+	 * [{@link BackoffDelay#minDelay()}; {@link BackoffDelay#maxDelay()}].
 	 * @return Jitter function to randomize backoff delay
 	 */
 	static Jitter random() {
 		return RANDOM_JITTER;
+	}
+
+	/**
+	 * Jitter function that applies a random jitter with a provided [0; 1] factor (default 0.5),
+	 * generating a backoff between {@code [d - d*factor; d + d*factor]} (but still within
+	 * the limits of [{@link BackoffDelay#minDelay()}; {@link BackoffDelay#maxDelay()}].
+	 * @return Jitter function to randomize backoff delay
+	 */
+	static Jitter random(double randomFactor) {
+		return new RandomJitter(randomFactor);
 	}
 }
