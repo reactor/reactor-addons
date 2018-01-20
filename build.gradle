@@ -26,6 +26,10 @@ buildscript {
   }
 }
 
+plugins {
+  id "me.champeau.gradle.jmh" version "0.4.4" apply false
+}
+
 description = 'Reactive fast data framework for the JVM'
 
 ext {
@@ -235,6 +239,8 @@ project('reactor-adapter') {
 
 project('reactor-extra') {
   description = 'Reactor Extra utilities'
+
+  apply plugin: 'me.champeau.gradle.jmh'
 
   repositories {
 	maven { url "http://maven-eclipse.github.io/maven" }
