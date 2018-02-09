@@ -28,18 +28,41 @@ import reactor.core.publisher.Signal;
 
 /**
  * Opinionated caching helper that defines how to store and restore a {@link Flux} in an
- * arbitrary cache abstraction. A generic writer/reader interface is provided, but cache
- * vendors that have a Map wrapper support can also be directly used.
+ * arbitrary cache abstraction. A generic writer/reader entry point is provided, but cache
+ * vendors that have a Map wrapper support can also be directly used:
  * <p>
+ * Generic cache entry points:
  * <pre><code>
- *    LoadingCache<Integer, Object> graphs = Caffeine.newBuilder()
- *                                       .maximumSize(10_000)
- *                                       .expireAfterWrite(5, TimeUnit.MINUTES)
- *                                       .refreshAfterWrite(1, TimeUnit.MINUTES)
- *                                       .build(key -> createExpensiveGraph(key));
+ *     AtomicReference&lt;Context> storeRef = new AtomicReference<>(Context.empty());
  *
- *    keyStream.concatMap(key -> CacheFlux.lookup(graphs.asMap(), key)
- *                                    .onCacheMissResume(repository.findOneById(key))
+ *     Flux&lt;Integer> cachedFlux = CacheFlux
+ *     		.lookup(k -> Mono.justOrEmpty(storeRef.get().getOrEmpty(k))
+ *     		                 .cast(Integer.class)
+ *     		                 .flatMap(max -> Flux.range(1, max)
+ *     		                                     .materialize()
+ *     		                                     .collectList()),
+ *     				key)
+ *     		.onCacheMissResume(Flux.range(1, 10))
+ *     		.andWriteWith((k, sigs) -> Flux.fromIterable(sigs)
+ *     		                               .dematerialize()
+ *     		                               .last()
+ *     		                               .doOnNext(max -> storeRef.updateAndGet(ctx -> ctx.put(k, max)))
+ *     		                               .then());
+ * </code></pre>
+ * <p>
+ * Map endpoints:
+ * <pre><code>
+ *    String key = "myCategory";
+ *    LoadingCache&lt;String, Object> graphs = Caffeine
+ *        .newBuilder()
+ *        .maximumSize(10_000)
+ *        .expireAfterWrite(5, TimeUnit.MINUTES)
+ *        .refreshAfterWrite(1, TimeUnit.MINUTES)
+ *        .build(key -> createExpensiveGraph(key));
+ *
+ *    Flux&lt;Integer> cachedMyCategory = CacheFlux
+ *        .lookup(graphs.asMap(), key, Integer.class)
+ *        .onCacheMissResume(repository.findAllByCategory(key));
  * </code></pre>
  * </p>
  *

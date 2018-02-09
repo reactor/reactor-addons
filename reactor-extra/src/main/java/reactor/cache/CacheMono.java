@@ -26,19 +26,35 @@ import reactor.core.publisher.Signal;
 
 /**
  * Opinionated caching helper that defines how to store and restore a {@link Mono} in an
- * arbitrary cache abstraction. A generic writer/reader interface is provided, but cache
+ * arbitrary cache abstraction. A generic writer/reader entry point is provided, but cache
  * vendors that have a Map wrapper support can also be directly used.
  * <p>
- * Example usage:
+ * Generic entry points example:
  * <pre><code>
- *    LoadingCache<Integer, Object> graphs = Caffeine.newBuilder()
- *                                       .maximumSize(10_000)
- *                                       .expireAfterWrite(5, TimeUnit.MINUTES)
- *                                       .refreshAfterWrite(1, TimeUnit.MINUTES)
- *                                       .build(key -> createExpensiveGraph(key));
+ *     AtomicReference&lt;Context> storeRef = new AtomicReference<>(Context.empty());
  *
- *    keyStream.concatMap(key -> CacheMono.lookup(graphs.asMap(), key)
- *                                    .onCacheMissResume(repository.findOneById(key))
+ *     Mono&lt;Integer> cachedMono = CacheMono
+ *     		.lookup(k -> Mono.justOrEmpty(storeRef.get().&lt;Integer>getOrEmpty(k))
+ *     		                 .map(Signal::next),
+ *     		        key)
+ *     		.onCacheMissResume(Mono.just(123))
+ *     		.andWriteWith((k, sig) -> Mono.fromRunnable(() ->
+ *     	            storeRef.updateAndGet(ctx -> ctx.put(k, sig.get())));
+ * </code></pre>
+ * <p>
+ * Map entry points example:
+ * <pre><code>
+ *    String key = "myId";
+ *    LoadingCache&lt;String, Object> graphs = Caffeine
+ *        .newBuilder()
+ *        .maximumSize(10_000)
+ *        .expireAfterWrite(5, TimeUnit.MINUTES)
+ *        .refreshAfterWrite(1, TimeUnit.MINUTES)
+ *        .build(key -> createExpensiveGraph(key));
+ *
+ *    Mono&lt;Integer> cachedMyId = CacheMono
+ *        .lookup(graphs.asMap(), key)
+ *        .onCacheMissResume(repository.findOneById(key));
  * </code></pre>
  * </p>
  *
@@ -58,6 +74,10 @@ public class CacheMono {
 	 * Note that the wrapped {@link Mono} is lazy, meaning that subscribing twice in a row
 	 * to the returned {@link Mono} on an empty cache will trigger a cache miss then a
 	 * cache hit.
+	 * <p>
+	 * For maps that are too generic (eg. {@code Map<String, Object>}), a variant is provided
+	 * that allows to refine the resulting {@link Mono} value type by explicitly providing
+	 * a {@link Class}.
 	 *
 	 * @param cacheMap {@link Map} wrapper of a cache
 	 * @param key mapped key
@@ -65,6 +85,7 @@ public class CacheMono {
 	 * @param <VALUE> Value Type
 	 *
 	 * @return The next {@link MonoCacheBuilderMapMiss builder step} to use to set up the source
+	 * @see #lookup(Map, Object, Class)
 	 */
 	public static <KEY, VALUE> MonoCacheBuilderMapMiss<VALUE> lookup(Map<KEY, ? super Signal<? extends VALUE>> cacheMap, KEY key) {
 		return otherSupplier -> Mono.defer(() ->
@@ -76,6 +97,35 @@ public class CacheMono {
 	}
 
 	/**
+	 * Restore a {@link Mono Mono&lt;VALUE&gt;} from the cache-map given a provided key. If no value
+	 * is in the cache, it will be calculated from the original source which is set up in
+	 * the next step. Note that if the source completes empty, this result will be cached
+	 * and all subsequent requests with the same key will return {@link Mono#empty()}. The
+	 * behaviour is similar for erroring sources, except cache hits would then return
+	 * {@link Mono#error(Throwable)}.
+	 * <p>
+	 * Note that the wrapped {@link Mono} is lazy, meaning that subscribing twice in a row
+	 * to the returned {@link Mono} on an empty cache will trigger a cache miss then a
+	 * cache hit.
+	 * <p>
+	 * This variant is for maps that are too generic (eg. {@code Map<String, Object>}),
+	 * helping the compiler refine the generic typ of the resulting {@link Mono} by
+	 * explicitly providing a {@link Class}. Value stored in the map for the key is
+	 * expected to be a {@link Signal} of a value of that {@link Class}.
+	 *
+	 * @param cacheMap {@link Map} wrapper of a cache
+	 * @param key mapped key
+	 * @param valueClass the generic {@link Class} of the resulting {@link Mono}
+	 * @param <KEY> Key Type
+	 * @param <VALUE> Value Type
+	 *
+	 * @return The next {@link MonoCacheBuilderMapMiss builder step} to use to set up the source
+	 * @see #lookup(Map, Object, Class)
+	 */
+	public static <KEY, VALUE> MonoCacheBuilderMapMiss<VALUE> lookup(Map<KEY, ? super Signal<? extends VALUE>> cacheMap, KEY key, Class<VALUE> valueClass) {
+		return lookup(cacheMap, key);
+	}
+
 	/**
 	 * Restore a {@link Mono Mono&lt;VALUE&gt;} from the {@link Function reader Function}
 	 * (see below) given a provided key.
