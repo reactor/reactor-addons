@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -335,11 +336,11 @@ public class CacheMonoTest {
 		            .verifyComplete();
 	}
 
-	private static <Key, Value> CacheMono.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
+	private static <K, V> Function<K, Mono<Signal<? extends V>>> reader(Map<K, ? extends Signal<? extends V>> cache) {
 		return key -> Mono.justOrEmpty(cache.get(key));
 	}
 
-	private static <Key, Value> CacheMono.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
+	private static <K, V> BiFunction<K, Signal<? extends V>, Mono<Void>> writer(Map<K, ? super Signal<? extends V>> cache) {
 		return (key, value) -> Mono.fromRunnable(() -> cache.put(key, value));
 	}
 

@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.Test;
@@ -20,11 +22,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CacheFluxTest {
 
 
-	private CacheFlux.FluxCacheReader<String, Integer> reader(Map<String, List> data) {
-		return k -> Mono.justOrEmpty((List<Signal<Integer>>) data.get(k));
+	private Function<String, Mono<List<Signal<Integer>>>> reader(Map<String, List> data) {
+		return k -> Mono.justOrEmpty(data.get(k));
 	}
 
-	private CacheFlux.FluxCacheWriter<String, Integer> writer(Map<String, List> data) {
+	private BiFunction<String, List<Signal<Integer>>, Mono<Void>> writer(Map<String, List> data) {
 		return ((k, signals) -> Mono.fromRunnable(() -> data.put(k, signals)));
 	}
 
