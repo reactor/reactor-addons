@@ -225,6 +225,8 @@ project('reactor-adapter') {
 
 	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
 
+	optional "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.2"
   }
 
