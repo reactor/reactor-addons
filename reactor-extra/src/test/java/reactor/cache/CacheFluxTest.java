@@ -5,7 +5,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.Test;
@@ -14,18 +19,63 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.PublisherProbe;
+import reactor.util.context.Context;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CacheFluxTest {
 
 
-	private CacheFlux.FluxCacheReader<String, Integer> reader(Map<String, List> data) {
-		return k -> Mono.justOrEmpty((List<Signal<Integer>>) data.get(k));
+	private Function<String, Mono<List<Signal<Integer>>>> reader(Map<String, List> data) {
+		return k -> Mono.justOrEmpty(data.get(k));
 	}
 
-	private CacheFlux.FluxCacheWriter<String, Integer> writer(Map<String, List> data) {
+	private BiFunction<String, List<Signal<Integer>>, Mono<Void>> writer(Map<String, List> data) {
 		return ((k, signals) -> Mono.fromRunnable(() -> data.put(k, signals)));
+	}
+
+	@Test
+	public void genericEntryPointJavadocExample() {
+		String key = "burger";
+		AtomicInteger sourceSubscribed = new AtomicInteger();
+		Flux<Integer> source = Flux.range(1, 10).doOnSubscribe(it -> sourceSubscribed.incrementAndGet());
+		AtomicReference<Context> storeRef = new AtomicReference<>(Context.empty());
+
+		Flux<Integer> cachedFlux = CacheFlux
+				.lookup(k -> Mono.justOrEmpty(storeRef.get().getOrEmpty(k))
+				                 .cast(Integer.class)
+				                 .flatMap(max -> Flux.range(1, max)
+				                                     .materialize()
+				                                     .collectList()),
+						key)
+				.onCacheMissResume(source)
+				.andWriteWith((k, sigs) -> Flux.fromIterable(sigs)
+				                               .dematerialize()
+				                               .last()
+				                               .doOnNext(max -> storeRef.updateAndGet(ctx -> ctx.put(k, max)))
+				                               .then());
+
+		assertThat(sourceSubscribed).as("before use").hasValue(0);
+
+		StepVerifier.create(cachedFlux)
+		            .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+		            .expectComplete()
+		            .verify();
+
+		assertThat(sourceSubscribed).as("cache miss").hasValue(1);
+
+		assertThat(storeRef.get())
+				.matches(ctx -> ctx.hasKey(key), "hasKey")
+				.satisfies(ctx -> assertThat(ctx.getOrDefault(key, -1)).isEqualTo(10));
+
+		StepVerifier.create(cachedFlux)
+		            .expectNextCount(10)
+		            .expectComplete()
+		            .verify();
+
+		assertThat(sourceSubscribed).as("cache hit").hasValue(1);
 	}
 
 
@@ -41,7 +91,7 @@ public class CacheFluxTest {
 		            .verifyComplete();
 
 		assertThat(data).containsKey("foo");
-		final List list = data.get("foo");
+		final List<Object> list = data.get("foo");
 		assertThat(list.remove(3))
 				.isInstanceOfSatisfying(Signal.class, Signal::isOnComplete);
 		assertThat(list).hasSize(3)
@@ -137,7 +187,7 @@ public class CacheFluxTest {
 		            .verifyComplete();
 
 		assertThat(data).containsKey("foo");
-		final List list = data.get("foo");
+		final List<Object> list = data.get("foo");
 		assertThat(list.remove(3))
 				.isInstanceOfSatisfying(Signal.class, Signal::isOnComplete);
 		assertThat(list).hasSize(3)

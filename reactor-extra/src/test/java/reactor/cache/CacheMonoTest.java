@@ -3,7 +3,10 @@ package reactor.cache;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -14,10 +17,48 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.PublisherProbe;
+import reactor.util.context.Context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CacheMonoTest {
+
+	@Test
+	public void genericEntryPointJavadocExample() {
+		AtomicInteger sourceSubscribed = new AtomicInteger();
+		Mono<Integer> source = Mono.just(123).doOnSubscribe(sub -> sourceSubscribed.incrementAndGet());
+		AtomicReference<Context> storeRef = new AtomicReference<>(Context.empty());
+		String key = "burger";
+
+		Mono<Integer> cachedMono = CacheMono
+				.lookup(k -> Mono.justOrEmpty(storeRef.get().<Integer>getOrEmpty(k))
+				                 .map(Signal::next),
+						key)
+				.onCacheMissResume(source)
+				.andWriteWith((k, sig) -> Mono.fromRunnable(() ->
+						storeRef.updateAndGet(ctx -> ctx.put(k, sig.get())))
+				);
+
+		assertThat(sourceSubscribed).as("before use").hasValue(0);
+
+		StepVerifier.create(cachedMono)
+		            .expectNext(123)
+		            .expectComplete()
+		            .verify();
+
+		assertThat(sourceSubscribed).as("cache miss").hasValue(1);
+
+		assertThat(storeRef.get())
+				.matches(ctx -> ctx.hasKey(key), "hasKey")
+				.satisfies(ctx -> assertThat(ctx.getOrDefault(key, -1)).isEqualTo(123));
+
+		StepVerifier.create(cachedMono)
+		            .expectNext(123)
+		            .expectComplete()
+		            .verify();
+
+		assertThat(sourceSubscribed).as("cache hit").hasValue(1);
+	}
 
 	@Test
 	public void shouldCacheValueInMap() {
@@ -335,11 +376,35 @@ public class CacheMonoTest {
 		            .verifyComplete();
 	}
 
-	private static <Key, Value> CacheMono.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
+	@Test
+	public void genericObjectMap() {
+		AtomicInteger count = new AtomicInteger();
+		Map<String, Object> genericMap = new HashMap<>();
+
+		Mono<Integer> cachedMono = CacheMono.lookup(genericMap, "foo", Integer.class)
+		         .onCacheMissResume(Mono.just(123).doOnSubscribe(sub -> count.incrementAndGet()));
+
+		StepVerifier.create(cachedMono)
+		            .expectNext(123)
+		            .verifyComplete();
+
+		assertThat(genericMap).hasSize(1)
+		                      .containsEntry("foo", Signal.next(123));
+
+		assertThat(count).as("cache miss").hasValue(1);
+
+		StepVerifier.create(cachedMono)
+		            .expectNext(123)
+		            .verifyComplete();
+
+		assertThat(count).as("cache hit").hasValue(1);
+	}
+
+	private static <K, V> Function<K, Mono<Signal<? extends V>>> reader(Map<K, ? extends Signal<? extends V>> cache) {
 		return key -> Mono.justOrEmpty(cache.get(key));
 	}
 
-	private static <Key, Value> CacheMono.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
+	private static <K, V> BiFunction<K, Signal<? extends V>, Mono<Void>> writer(Map<K, ? super Signal<? extends V>> cache) {
 		return (key, value) -> Mono.fromRunnable(() -> cache.put(key, value));
 	}
 

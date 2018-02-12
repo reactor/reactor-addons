@@ -28,18 +28,41 @@ import reactor.core.publisher.Signal;
 
 /**
  * Opinionated caching helper that defines how to store and restore a {@link Flux} in an
- * arbitrary cache abstraction. A generic writer/reader interface is provided, but cache
- * vendors that have a Map wrapper support can also be directly used.
+ * arbitrary cache abstraction. A generic writer/reader entry point is provided, but cache
+ * vendors that have a Map wrapper support can also be directly used:
  * <p>
+ * Generic cache entry points:
  * <pre><code>
- *    LoadingCache<Integer, Object> graphs = Caffeine.newBuilder()
- *                                       .maximumSize(10_000)
- *                                       .expireAfterWrite(5, TimeUnit.MINUTES)
- *                                       .refreshAfterWrite(1, TimeUnit.MINUTES)
- *                                       .build(key -> createExpensiveGraph(key));
+ *     AtomicReference&lt;Context> storeRef = new AtomicReference<>(Context.empty());
  *
- *    keyStream.concatMap(key -> CacheFlux.lookup(graphs.asMap(), key)
- *                                    .onCacheMissResume(repository.findOneById(key))
+ *     Flux&lt;Integer> cachedFlux = CacheFlux
+ *     		.lookup(k -> Mono.justOrEmpty(storeRef.get().getOrEmpty(k))
+ *     		                 .cast(Integer.class)
+ *     		                 .flatMap(max -> Flux.range(1, max)
+ *     		                                     .materialize()
+ *     		                                     .collectList()),
+ *     				key)
+ *     		.onCacheMissResume(Flux.range(1, 10))
+ *     		.andWriteWith((k, sigs) -> Flux.fromIterable(sigs)
+ *     		                               .dematerialize()
+ *     		                               .last()
+ *     		                               .doOnNext(max -> storeRef.updateAndGet(ctx -> ctx.put(k, max)))
+ *     		                               .then());
+ * </code></pre>
+ * <p>
+ * Map endpoints:
+ * <pre><code>
+ *    String key = "myCategory";
+ *    LoadingCache&lt;String, Object> graphs = Caffeine
+ *        .newBuilder()
+ *        .maximumSize(10_000)
+ *        .expireAfterWrite(5, TimeUnit.MINUTES)
+ *        .refreshAfterWrite(1, TimeUnit.MINUTES)
+ *        .build(key -> createExpensiveGraph(key));
+ *
+ *    Flux&lt;Integer> cachedMyCategory = CacheFlux
+ *        .lookup(graphs.asMap(), key, Integer.class)
+ *        .onCacheMissResume(repository.findAllByCategory(key));
  * </code></pre>
  * </p>
  *
@@ -100,8 +123,9 @@ public class CacheFlux {
 	}
 
 	/**
-	 * Restore a {@link Flux Flux&lt;VALUE&gt;} from the {@link FluxCacheReader} given a provided
-	 * key. The cache is expected to store original values as a {@link List} of {@link Signal}
+	 * Restore a {@link Flux Flux&lt;VALUE&gt;} from the {@link Function cache reader Function}
+	 * given a provided key.
+	 * The cache is expected to store original values as a {@link List} of {@link Signal}
 	 * of T. If no value is in the cache, it will be calculated from the original source
 	 * which is set up in the next step. Note that if the source completes empty, this
 	 * result will be cached and all subsequent requests with the same key will return
@@ -112,14 +136,15 @@ public class CacheFlux {
 	 * to the returned {@link Flux} on an empty cache will trigger a cache miss then a
 	 * cache hit.
 	 *
-	 * @param reader a {@link FluxCacheReader} function that looks up collection of {@link Signal} from a cache
+	 * @param reader a {@link Function cache reader Function} function that looks up collection of {@link Signal} from a cache
 	 * @param key mapped key
 	 * @param <KEY> Key Type
 	 * @param <VALUE> Value Type
 	 *
 	 * @return The next {@link FluxCacheBuilderCacheMiss builder step} used to set up the source
 	 */
-	public static <KEY, VALUE> FluxCacheBuilderCacheMiss<KEY, VALUE> lookup(FluxCacheReader<KEY, VALUE> reader, KEY key) {
+	public static <KEY, VALUE> FluxCacheBuilderCacheMiss<KEY, VALUE> lookup(
+			Function<KEY, Mono<List<Signal<VALUE>>>> reader, KEY key) {
 		return otherSupplier -> writer ->
 				Flux.defer(() ->
 						reader.apply(key)
@@ -133,35 +158,6 @@ public class CacheFlux {
 		);
 	}
 
-	// ==== Support interfaces ====
-
-	/**
-	 * Functional interface that gives ability to lookup for cached multiple results from the Cache
-	 * source.
-	 *
-	 * @param <KEY> Key Type
-	 * @param <VALUE> Value Type
-	 */
-	@FunctionalInterface
-	interface FluxCacheReader<KEY, VALUE>
-			extends Function<KEY, Mono<List<Signal<VALUE>>>> {
-
-	}
-
-	/**
-	 * Functional interface that gives ability to write results from a {@link Flux} source
-	 * to Cache-storage, as a {@code List<Signal<T>>}. The bifunction must return a {@link Mono}
-	 * representing the fact that the list of signals has been stored, without modification.
-	 *
-	 * @param <KEY> Key Type
-	 * @param <VALUE> Value Type of the source. The source is stored as a {@code List<Signal<VALUE>>}
-	 */
-	@FunctionalInterface
-	interface FluxCacheWriter<KEY, VALUE> extends
-	                                      BiFunction<KEY, List<Signal<VALUE>>, Mono<Void>> {
-
-	}
-
 	// ==== Flux Builders ====
 
 	/**
@@ -170,7 +166,7 @@ public class CacheFlux {
 	 * @param <KEY> Key type
 	 * @param <VALUE> Value type
 	 */
-	interface FluxCacheBuilderCacheMiss<KEY, VALUE> {
+	public interface FluxCacheBuilderCacheMiss<KEY, VALUE> {
 
 		/**
 		 * Setup original source to fallback to in case of cache miss.
@@ -195,24 +191,29 @@ public class CacheFlux {
 	}
 
 	/**
-	 * Set up the {@link FluxCacheWriter} to use to store the source data into the cache
-	 * in case of cache miss.
+	 * Set up the {@link BiFunction cache writer BiFunction} to use to store the source
+	 * data into the cache in case of cache miss. The source {@link Flux} is materialized
+	 * into a {@link List} of {@link Signal} (completion/error signals included) to be
+	 * stored.
 	 *
 	 * @param <KEY> Key type
 	 * @param <VALUE> Value type
 	 */
-	interface FluxCacheBuilderCacheWriter<KEY, VALUE> {
+	public interface FluxCacheBuilderCacheWriter<KEY, VALUE> {
 
 		/**
-		 * Set up the {@link FluxCacheWriter} to use to store the source data into the cache
-		 * in case of cache miss.
+		 * Set up the {@link BiFunction cache writer BiFunction} to use to store the source
+		 * data into the cache in case of cache miss. The source {@link Flux} is materialized
+		 * into a {@link List} of {@link Signal} (completion/error signals included) to be
+		 * stored.
 		 *
-		 * @param writer {@link FluxCacheWriter} instance
+		 * @param writer {@link BiFunction} of key-signals to {@link Mono Mono&lt;Void&gt;}
+		 * (which represents the completion of the cache write operation.
 		 *
 		 * @return A wrapped {@link Flux} that transparently looks up data from a cache
 		 * and store data into the cache.
 		 */
-		Flux<VALUE> andWriteWith(FluxCacheWriter<? super KEY, VALUE> writer);
+		Flux<VALUE> andWriteWith(BiFunction<KEY, List<Signal<VALUE>>, Mono<Void>> writer);
 	}
 
 	/**
@@ -222,7 +223,7 @@ public class CacheFlux {
 	 *
 	 * @param <VALUE> type
 	 */
-	interface FluxCacheBuilderMapMiss<VALUE> {
+	public interface FluxCacheBuilderMapMiss<VALUE> {
 
 		/**
 		 * Setup original source to fallback to in case of cache miss.

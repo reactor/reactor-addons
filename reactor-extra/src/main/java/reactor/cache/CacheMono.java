@@ -26,19 +26,35 @@ import reactor.core.publisher.Signal;
 
 /**
  * Opinionated caching helper that defines how to store and restore a {@link Mono} in an
- * arbitrary cache abstraction. A generic writer/reader interface is provided, but cache
+ * arbitrary cache abstraction. A generic writer/reader entry point is provided, but cache
  * vendors that have a Map wrapper support can also be directly used.
  * <p>
- * Example usage:
+ * Generic entry points example:
  * <pre><code>
- *    LoadingCache<Integer, Object> graphs = Caffeine.newBuilder()
- *                                       .maximumSize(10_000)
- *                                       .expireAfterWrite(5, TimeUnit.MINUTES)
- *                                       .refreshAfterWrite(1, TimeUnit.MINUTES)
- *                                       .build(key -> createExpensiveGraph(key));
+ *     AtomicReference&lt;Context> storeRef = new AtomicReference<>(Context.empty());
  *
- *    keyStream.concatMap(key -> CacheMono.lookup(graphs.asMap(), key)
- *                                    .onCacheMissResume(repository.findOneById(key))
+ *     Mono&lt;Integer> cachedMono = CacheMono
+ *     		.lookup(k -> Mono.justOrEmpty(storeRef.get().&lt;Integer>getOrEmpty(k))
+ *     		                 .map(Signal::next),
+ *     		        key)
+ *     		.onCacheMissResume(Mono.just(123))
+ *     		.andWriteWith((k, sig) -> Mono.fromRunnable(() ->
+ *     	            storeRef.updateAndGet(ctx -> ctx.put(k, sig.get())));
+ * </code></pre>
+ * <p>
+ * Map entry points example:
+ * <pre><code>
+ *    String key = "myId";
+ *    LoadingCache&lt;String, Object> graphs = Caffeine
+ *        .newBuilder()
+ *        .maximumSize(10_000)
+ *        .expireAfterWrite(5, TimeUnit.MINUTES)
+ *        .refreshAfterWrite(1, TimeUnit.MINUTES)
+ *        .build(key -> createExpensiveGraph(key));
+ *
+ *    Mono&lt;Integer> cachedMyId = CacheMono
+ *        .lookup(graphs.asMap(), key)
+ *        .onCacheMissResume(repository.findOneById(key));
  * </code></pre>
  * </p>
  *
@@ -58,6 +74,10 @@ public class CacheMono {
 	 * Note that the wrapped {@link Mono} is lazy, meaning that subscribing twice in a row
 	 * to the returned {@link Mono} on an empty cache will trigger a cache miss then a
 	 * cache hit.
+	 * <p>
+	 * For maps that are too generic (eg. {@code Map<String, Object>}), a variant is provided
+	 * that allows to refine the resulting {@link Mono} value type by explicitly providing
+	 * a {@link Class}.
 	 *
 	 * @param cacheMap {@link Map} wrapper of a cache
 	 * @param key mapped key
@@ -65,6 +85,7 @@ public class CacheMono {
 	 * @param <VALUE> Value Type
 	 *
 	 * @return The next {@link MonoCacheBuilderMapMiss builder step} to use to set up the source
+	 * @see #lookup(Map, Object, Class)
 	 */
 	public static <KEY, VALUE> MonoCacheBuilderMapMiss<VALUE> lookup(Map<KEY, ? super Signal<? extends VALUE>> cacheMap, KEY key) {
 		return otherSupplier -> Mono.defer(() ->
@@ -76,8 +97,39 @@ public class CacheMono {
 	}
 
 	/**
-	 * Restore a {@link Mono Mono&lt;VALUE&gt;} from the {@link MonoCacheReader} given a provided
-	 * key. If no value is in the cache, it will be calculated from the original source
+	 * Restore a {@link Mono Mono&lt;VALUE&gt;} from the cache-map given a provided key. If no value
+	 * is in the cache, it will be calculated from the original source which is set up in
+	 * the next step. Note that if the source completes empty, this result will be cached
+	 * and all subsequent requests with the same key will return {@link Mono#empty()}. The
+	 * behaviour is similar for erroring sources, except cache hits would then return
+	 * {@link Mono#error(Throwable)}.
+	 * <p>
+	 * Note that the wrapped {@link Mono} is lazy, meaning that subscribing twice in a row
+	 * to the returned {@link Mono} on an empty cache will trigger a cache miss then a
+	 * cache hit.
+	 * <p>
+	 * This variant is for maps that are too generic (eg. {@code Map<String, Object>}),
+	 * helping the compiler refine the generic typ of the resulting {@link Mono} by
+	 * explicitly providing a {@link Class}. Value stored in the map for the key is
+	 * expected to be a {@link Signal} of a value of that {@link Class}.
+	 *
+	 * @param cacheMap {@link Map} wrapper of a cache
+	 * @param key mapped key
+	 * @param valueClass the generic {@link Class} of the resulting {@link Mono}
+	 * @param <KEY> Key Type
+	 * @param <VALUE> Value Type
+	 *
+	 * @return The next {@link MonoCacheBuilderMapMiss builder step} to use to set up the source
+	 * @see #lookup(Map, Object, Class)
+	 */
+	public static <KEY, VALUE> MonoCacheBuilderMapMiss<VALUE> lookup(Map<KEY, ? super Signal<? extends VALUE>> cacheMap, KEY key, Class<VALUE> valueClass) {
+		return lookup(cacheMap, key);
+	}
+
+	/**
+	 * Restore a {@link Mono Mono&lt;VALUE&gt;} from the {@link Function reader Function}
+	 * (see below) given a provided key.
+	 * If no value is in the cache, it will be calculated from the original source
 	 * which is set up in the next step. Note that if the source completes empty, this
 	 * result will be cached and all subsequent requests with the same key will return
 	 * {@link Mono#empty()}. The behaviour is similar for erroring sources, except cache
@@ -86,15 +138,22 @@ public class CacheMono {
 	 * Note that the wrapped {@link Mono} is lazy, meaning that subscribing twice in a row
 	 * to the returned {@link Mono} on an empty cache will trigger a cache miss then a
 	 * cache hit.
+	 * <p>
+	 * The cache {@link Function reader Function} takes a key and returns a {@link Mono}
+	 * of a {@link Signal} representing the value (or {@link Signal#complete()} if the
+	 * cached Mono was empty). See {@link CacheMono} for an example.
+
 	 *
-	 * @param reader a {@link MonoCacheReader} function that looks up {@link Signal} from a cache
+	 * @param reader a {@link Function} that looks up {@link Signal} from a cache, returning
+	 * them as a {@link Mono Mono&lt;Signal&gt;}
 	 * @param key mapped key
 	 * @param <KEY> Key Type
 	 * @param <VALUE> Value Type
 	 *
 	 * @return The next {@link MonoCacheBuilderCacheMiss builder step} to use to set up the source
 	 */
-	public static <KEY, VALUE> MonoCacheBuilderCacheMiss<KEY, VALUE> lookup(MonoCacheReader<KEY, VALUE> reader, KEY key) {
+	public static <KEY, VALUE> MonoCacheBuilderCacheMiss<KEY, VALUE> lookup(
+			Function<KEY, Mono<Signal<? extends VALUE>>> reader, KEY key) {
 		return otherSupplier -> writer -> Mono.defer(() ->
 				reader.apply(key)
 				  .switchIfEmpty(otherSupplier.get()
@@ -106,74 +165,6 @@ public class CacheMono {
 				  .dematerialize());
 	}
 
-	// ==== Support interfaces ====
-
-	/**
-	 * Functional interface that gives ability to lookup for cached result from the Cache
-	 * source. <p> Example adapter around {@link Map} usage:
-	 * <pre><code>
-	 * Map<Integer, Signal<? extends String>> cache = new HashMap<>();
-	 * Function<Integer, Mono<String>> flatMap = key -> CacheMono
-	 *                                                   .lookup(reader(cache), key)
-	 *                                                   .onCacheMissResume(source)
-	 *                                                   .andWriteWith(writer(cache));
-	 *
-	 *
-	 * private static <Key, Value> CacheMono.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
-	 *    return key -> Mono.justOrEmpty(cache.get(key));
-	 * }
-	 *
-	 * private static <Key, Value> CacheMono.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
-	 *    return (key, value) -> {
-	 *        cache.put(key, value);
-	 *        return Mono.just(value);
-	 *    };
-	 * }
-	 * </code></pre>
-	 * </p>
-	 *
-	 * @param <KEY> Key Type
-	 * @param <VALUE> Value Type
-	 */
-	@FunctionalInterface
-	interface MonoCacheReader<KEY, VALUE>
-			extends Function<KEY, Mono<Signal<? extends VALUE>>> {
-
-	}
-
-	/**
-	 * Functional interface that gives ability to write results from the original source
-	 * to Cache-storage. The returned {@link Mono Mono&lt;Void&gt;} represents the
-	 * completion of the cache write.
-	 *
-	 * <p> Example adapter around {@link Map} usage:
-	 * <pre><code>
-	 * Map<Integer, Signal<? extends String>> cache = new HashMap<>();
-	 * Function<Integer, Mono<String>> flatMap = key -> CacheMono
-	 *                                                   .lookup(reader(cache), key)
-	 *                                                   .onCacheMissResume(source)
-	 *                                                   .andWriteWith(writer(cache));
-	 *
-	 *
-	 * private static <Key, Value> CacheMono.MonoCacheReader<Key, Value> reader(Map<Key, ? extends Signal<? extends Value>> cache) {
-	 *    return key -> Mono.justOrEmpty(cache.get(key));
-	 * }
-	 *
-	 * private static <Key, Value> CacheMono.MonoCacheWriter<Key, Value> writer(Map<Key, ? super Signal<? extends Value>> cache) {
-	 *    return (key, value) -> Mono.fromRunnable(() -> cache.put(key, value));
-	 * }
-	 * </code></pre>
-	 * </p>
-	 *
-	 * @param <KEY> Key Type
-	 * @param <VALUE> Value Type
-	 */
-	@FunctionalInterface
-	interface MonoCacheWriter<KEY, VALUE> extends
-	                                      BiFunction<KEY, Signal<? extends VALUE>, Mono<Void>> {
-
-	}
-
 	// ==== Mono Builders ====
 
 	/**
@@ -182,7 +173,7 @@ public class CacheMono {
 	 * @param <KEY> Key type
 	 * @param <VALUE> Value type
 	 */
-	interface MonoCacheBuilderCacheMiss<KEY, VALUE> {
+	public interface MonoCacheBuilderCacheMiss<KEY, VALUE> {
 
 		/**
 		 * Setup original source to fallback to in case of cache miss.
@@ -208,24 +199,30 @@ public class CacheMono {
 	}
 
 	/**
-	 * Set up the {@link MonoCacheWriter} to use to store the source data into the cache
-	 * in case of cache miss.
+	 * Set up the {@link BiFunction cache writer BiFunction} to use to store the source
+	 * data into the cache in case of cache miss.
+	 * <p>
+	 * This BiFunction takes the target key and a {@link Signal} representing the value to
+	 * store, and returns a {@link Mono Mono&lt;Void&gt;} that represents the completion
+	 * of the cache write operation.
 	 *
 	 * @param <KEY> Key type
 	 * @param <VALUE> Value type
 	 */
-	interface MonoCacheBuilderCacheWriter<KEY, VALUE> {
+	public interface MonoCacheBuilderCacheWriter<KEY, VALUE> {
 
 		/**
-		 * Set up the {@link MonoCacheWriter} to use to store the source data into the cache
-		 * in case of cache miss.
+		 * Set up the {@link BiFunction cache writer BiFunction} to use to store the source
+		 * data into the cache in case of cache miss. This BiFunction takes the target key
+		 * and a {@link Signal} representing the value to store, and returns a {@link Mono Mono&lt;Void&gt;}
+		 * that represents the completion of the cache write operation.
 		 *
-		 * @param writer {@link MonoCacheWriter} instance
+		 * @param writer Cache writer {@link BiFunction}
 		 *
 		 * @return A wrapped {@link Mono} that transparently looks up data from a cache
 		 * and store data into the cache.
 		 */
-		Mono<VALUE> andWriteWith(MonoCacheWriter<? super KEY, VALUE> writer);
+		Mono<VALUE> andWriteWith(BiFunction<KEY, Signal<? extends VALUE>, Mono<Void>> writer);
 	}
 
 	/**
@@ -235,7 +232,7 @@ public class CacheMono {
 	 *
 	 * @param <VALUE> type
 	 */
-	interface MonoCacheBuilderMapMiss<VALUE> {
+	public interface MonoCacheBuilderMapMiss<VALUE> {
 
 		/**
 		 * Setup original source to fallback to in case of cache miss.
