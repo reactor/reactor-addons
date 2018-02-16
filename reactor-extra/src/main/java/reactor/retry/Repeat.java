@@ -73,6 +73,16 @@ public interface Repeat<T> extends Function<Flux<Long>, Publisher<Long>> {
 	}
 
 	/**
+	 * Repeat function that repeats n times, only if the predicate returns true.
+	 * @param predicate Predicate that determines if next repeat is performed
+	 * @param n number of repeats
+	 * @return Repeat function with predicate and n repeats
+	 */
+	static <T> Repeat<T> create(Predicate<? super RepeatContext<T>> predicate, int n) {
+		return DefaultRepeat.create(predicate, n);
+	}
+
+	/**
 	 * Returns a repeat function with an application context that may be
 	 * used to perform any rollbacks before a repeat. This application
 	 * context is provided to any repeat predicate {@link #onlyIf(Predicate)},

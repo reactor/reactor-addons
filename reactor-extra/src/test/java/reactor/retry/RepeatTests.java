@@ -268,6 +268,16 @@ public class RepeatTests {
 	}
 
 	@Test
+	public void fluxRepeatCreate() {
+		Repeat<?> repeat = Repeat.create(context -> context.iteration() < 3, 4).doOnRepeat(onRepeat());
+		Flux<Integer> flux = Flux.range(0, 2).repeatWhen(repeat);
+
+		StepVerifier.create(flux)
+				.expectNext(0, 1, 0, 1, 0, 1)
+				.verifyComplete();
+	}
+
+	@Test
 	public void once() {
 		Flux<Integer> flux = Flux.range(0, 2).repeatWhen(Repeat.once().doOnRepeat(onRepeat()));
 
