@@ -29,7 +29,7 @@ buildscript {
 description = 'Reactive fast data framework for the JVM'
 
 ext {
-  reactorCoreVersion ='3.1.4.RELEASE'
+  reactorCoreVersion ='3.1.5.RELEASE'
 
   gradleVersion = '4.2'
   gradleScriptDir = "${rootProject.projectDir}/gradle"
