@@ -45,8 +45,8 @@ import reactor.core.scheduler.Scheduler;
 public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 
 	/**
-	 * Returns a retry function that retries any exception. More constraints
-	 * may be added using {@link #retryMax(int)} or {@link #timeout(Duration)}.
+	 * Returns a retry function that retries any exception, once.
+	 * More constraints may be added using {@link #retryMax(int)} or {@link #timeout(Duration)}.
 	 *
 	 * @return retry function that retries on any exception
 	 */
@@ -56,11 +56,12 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 
 	/**
 	 * Returns a retry function that retries errors resulting from any of the
-	 * specified exceptions. More constraints may be added using {@link #retryMax(int)}
+	 * specified exceptions, once.
+	 * More constraints may be added using {@link #retryMax(int)}
 	 * or {@link #timeout(Duration)}.
 	 *
 	 * @param retriableExceptions Exceptions that may be retried
-	 * @return retry function that retries only for specified exceptions
+	 * @return retry function that retries indefinitely, only for specified exceptions
 	 */
 	@SafeVarargs
 	static <T> Retry<T> anyOf(Class<? extends Throwable>... retriableExceptions) {
@@ -79,7 +80,8 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 
 	/**
 	 * Returns a retry function that retries errors resulting from all exceptions except
-	 * the specified non-retriable exceptions. More constraints may be added using
+	 * the specified non-retriable exceptions, once.
+	 * More constraints may be added using
 	 * {@link #retryMax(int)} or {@link #timeout(Duration)}.
 	 *
 	 * @param nonRetriableExceptions exceptions that may not be retried
@@ -101,7 +103,8 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 	}
 
 	/**
-	 * Retry function that retries only if the predicate returns true.
+	 * Retry function that retries only if the predicate returns true, up to
+	 * {@link Integer#MAX_VALUE} times.
 	 * @param predicate Predicate that determines if next retry is performed
 	 * @return Retry function with predicate
 	 */
@@ -152,10 +155,12 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 
 	/**
 	 * Returns a retry function with timeout. The timeout starts from
-	 * the instant that this function is applied. All other properties of
-	 * this retry function are retained in the returned instance.
+	 * the instant that this function is applied, and the function keeps retrying
+	 * until the timeout expires. Use {@link #retryMax(int)} AFTER this method to
+	 * change that to a "retry until timeout OR n attempts" behaviour.
+	 * All other properties of this retry function are retained in the returned instance.
 	 * @param timeout timeout after which no new retries are initiated
-	 * @return retry function with timeout
+	 * @return retry function with unlimited attempts until timeout
 	 */
 	Retry<T> timeout(Duration timeout);
 
