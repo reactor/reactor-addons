@@ -74,16 +74,18 @@ fun <T> Flux<T>.retryRandomBackoff(times: Int, first: Duration, max: Duration? =
  */
 fun <T> Mono<T>.retryExponentialBackoff(times: Int, first: Duration, max: Duration? = null,
                                         jitter: Boolean = false,
-                                        doOnRetry: ((RetryContext<T>) -> Unit)? = null): Flux<T> {
+                                        doOnRetry: ((RetryContext<T>) -> Unit)? = null): Mono<T> {
+
+
     val retry = Retry.any<T>()
             .retryMax(times)
             .exponentialBackoff(first, max)
             .jitter(if (jitter) Jitter.random() else Jitter.noJitter())
 
     return if (doOnRetry == null)
-        retry.apply(this)
+        this.retryWhen(retry)
     else
-        retry.doOnRetry(doOnRetry).apply(this)
+        this.retryWhen(retry.doOnRetry(doOnRetry))
 }
 
 /**
@@ -100,14 +102,14 @@ fun <T> Mono<T>.retryExponentialBackoff(times: Int, first: Duration, max: Durati
  * @since 3.1.1
  */
 fun <T> Mono<T>.retryRandomBackoff(times: Int, first: Duration, max: Duration? = null,
-                                   doOnRetry: ((RetryContext<T>) -> Unit)? = null): Flux<T> {
+                                   doOnRetry: ((RetryContext<T>) -> Unit)? = null): Mono<T> {
     val retry = Retry.any<T>()
             .retryMax(times)
             .randomBackoff(first, max)
 
     return if (doOnRetry == null)
-        retry.apply(this)
+        this.retryWhen(retry)
     else
-        retry.doOnRetry(doOnRetry).apply(this)
+        this.retryWhen(retry.doOnRetry(doOnRetry))
 }
 
