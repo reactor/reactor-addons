@@ -75,8 +75,6 @@ fun <T> Flux<T>.retryRandomBackoff(times: Int, first: Duration, max: Duration? =
 fun <T> Mono<T>.retryExponentialBackoff(times: Int, first: Duration, max: Duration? = null,
                                         jitter: Boolean = false,
                                         doOnRetry: ((RetryContext<T>) -> Unit)? = null): Mono<T> {
-
-
     val retry = Retry.any<T>()
             .retryMax(times)
             .exponentialBackoff(first, max)
