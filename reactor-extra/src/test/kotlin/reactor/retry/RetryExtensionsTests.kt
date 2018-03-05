@@ -37,10 +37,11 @@ class RetryExtensionsTests {
     fun monoRetryExponentialBackoff() {
         val retries = mutableListOf<Long>()
 
-        Mono.error<Any>(IOException())
+        val mono: Mono<Any> = Mono.error<Any>(IOException())
                 .retryExponentialBackoff(4, Duration.ofMillis(100),
                         Duration.ofMillis(500)) { retries.add(it.backoff().toMillis()) }
-                .test()
+
+        StepVerifier.withVirtualTime { mono }
                 .expectSubscription()
                 .thenAwait(Duration.ofMillis(100))
                 .thenAwait(Duration.ofMillis(200))
@@ -70,7 +71,7 @@ class RetryExtensionsTests {
     fun monoRetryRandomBackoff() {
         val retries = mutableListOf<Long>()
 
-        val mono = Mono.error<Any>(IOException())
+        val mono: Mono<Any> = Mono.error<Any>(IOException())
                 .retryRandomBackoff(4, Duration.ofMillis(100),
                         Duration.ofMillis(2000)) { retries.add(it.backoff().toMillis()) }
 
