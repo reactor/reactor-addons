@@ -60,17 +60,17 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 		volatile int terminated;
 		@SuppressWarnings("rawtypes")
 		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription> TERMINATED =
-				AtomicIntegerFieldUpdater.newUpdater(AsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class, "terminated");
+				AtomicIntegerFieldUpdater.newUpdater(AbstractFileReaderSubscription.class, "terminated");
 
 		volatile long requested;
 		@SuppressWarnings("rawtypes")
-		static final AtomicLongFieldUpdater<AsyncFileChannelReaderFlux.AbstractFileReaderSubscription> REQUESTED =
-				AtomicLongFieldUpdater.newUpdater(AsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class, "requested");
+		static final AtomicLongFieldUpdater<AbstractFileReaderSubscription> REQUESTED =
+				AtomicLongFieldUpdater.newUpdater(AbstractFileReaderSubscription.class, "requested");
 
 		volatile long position;
 		@SuppressWarnings("rawtypes")
 		static final AtomicLongFieldUpdater<AbstractFileReaderSubscription> POSITION =
-				AtomicLongFieldUpdater.newUpdater(AsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class, "position");
+				AtomicLongFieldUpdater.newUpdater(AbstractFileReaderSubscription.class, "position");
 
 		AbstractFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
 				Path file,
@@ -96,7 +96,7 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 
 		@Override
 		public void cancel() {
-			if (cancelled) {
+			if (isCancelledOrTerminated()) {
 				return;
 			}
 
@@ -186,7 +186,7 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 
 							if (cancelled) {
 								return;
-							}
+					 		}
 
 							if (read < capacity) {
 								doComplete(actual);
