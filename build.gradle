@@ -246,11 +246,21 @@ project('reactor-extra') {
 	maven { url "http://maven-eclipse.github.io/maven" }
   }
 
+  task testNG (type: Test) {
+	useTestNG()
+  }
+
+  test {
+	useJUnit()
+	dependsOn testNG
+  }
+
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
 	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
 
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.2"
+	testCompile "org.testng:testng:6.14.2"
   }
 }
 

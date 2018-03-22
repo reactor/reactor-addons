@@ -35,11 +35,16 @@ import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBuffer> {
 
+	public static final String EMPTY_FILE = ClassLoader.getSystemResource("empty.txt")
+	                                                   .getFile();
+	public static final String SHAKESPEARE_FILE = ClassLoader.getSystemResource("shakespeare.txt")
+	                                                         .getFile();
+	public static final String DEFAULT_FILE = ClassLoader.getSystemResource("default.txt")
+	                                                     .getFile();
 	public static final String FILE_CONTENT =
 			"1\n" + "2\n" + "3\n" + "4\n" + "5\n" + "6\n" + "7\n" + "8\n" + "9\n" + "10 11 12";
 
@@ -50,10 +55,10 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 	@Override
 	public Publisher<ByteBuffer> createPublisher(long elements) {
 
-		return elements == 0 ? new AsyncFileChannelReaderFlux(Paths.get("./src/test/resources/empty.txt"), 1024) :
+		return elements == 0 ? new AsyncFileChannelReaderFlux(Paths.get(EMPTY_FILE), 1024) :
 				elements > 26 ?
-				new AsyncFileChannelReaderFlux(Paths.get("./src/test/resources/shakespeare.txt"), 1024) :
-				new AsyncFileChannelReaderFlux(Paths.get("./src/test/resources/file.txt"), (int) Math.ceil(26d / (double) elements));
+				new AsyncFileChannelReaderFlux(Paths.get(SHAKESPEARE_FILE), 1024) :
+				new AsyncFileChannelReaderFlux(Paths.get(DEFAULT_FILE), (int) Math.ceil(26d / (double) elements));
 	}
 
 	@Override
@@ -62,9 +67,14 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 				2);
 	}
 
+	@org.junit.Test
+	public void empty(){
+
+	}
+
 	@Test
 	public void shouldBeAbleToReadFileInFastPath() {
-		Path path = Paths.get("./src/test/resources/file.txt");
+		Path path = Paths.get("./src/test/resources/default.txt");
 
 		Mono<String> fileFlux = new AsyncFileChannelReaderFlux(path, 1024)
 		                                .reduce(new StringBuffer(),
@@ -80,7 +90,7 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldBeAbleToReadFileInSlowPath() {
-		Path path = Paths.get("./src/test/resources/file.txt");
+		Path path = Paths.get("./src/test/resources/default.txt");
 
 		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 8);
 
@@ -112,7 +122,7 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldNotFailOnConcurrentRequests() throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/file.txt");
+		Path path = Paths.get("./src/test/resources/default.txt");
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
@@ -132,7 +142,7 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 	@Test
 	public void shouldNotFailOnConcurrentRequestsAndError()
 			throws IOException, InterruptedException {
-		Path path = Paths.get("./src/test/resources/file.txt");
+		Path path = Paths.get("./src/test/resources/default.txt");
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
@@ -153,7 +163,7 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 	@Test
 	public void shouldEmitZeroElementsOnAlwaysFalseConditionalSubscriber()
 			throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/file.txt");
+		Path path = Paths.get("./src/test/resources/default.txt");
 
 		TestSubscriber actual = new ConditionalTestSubscriber(false);
 		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
@@ -168,7 +178,7 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldCloseChannelOnCompletion() throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/file.txt");
+		Path path = Paths.get("./src/test/resources/default.txt");
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
@@ -184,7 +194,7 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldCloseChannelOnError() {
-		Path path = Paths.get("./src/test/resources/file.txt");
+		Path path = Paths.get("./src/test/resources/default.txt");
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
@@ -309,5 +319,4 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 			}
 		}
 	}
-
 }

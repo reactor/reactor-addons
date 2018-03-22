@@ -219,10 +219,10 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 								long r = requested;
 
 								if (r == next) {
+									POSITION.set(FileReaderSubscription.this, nextP);
 									r = REQUESTED.addAndGet(FileReaderSubscription.this, -next);
 									next = 0;
 									if (r == 0L) {
-										POSITION.set(FileReaderSubscription.this, nextP);
 										return;
 									}
 								}
@@ -299,10 +299,10 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 								long r = requested;
 
 								if (r == next) {
+									POSITION.set(ConditionalFileReaderSubscription.this, nextP);
 									r = REQUESTED.addAndGet(ConditionalFileReaderSubscription.this, -next);
 									next = 0;
 									if (r == 0L) {
-										POSITION.set(ConditionalFileReaderSubscription.this, nextP);
 										return;
 									}
 								}
