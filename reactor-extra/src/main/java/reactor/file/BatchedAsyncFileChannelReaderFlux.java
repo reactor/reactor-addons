@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2011-2018 Pivotal Software Inc, All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package reactor.file;
 
 import java.io.IOException;
@@ -8,13 +24,13 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Subscription;
 import reactor.core.CoreSubscriber;
+import reactor.core.Fuseable;
 import reactor.core.Scannable;
 import reactor.core.publisher.Operators;
 import reactor.util.annotation.Nullable;
@@ -34,16 +50,18 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 	@Override
 	public void subscribe(CoreSubscriber<? super ByteBuffer> actual) {
 		try {
-//			if (actual instanceof Fuseable.ConditionalSubscriber) {
-//				actual.onSubscribe(new ConditionalFileReaderSubscription(actual,
-//						file,
-//						bufferCapacity));
-//			}
-//			else {
+			if (actual instanceof Fuseable.ConditionalSubscriber) {
+				actual.onSubscribe(new ConditionalFileReaderSubscription(actual,
+						file,
+						bufferCapacity,
+						batchSize));
+			}
+			else {
 				actual.onSubscribe(new FileReaderSubscription(actual,
 						file,
-						bufferCapacity, batchSize));
-//			}
+						bufferCapacity,
+						batchSize));
+			}
 		}
 		catch (IOException e) {
 			Operators.error(actual, e);
@@ -59,14 +77,13 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 		final int                     capacity;
 		final int                     parallelization;
 
-		final PriorityBlockingQueue<PrioritizedByteBuffer>   queue;
+		final LockFreePriorityQueue<PrioritizedByteBuffer>   queue;
 
 		volatile boolean cancelled;
 
 		volatile     int                                                       terminated;
 		@SuppressWarnings("rawtypes")
-		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription>
-		                                                                       TERMINATED =
+		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription> TERMINATED =
 				AtomicIntegerFieldUpdater.newUpdater(BatchedAsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class,
 						"terminated");
 
@@ -85,12 +102,6 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 				AtomicLongFieldUpdater.newUpdater(BatchedAsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class,
 						"position");
 
-		volatile     int                                                   pending;
-		@SuppressWarnings("rawtypes")
-		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription> PENDING =
-				AtomicIntegerFieldUpdater.newUpdater(BatchedAsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class,
-						"pending");
-
 		volatile     int                                                   wip;
 		@SuppressWarnings("rawtypes")
 		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription> WIP =
@@ -105,10 +116,10 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 			this.actual = actual;
 			this.capacity = capacity;
 			this.parallelization = parallelization;
-			this.queue = new PriorityBlockingQueue<>(parallelization * 2);
+			this.queue = new LockFreePriorityQueue<>();
 			this.channel = AsynchronousFileChannel.open(file,
 					Collections.emptySet(),
-					ForkJoinPool.commonPool());
+					new ForkJoinPool(parallelization));
 		}
 
 		@Nullable
@@ -130,9 +141,10 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 				return;
 			}
 
+			cancelled = true;
+
 			try {
 				channel.close();
-				cancelled = true;
 			}
 			catch (IOException e) {
 				doError(actual, e);
@@ -145,9 +157,9 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 				if (Operators.addCap(REQUESTED, this, n) == 0) {
 					if (!isCancelledOrTerminated()) {
 						if(queue.isEmpty()) {
-							trySchedule(position, n);
+							trySchedule(position);
 						} else {
-							drain(position, n, pending);
+							drain();
 						}
 					}
 				}
@@ -186,9 +198,8 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 			return cancelled || terminated == 1;
 		}
 
-		void trySchedule(long position, long n) {
+		void trySchedule(long position) {
 			position = (long) Math.ceil((double) position / (double) parallelization) * parallelization;
-			PENDING.addAndGet(this, parallelization);
 
 			for (int i = 0; i < parallelization; i++) {
 				ByteBuffer buffer = ByteBuffer.allocate(capacity);
@@ -196,23 +207,19 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 						buffer,
 						position * capacity + capacity * i,
 						buffer,
-						new Handler(position, position + i, n)
+						new Handler(position + i)
 				);
 			}
 		}
 
-		abstract void drain(long p, long n, int pending);
+		abstract void drain();
 
 		final class Handler implements CompletionHandler<Integer, ByteBuffer> {
 
-			private final long position;
 			private final long priority;
-			private final long requested;
 
-			Handler(long position, long priority, long requested) {
-				this.position = position;
+			Handler(long priority) {
 				this.priority = priority;
-				this.requested = requested;
 			}
 
 			@Override
@@ -221,8 +228,8 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 					if (read != capacity) {
 						queue.add(new PrioritizedByteBuffer(
 								priority,
-								ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read))
-						));
+								ByteBuffer.wrap(Arrays.copyOf(buffer.array(), read)),
+								true));
 						done = true;
 					}
 					else {
@@ -232,16 +239,21 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 						));
 					}
 				} else {
+					queue.add(new PrioritizedByteBuffer(
+							priority,
+							buffer,
+							true,
+							true
+					));
 					done = true;
 				}
 
-				drain(position, requested, pending);
-				PENDING.decrementAndGet(AbstractFileReaderSubscription.this);
+				drain();
 			}
 
 			@Override
 			public void failed(Throwable exc, ByteBuffer attachment) {
-				if(isCancelledOrTerminated()) {
+				if(done || isCancelledOrTerminated()) {
 					return;
 				}
 
@@ -255,39 +267,51 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 		FileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
 				Path file,
 				int capacity,
-				int parallelization) throws IOException {
-			super(actual, file, capacity, parallelization);
+				int parallelism) throws IOException {
+			super(actual, file, capacity, parallelism);
 		}
 
 		@Override
-		void drain(long p, long n, int r) {
+		void drain() {
 			if (WIP.getAndIncrement(this) != 0) {
 				return;
 			}
 
-			long e = 0;
+			final CoreSubscriber<? super ByteBuffer> s = actual;
 			int missed = 1;
+			long p = position;
+			long n = requested;
 
 			for (;;) {
+				long e = 0;
+
 				main: for (;;) {
 					while (e != n) {
-						if (isCancelledOrTerminated()) {
+						if (cancelled) {
 							return;
 						}
 
-						PrioritizedByteBuffer item = queue.peek();
-						if (item != null && item.priority == p + e) {
-							actual.onNext(item.byteBuffer);
+						PrioritizedByteBuffer next = queue.peek();
+
+						if (null != next && p + e == next.priority) {
+							if(!next.empty) {
+								s.onNext(next.buffer);
+							}
+
 							queue.poll();
 							e++;
+
+							if(next.terminal) {
+								doComplete(s);
+								return;
+							}
 						}
 						else {
-							p = POSITION.addAndGet(this, e);
 							n = REQUESTED.addAndGet(this, -e);
-							e = 0L;
+							p = POSITION.addAndGet(this, e);
 
-							if(item == null && !done && !isCancelledOrTerminated()) {
-								trySchedule(p, n);
+							if(next == null && !done && !cancelled) {
+								trySchedule(p);
 							}
 
 							break main;
@@ -307,22 +331,8 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 					}
 				}
 
-				if (isCancelledOrTerminated()) {
+				if (cancelled) {
 					return;
-				}
-
-				if(done && queue.isEmpty() && r == 1) {
-					doComplete(actual);
-					return;
-				}
-
-
-
-				r = pending;
-				n = requested;
-
-				if(!queue.isEmpty()) {
-					continue;
 				}
 
 				int w = wip;
@@ -334,7 +344,99 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 				}
 				else {
 					missed = w;
-					r = pending;
+				}
+			}
+		}
+	}
+
+	static final class ConditionalFileReaderSubscription extends
+	                                               AbstractFileReaderSubscription {
+
+		ConditionalFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
+				Path file,
+				int capacity,
+				int parallelism) throws IOException {
+			super(actual, file, capacity, parallelism);
+		}
+
+		@Override
+		void drain() {
+			if (WIP.getAndIncrement(this) != 0) {
+				return;
+			}
+
+			final CoreSubscriber<? super ByteBuffer> s = actual;
+			final Fuseable.ConditionalSubscriber<? super  ByteBuffer> c = (Fuseable.ConditionalSubscriber<? super ByteBuffer>) s;
+			int missed = 1;
+			long p = position;
+			long n = requested;
+
+			for (;;) {
+				long e = 0;
+
+				main: for (;;) {
+					while (e != n) {
+						if (cancelled) {
+							return;
+						}
+
+						PrioritizedByteBuffer item = queue.peek();
+						boolean b = false;
+
+						if (null != item && p + e == item.priority) {
+							if(!item.empty) {
+								b = c.tryOnNext(item.buffer);
+							}
+
+							queue.poll();
+
+							if (b) {
+								e++;
+							}
+
+							if(item.terminal) {
+								doComplete(s);
+								return;
+							}
+						}
+						else {
+							n = REQUESTED.addAndGet(this, -e);
+							p = POSITION.addAndGet(this, e);
+
+							if(item == null && !done && !cancelled) {
+								trySchedule(p);
+							}
+
+							break main;
+						}
+					}
+
+					n = requested;
+
+					if (n == e) {
+						n = REQUESTED.addAndGet(this, -e);
+						p = POSITION.addAndGet(this, e);
+						e = 0L;
+
+						if (n == 0L) {
+							break;
+						}
+					}
+				}
+
+				if (cancelled) {
+					return;
+				}
+
+				int w = wip;
+				if (missed == w) {
+					missed = WIP.addAndGet(this, -missed);
+					if (missed == 0) {
+						break;
+					}
+				}
+				else {
+					missed = w;
 				}
 			}
 		}
@@ -344,11 +446,26 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 	                                         Comparable<PrioritizedByteBuffer> {
 
 		final long       priority;
-		final ByteBuffer byteBuffer;
+		final ByteBuffer buffer;
+		final boolean    terminal;
+		final boolean    empty;
 
 		PrioritizedByteBuffer(long priority, ByteBuffer buffer) {
+			this(priority, buffer, false, false);
+		}
+
+		PrioritizedByteBuffer(long priority, ByteBuffer buffer, boolean terminal) {
+			this(priority, buffer, terminal, false);
+		}
+
+		PrioritizedByteBuffer(long priority,
+				ByteBuffer buffer,
+				boolean terminal,
+				boolean empty) {
 			this.priority = priority;
-			byteBuffer = buffer;
+			this.buffer = buffer;
+			this.terminal = terminal;
+			this.empty = empty;
 		}
 
 		@Override
@@ -356,92 +473,4 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 			return Long.compare(priority, o.priority);
 		}
 	}
-
-
-
-	/*
-	static final class ConditionalFileReaderSubscription
-			extends AbstractFileReaderSubscription {
-
-		ConditionalFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
-				int capacity) throws IOException {
-			super(actual, file, capacity, parallelization);
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		void run(long n, long i, long position) {
-			final Fuseable.ConditionalSubscriber<? super ByteBuffer> c =
-					(Fuseable.ConditionalSubscriber<? super ByteBuffer>) actual;
-			ByteBuffer buffer = ByteBuffer.allocate(capacity);
-			channel.read(buffer,
-					position,
-					null,
-					new CompletionHandler<Integer, Object>() {
-						@Override
-						public void completed(Integer read, Object attachment) {
-							if (cancelled) {
-								return;
-							}
-
-							boolean b = false;
-
-							if (read != -1) {
-								if (read != capacity) {
-									b =
-											c.tryOnNext(ByteBuffer.wrap(Arrays.copyOf(
-													buffer.array(),
-													read)));
-								}
-								else {
-									b = c.tryOnNext(buffer);
-								}
-							}
-
-							if (cancelled) {
-								return;
-							}
-
-							if (read < capacity) {
-								doComplete(actual);
-								return;
-							}
-
-							long next = i;
-							long nextP = position + capacity;
-
-							if (b) {
-								next++;
-							}
-
-							if (n != next) {
-								run(n, next, nextP);
-							}
-							else {
-								long r = requested;
-
-								if (r == next) {
-									r = REQUESTED.addAndGet(
-											ConditionalFileReaderSubscription.this,
-											-next);
-									next = 0;
-									if (r == 0L) {
-										POSITION.set(ConditionalFileReaderSubscription.this,
-												nextP);
-										return;
-									}
-								}
-
-								run(r, next, nextP);
-							}
-						}
-
-						@Override
-						public void failed(Throwable exc, Object attachment) {
-							doError(actual, exc);
-						}
-					});
-		}
-	}*/
 }
