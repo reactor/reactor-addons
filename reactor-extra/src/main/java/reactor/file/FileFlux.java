@@ -17,7 +17,9 @@
 package reactor.file;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import java.util.Collections;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,11 +31,15 @@ public abstract class FileFlux extends Flux<ByteBuffer> {
 	static final int DEFAULT_BUFFER_CAPACITY = 1024;
 
 	public static FileFlux from(Path path) {
-		return new FileChannelReaderFlux(path, DEFAULT_BUFFER_CAPACITY, Schedulers.parallel());
+		return from(path, DEFAULT_BUFFER_CAPACITY, Schedulers.parallel());
 	}
 
 	public static FileFlux from(Path path, int bufferCapacity, Scheduler scheduler) {
-		return new FileChannelReaderFlux(path, bufferCapacity, scheduler);
+		return new FileChannelReaderFlux(
+			() -> FileChannel.open(path, Collections.emptySet()),
+			bufferCapacity,
+			scheduler
+		);
 	}
 
 	public Flux<ByteBuffer> lines() {

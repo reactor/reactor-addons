@@ -23,8 +23,8 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -38,12 +38,14 @@ import reactor.util.annotation.Nullable;
 
 public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 
-	private final Path file;
-	private final int  bufferCapacity;
-	private final int  batchSize;
+	private final Callable<AsynchronousFileChannel> asynchronousFileChannelCallable;
+	private final int                               bufferCapacity;
+	private final int                               batchSize;
 
-	BatchedAsyncFileChannelReaderFlux(Path file, int bufferCapacity, int batchSize) {
-		this.file = file;
+	BatchedAsyncFileChannelReaderFlux(Callable<AsynchronousFileChannel> asynchronousFileChannelCallable,
+									  int bufferCapacity,
+									  int batchSize) {
+		this.asynchronousFileChannelCallable = asynchronousFileChannelCallable;
 		this.bufferCapacity = bufferCapacity;
 		this.batchSize = batchSize;
 	}
@@ -53,18 +55,18 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 		try {
 			if (actual instanceof Fuseable.ConditionalSubscriber) {
 				actual.onSubscribe(new ConditionalFileReaderSubscription(actual,
-						file,
+						asynchronousFileChannelCallable,
 						bufferCapacity,
 						batchSize));
 			}
 			else {
 				actual.onSubscribe(new FileReaderSubscription(actual,
-						file,
+						asynchronousFileChannelCallable,
 						bufferCapacity,
 						batchSize));
 			}
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			Operators.error(actual, e);
 		}
 	}
@@ -74,11 +76,10 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 
 		final CoreSubscriber<? super ByteBuffer> actual;
 
-		final AsynchronousFileChannel channel;
-		final int                     capacity;
-		final int                     parallelization;
-
-		final PriorityBlockingQueue<PrioritizedByteBuffer> queue;
+		final AsynchronousFileChannel                      channel;
+		final LockFreePriorityQueue<PrioritizedByteBuffer> queue;
+		final int                                          capacity;
+		final int                                          batchSize;
 
 		volatile boolean cancelled;
 
@@ -115,18 +116,15 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 				AtomicIntegerFieldUpdater.newUpdater(BatchedAsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class,
 						"wip");
 
-
 		AbstractFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
+				Callable<AsynchronousFileChannel> asynchronousFileChannelCallable,
 				int capacity,
-				int parallelization) throws IOException {
+				int batchSize) throws Exception {
 			this.actual = actual;
 			this.capacity = capacity;
-			this.parallelization = parallelization;
-			this.queue = new PriorityBlockingQueue<>(parallelization * 2);
-			this.channel = AsynchronousFileChannel.open(file,
-					Collections.emptySet(),
-					new ForkJoinPool(parallelization));
+			this.batchSize = batchSize;
+			this.queue = new LockFreePriorityQueue<>();
+			this.channel = asynchronousFileChannelCallable.call();
 		}
 
 		@Nullable
@@ -206,9 +204,9 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 		}
 
 		void trySchedule() {
-			long position = SCHEDULES.getAndAdd(this, parallelization);
+			long position = SCHEDULES.getAndAdd(this, batchSize);
 
-			for (int i = 0; i < parallelization; i++) {
+			for (int i = 0; i < batchSize; i++) {
 				ByteBuffer buffer = ByteBuffer.allocate(capacity);
 				channel.read(
 						buffer,
@@ -272,10 +270,10 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 	static final class FileReaderSubscription extends AbstractFileReaderSubscription {
 
 		FileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
+				Callable<AsynchronousFileChannel> asynchronousFileChannelCallable,
 				int capacity,
-				int parallelism) throws IOException {
-			super(actual, file, capacity, parallelism);
+				int batchSize) throws Exception {
+			super(actual, asynchronousFileChannelCallable, capacity, batchSize);
 		}
 
 		@Override
@@ -363,10 +361,10 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 	                                               AbstractFileReaderSubscription {
 
 		ConditionalFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
+				Callable<AsynchronousFileChannel> asynchronousFileChannelCallable,
 				int capacity,
-				int parallelism) throws IOException {
-			super(actual, file, capacity, parallelism);
+				int batchSize) throws Exception {
+			super(actual, asynchronousFileChannelCallable, capacity, batchSize);
 		}
 
 		@Override

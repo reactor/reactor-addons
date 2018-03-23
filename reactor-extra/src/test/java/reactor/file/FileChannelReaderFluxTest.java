@@ -77,7 +77,7 @@ public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer>
 
 	@Test
 	public void shouldBeAbleToReadFileInFastPath() {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		Mono<String> fileFlux = FileFlux.from(path)
 		                                .reduce(new StringBuffer(),
@@ -93,7 +93,7 @@ public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer>
 
 	@Test
 	public void shouldBeAbleToReadFileInSlowPath() {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		Flux<ByteBuffer> fileFlux = FileFlux.from(path, 8, Schedulers.parallel());
 
@@ -125,7 +125,7 @@ public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer>
 
 	@Test
 	public void shouldNotFailOnConcurrentRequests() throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = FileFlux.from(path);
@@ -145,7 +145,7 @@ public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer>
 	@Test
 	public void shouldNotFailOnConcurrentRequestsAndError()
 			throws IOException, InterruptedException {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = FileFlux.from(path);
@@ -166,7 +166,7 @@ public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer>
 	@Test
 	public void shouldEmitZeroElementsOnAlwaysFalseConditionalSubscriber()
 			throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new ConditionalTestSubscriber(false);
 		Flux<ByteBuffer> fileFlux = FileFlux.from(path);
@@ -181,7 +181,7 @@ public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer>
 
 	@Test
 	public void shouldCloseChannelOnCompletion() throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = FileFlux.from(path);
@@ -197,7 +197,7 @@ public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer>
 
 	@Test
 	public void shouldCloseChannelOnError() {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = FileFlux.from(path);
@@ -211,7 +211,7 @@ public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer>
 
 	@Test
 	public void shouldCloseChannelOnCancel() {
-		Path path = Paths.get("./src/test/resources/shakespeare.txt");
+		Path path = Paths.get(SHAKESPEARE_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = FileFlux.from(path, 2, Schedulers.parallel());

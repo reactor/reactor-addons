@@ -18,12 +18,16 @@ package reactor.file;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.junit.Assert;
 import org.reactivestreams.Publisher;
@@ -38,6 +42,9 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBuffer> {
+
+	public static final Function<Path, Callable<AsynchronousFileChannel>> CREATOR = ptf -> () ->
+			AsynchronousFileChannel.open(ptf, Collections.emptySet(), ForkJoinPool.commonPool());
 
 	public static final String EMPTY_FILE = ClassLoader.getSystemResource("empty.txt")
 	                                                   .getFile();
@@ -54,17 +61,20 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Override
 	public Publisher<ByteBuffer> createPublisher(long elements) {
+		Path shakespeareFilePath = Paths.get(SHAKESPEARE_FILE);
+		Path emptyFilePath = Paths.get(EMPTY_FILE);
+		Path defaultFilePath = Paths.get(DEFAULT_FILE);
 
-		return elements == 0 ? new AsyncFileChannelReaderFlux(Paths.get(EMPTY_FILE), 1024) :
+		return elements == 0 ? new AsyncFileChannelReaderFlux(CREATOR.apply(emptyFilePath), 1024) :
 				elements > 26 ?
-				new AsyncFileChannelReaderFlux(Paths.get(SHAKESPEARE_FILE), 1024) :
-				new AsyncFileChannelReaderFlux(Paths.get(DEFAULT_FILE), (int) Math.ceil(26d / (double) elements));
+				new AsyncFileChannelReaderFlux(CREATOR.apply(shakespeareFilePath), 1024) :
+				new AsyncFileChannelReaderFlux(CREATOR.apply(defaultFilePath), (int) Math.ceil(26d / (double) elements));
 	}
 
 	@Override
 	public Publisher<ByteBuffer> createFailedPublisher() {
-		return new AsyncFileChannelReaderFlux(Paths.get("./src/test/resources/none.txt"),
-				2);
+		Path wrongFilePath = Paths.get("./src/test/resources/none.txt");
+		return new AsyncFileChannelReaderFlux(CREATOR.apply(wrongFilePath), 2);
 	}
 
 	@org.junit.Test
@@ -74,9 +84,9 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldBeAbleToReadFileInFastPath() {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
-		Mono<String> fileFlux = new AsyncFileChannelReaderFlux(path, 1024)
+		Mono<String> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 1024)
 		                                .reduce(new StringBuffer(),
 				                                (sb, bb) -> sb.append(new String(bb.array())))
 		                                .map(StringBuffer::toString);
@@ -90,9 +100,9 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldBeAbleToReadFileInSlowPath() {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
-		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 8);
+		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 8);
 
 		StepVerifier.create(fileFlux, 1)
 		            .expectSubscription()
@@ -112,7 +122,7 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 	public void shouldBeAbleToHandleError() {
 		Path path = Paths.get("./src/test/resources/file.t");
 
-		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 8);
+		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 8);
 
 		StepVerifier.create(fileFlux)
 		            .expectSubscription()
@@ -122,10 +132,10 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldNotFailOnConcurrentRequests() throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
+		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 1024);
 
 		fileFlux.subscribe(actual);
 
@@ -142,10 +152,10 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 	@Test
 	public void shouldNotFailOnConcurrentRequestsAndError()
 			throws IOException, InterruptedException {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
+		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 1024);
 
 		fileFlux.subscribe(actual);
 
@@ -163,10 +173,10 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 	@Test
 	public void shouldEmitZeroElementsOnAlwaysFalseConditionalSubscriber()
 			throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new ConditionalTestSubscriber(false);
-		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
+		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 1024);
 
 		fileFlux.subscribe(actual);
 
@@ -178,10 +188,10 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldCloseChannelOnCompletion() throws InterruptedException {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
+		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 1024);
 
 		fileFlux.subscribe(actual);
 
@@ -194,10 +204,10 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldCloseChannelOnError() {
-		Path path = Paths.get("./src/test/resources/default.txt");
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 1024);
+		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 1024);
 
 		fileFlux.subscribe(actual);
 		actual.s.doError(actual, new NullPointerException());
@@ -208,10 +218,10 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 
 	@Test
 	public void shouldCloseChannelOnCancel() {
-		Path path = Paths.get("./src/test/resources/shakespeare.txt");
+		Path path = Paths.get(SHAKESPEARE_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(path, 2);
+		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 2);
 
 		fileFlux.subscribe(actual);
 		actual.request(Long.MAX_VALUE);

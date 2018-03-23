@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -35,12 +36,14 @@ import reactor.util.annotation.Nullable;
 
 public class FileChannelReaderFlux extends FileFlux {
 
-	private final Path      file;
+	private final Callable<FileChannel>  fileChannelCallable;
 	private final int       bufferCapacity;
 	private final Scheduler scheduler;
 
-	FileChannelReaderFlux(Path file, int bufferCapacity, Scheduler scheduler) {
-		this.file = file;
+	FileChannelReaderFlux(Callable<FileChannel> fileChannelCallable,
+			int bufferCapacity,
+			Scheduler scheduler) {
+		this.fileChannelCallable = fileChannelCallable;
 		this.bufferCapacity = bufferCapacity;
 		this.scheduler = scheduler;
 	}
@@ -50,18 +53,18 @@ public class FileChannelReaderFlux extends FileFlux {
 		try {
 			if (actual instanceof Fuseable.ConditionalSubscriber) {
 				actual.onSubscribe(new ConditionalFileReaderSubscription(actual,
-						file,
+						fileChannelCallable,
 						bufferCapacity,
 						scheduler.createWorker()));
 			}
 			else {
 				actual.onSubscribe(new FileReaderSubscription(actual,
-						file,
+						fileChannelCallable,
 						bufferCapacity,
 						scheduler.createWorker()));
 			}
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			Operators.error(actual, e);
 		}
 	}
@@ -93,13 +96,13 @@ public class FileChannelReaderFlux extends FileFlux {
 				AtomicIntegerFieldUpdater.newUpdater(AbstractFileReaderSubscription.class, "wip");
 
 		AbstractFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
+				Callable<FileChannel> fileChannelCallable,
 				int capacity,
-				Scheduler.Worker worker) throws IOException {
+				Scheduler.Worker worker) throws Exception {
 			this.actual = actual;
 			this.capacity = capacity;
 			this.worker = worker;
-			this.channel = FileChannel.open(file);
+			this.channel = fileChannelCallable.call();
 		}
 
 		@Nullable
@@ -232,10 +235,10 @@ public class FileChannelReaderFlux extends FileFlux {
 	static final class FileReaderSubscription extends AbstractFileReaderSubscription {
 
 		FileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
+				Callable<FileChannel> fileChannelCallable,
 				int capacity,
-				Scheduler.Worker worker) throws IOException {
-			super(actual, file, capacity, worker);
+				Scheduler.Worker worker) throws Exception {
+			super(actual, fileChannelCallable, capacity, worker);
 		}
 
 		@Override
@@ -330,10 +333,10 @@ public class FileChannelReaderFlux extends FileFlux {
 			extends AbstractFileReaderSubscription {
 
 		ConditionalFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
+				Callable<FileChannel> fileChannelCallable,
 				int capacity,
-				Scheduler.Worker worker) throws IOException {
-			super(actual, file, capacity, worker);
+				Scheduler.Worker worker) throws Exception {
+			super(actual, fileChannelCallable, capacity, worker);
 		}
 
 		@Override

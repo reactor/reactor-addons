@@ -20,10 +20,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -36,11 +34,12 @@ import reactor.util.annotation.Nullable;
 
 public class AsyncFileChannelReaderFlux extends FileFlux {
 
-	private final Path      file;
-	private final int       bufferCapacity;
+	private final Callable<AsynchronousFileChannel> asynchronousFileChannelCallable;
+	private final int                               bufferCapacity;
 
-	AsyncFileChannelReaderFlux(Path file, int bufferCapacity) {
-		this.file = file;
+	AsyncFileChannelReaderFlux(Callable<AsynchronousFileChannel> asynchronousFileChannelCallable,
+			int bufferCapacity) {
+		this.asynchronousFileChannelCallable = asynchronousFileChannelCallable;
 		this.bufferCapacity = bufferCapacity;
 	}
 
@@ -49,16 +48,16 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 		try {
 			if (actual instanceof Fuseable.ConditionalSubscriber) {
 				actual.onSubscribe(new ConditionalFileReaderSubscription(actual,
-						file,
+						asynchronousFileChannelCallable,
 						bufferCapacity));
 			}
 			else {
 				actual.onSubscribe(new FileReaderSubscription(actual,
-						file,
+						asynchronousFileChannelCallable,
 						bufferCapacity));
 			}
 		}
-		catch (IOException e) {
+		catch (Exception e) {
 			Operators.error(actual, e);
 		}
 	}
@@ -89,12 +88,11 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 				AtomicLongFieldUpdater.newUpdater(AbstractFileReaderSubscription.class, "position");
 
 		AbstractFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
-				int capacity) throws IOException {
+				Callable<AsynchronousFileChannel> fileChannelCallable,
+				int capacity) throws Exception {
 			this.actual = actual;
 			this.capacity = capacity;
-			this.channel = AsynchronousFileChannel.open(file, Collections.emptySet(),
-					ForkJoinPool.commonPool());
+			this.channel = fileChannelCallable.call();
 		}
 
 		@Nullable
@@ -175,9 +173,9 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 	static final class FileReaderSubscription extends AbstractFileReaderSubscription {
 
 		FileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
-				int capacity) throws IOException {
-			super(actual, file, capacity);
+				Callable<AsynchronousFileChannel> fileChannelCallable,
+				int capacity) throws Exception {
+			super(actual, fileChannelCallable, capacity);
 		}
 
 		@Override
@@ -247,9 +245,9 @@ public class AsyncFileChannelReaderFlux extends FileFlux {
 			extends AbstractFileReaderSubscription {
 
 		ConditionalFileReaderSubscription(CoreSubscriber<? super ByteBuffer> actual,
-				Path file,
-				int capacity) throws IOException {
-			super(actual, file, capacity);
+				Callable<AsynchronousFileChannel> fileChannelCallable,
+				int capacity) throws Exception {
+			super(actual, fileChannelCallable, capacity);
 		}
 
 		@Override

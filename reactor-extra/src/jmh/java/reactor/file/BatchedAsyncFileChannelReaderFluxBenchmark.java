@@ -28,7 +28,7 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 import reactor.core.publisher.Operators;
 
-public class AsyncFileChannelReaderFluxBenchmark {
+public class BatchedAsyncFileChannelReaderFluxBenchmark {
 	public static final String SHAKESPEARE_FILE = ClassLoader.getSystemResource("shakespeare.txt")
 	                                                         .getFile()
 	                                                         .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh");
@@ -39,9 +39,10 @@ public class AsyncFileChannelReaderFluxBenchmark {
 	@BenchmarkMode({Mode.Throughput, Mode.SampleTime})
 	public void smallFileLowChanksSizeMAXDemand() {
 		Path path = Paths.get(DEFAULT_FILE);
-		new AsyncFileChannelReaderFlux(
-				() -> AsynchronousFileChannel.open(path, Collections.emptySet(), ForkJoinPool.commonPool()),
-				1
+		new BatchedAsyncFileChannelReaderFlux(
+			() -> AsynchronousFileChannel.open(path, Collections.emptySet(), ForkJoinPool.commonPool()),
+			1,
+			Runtime.getRuntime().availableProcessors() * 2
 		).blockLast();
 	}
 
@@ -49,9 +50,10 @@ public class AsyncFileChannelReaderFluxBenchmark {
 	@BenchmarkMode({Mode.Throughput, Mode.SampleTime})
 	public void smallFileDefaultChanksSizeMAXDemand() {
 		Path path = Paths.get(DEFAULT_FILE);
-		new AsyncFileChannelReaderFlux(
-				() -> AsynchronousFileChannel.open(path, Collections.emptySet(), ForkJoinPool.commonPool()),
-				1024
+		new BatchedAsyncFileChannelReaderFlux(
+			() -> AsynchronousFileChannel.open(path, Collections.emptySet(), ForkJoinPool.commonPool()),
+			1024,
+			Runtime.getRuntime().availableProcessors() * 2
 		).blockLast();
 	}
 
@@ -60,9 +62,10 @@ public class AsyncFileChannelReaderFluxBenchmark {
 	@BenchmarkMode({Mode.Throughput, Mode.SampleTime})
 	public void largeFileDefaultChanksSizeMAXDemand() {
 		Path path = Paths.get(SHAKESPEARE_FILE);
-		new AsyncFileChannelReaderFlux(
-				() -> AsynchronousFileChannel.open(path, Collections.emptySet(), ForkJoinPool.commonPool()),
-				1024
+		new BatchedAsyncFileChannelReaderFlux(
+			() -> AsynchronousFileChannel.open(path, Collections.emptySet(), ForkJoinPool.commonPool()),
+			1024,
+			Runtime.getRuntime().availableProcessors() * 2
 		).blockLast();
 	}
 
@@ -72,9 +75,10 @@ public class AsyncFileChannelReaderFluxBenchmark {
 		Path path = Paths.get(SHAKESPEARE_FILE);
 		TestBlockingLastSubscriber<ByteBuffer> subscriber = new
 				TestBlockingLastSubscriber<>();
-		new AsyncFileChannelReaderFlux(
-				() -> AsynchronousFileChannel.open(path, Collections.emptySet(), ForkJoinPool.commonPool()),
-				1024
+		new BatchedAsyncFileChannelReaderFlux(
+			() -> AsynchronousFileChannel.open(path, Collections.emptySet(), ForkJoinPool.commonPool()),
+			1024,
+			Runtime.getRuntime().availableProcessors() * 2
 		).subscribe(Operators.toCoreSubscriber(subscriber));
 
 		subscriber.blockingGet();
