@@ -56,11 +56,12 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	public Publisher<ByteBuffer> createPublisher(long elements) {
 
 		return elements == 0 ? new BatchedAsyncFileChannelReaderFlux(Paths.get
-				(EMPTY_FILE), 1024, Runtime.getRuntime().availableProcessors()) :
+				(EMPTY_FILE), 1024, 2) :
 				elements > 26 ?
-				new BatchedAsyncFileChannelReaderFlux(Paths.get(SHAKESPEARE_FILE), 1024, Runtime.getRuntime().availableProcessors()) :
+				new BatchedAsyncFileChannelReaderFlux(Paths.get(SHAKESPEARE_FILE),
+						1024, 2) :
 				new BatchedAsyncFileChannelReaderFlux(Paths.get(DEFAULT_FILE), (int)
-						Math.ceil(26d / (double) elements), Runtime.getRuntime().availableProcessors());
+						Math.ceil(26d / (double) elements), 2);
 	}
 
 	@Override
@@ -113,7 +114,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	public void shouldBeAbleToReadFileInSlowPath1() {
 		Path path = Paths.get("./src/test/resources/default.txt");
 
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(path, 8, 8);
+		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(path, 8, 1);
 
 		StepVerifier.create(fileFlux, 1)
 		            .expectSubscription()
@@ -133,7 +134,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	public void shouldBeAbleToReadFileInSlowPath2() {
 		Path path = Paths.get("./src/test/resources/default.txt");
 
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(path, 8, 8);
+		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(path, 8, 2);
 
 		StepVerifier.create(fileFlux, 1)
 		            .expectSubscription()
@@ -153,7 +154,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	public void shouldBeAbleToHandleError() {
 		Path path = Paths.get("./src/test/resources/file.t");
 
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(path, 8, 8);
+		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(path, 8, 3);
 
 		StepVerifier.create(fileFlux)
 		            .expectSubscription()

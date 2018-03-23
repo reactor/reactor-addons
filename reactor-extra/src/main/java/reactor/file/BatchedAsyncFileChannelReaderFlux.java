@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -77,7 +78,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 		final int                     capacity;
 		final int                     parallelization;
 
-		final LockFreePriorityQueue<PrioritizedByteBuffer>   queue;
+		final PriorityBlockingQueue<PrioritizedByteBuffer> queue;
 
 		volatile boolean cancelled;
 
@@ -102,6 +103,12 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 				AtomicLongFieldUpdater.newUpdater(BatchedAsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class,
 						"position");
 
+		volatile     long                                                   schedules;
+		@SuppressWarnings("rawtypes")
+		static final AtomicLongFieldUpdater<AbstractFileReaderSubscription> SCHEDULES =
+				AtomicLongFieldUpdater.newUpdater(BatchedAsyncFileChannelReaderFlux.AbstractFileReaderSubscription.class,
+						"schedules");
+
 		volatile     int                                                   wip;
 		@SuppressWarnings("rawtypes")
 		static final AtomicIntegerFieldUpdater<AbstractFileReaderSubscription> WIP =
@@ -116,7 +123,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 			this.actual = actual;
 			this.capacity = capacity;
 			this.parallelization = parallelization;
-			this.queue = new LockFreePriorityQueue<>();
+			this.queue = new PriorityBlockingQueue<>(parallelization * 2);
 			this.channel = AsynchronousFileChannel.open(file,
 					Collections.emptySet(),
 					new ForkJoinPool(parallelization));
@@ -157,7 +164,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 				if (Operators.addCap(REQUESTED, this, n) == 0) {
 					if (!isCancelledOrTerminated()) {
 						if(queue.isEmpty()) {
-							trySchedule(position);
+							trySchedule();
 						} else {
 							drain();
 						}
@@ -198,8 +205,8 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 			return cancelled || terminated == 1;
 		}
 
-		void trySchedule(long position) {
-			position = (long) Math.ceil((double) position / (double) parallelization) * parallelization;
+		void trySchedule() {
+			long position = SCHEDULES.getAndAdd(this, parallelization);
 
 			for (int i = 0; i < parallelization; i++) {
 				ByteBuffer buffer = ByteBuffer.allocate(capacity);
@@ -281,6 +288,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 			int missed = 1;
 			long p = position;
 			long n = requested;
+			boolean scheduled = false;
 
 			for (;;) {
 				long e = 0;
@@ -299,19 +307,25 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 							}
 
 							queue.poll();
+							scheduled = false;
 							e++;
 
 							if(next.terminal) {
+								if(cancelled) {
+									return;
+								}
+
 								doComplete(s);
 								return;
 							}
 						}
 						else {
-							n = REQUESTED.addAndGet(this, -e);
 							p = POSITION.addAndGet(this, e);
+							n = REQUESTED.addAndGet(this, -e);
 
-							if(next == null && !done && !cancelled) {
-								trySchedule(p);
+							if(next == null && !scheduled && !done && !cancelled) {
+								trySchedule();
+								scheduled = true;
 							}
 
 							break main;
@@ -321,18 +335,14 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 					n = requested;
 
 					if (n == e) {
-						n = REQUESTED.addAndGet(this, -e);
 						p = POSITION.addAndGet(this, e);
+						n = REQUESTED.addAndGet(this, -e);
 						e = 0L;
 
 						if (n == 0L) {
 							break;
 						}
 					}
-				}
-
-				if (cancelled) {
-					return;
 				}
 
 				int w = wip;
@@ -370,6 +380,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 			int missed = 1;
 			long p = position;
 			long n = requested;
+			boolean scheduled = false;
 
 			for (;;) {
 				long e = 0;
@@ -380,31 +391,37 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 							return;
 						}
 
-						PrioritizedByteBuffer item = queue.peek();
+						PrioritizedByteBuffer next = queue.peek();
 						boolean b = false;
 
-						if (null != item && p + e == item.priority) {
-							if(!item.empty) {
-								b = c.tryOnNext(item.buffer);
+						if (null != next && p + e == next.priority) {
+							if(!next.empty) {
+								b = c.tryOnNext(next.buffer);
 							}
 
 							queue.poll();
+							scheduled = false;
 
 							if (b) {
 								e++;
 							}
 
-							if(item.terminal) {
+							if(next.terminal) {
+								if(cancelled) {
+									return;
+								}
+
 								doComplete(s);
 								return;
 							}
 						}
 						else {
-							n = REQUESTED.addAndGet(this, -e);
 							p = POSITION.addAndGet(this, e);
+							n = REQUESTED.addAndGet(this, -e);
 
-							if(item == null && !done && !cancelled) {
-								trySchedule(p);
+							if(next == null && !scheduled && !done && !cancelled) {
+								trySchedule();
+								scheduled = true;
 							}
 
 							break main;
@@ -414,18 +431,14 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 					n = requested;
 
 					if (n == e) {
-						n = REQUESTED.addAndGet(this, -e);
 						p = POSITION.addAndGet(this, e);
+						n = REQUESTED.addAndGet(this, -e);
 						e = 0L;
 
 						if (n == 0L) {
 							break;
 						}
 					}
-				}
-
-				if (cancelled) {
-					return;
 				}
 
 				int w = wip;
