@@ -380,6 +380,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 
 			for (;;) {
 				long e = 0;
+				long f = 0;
 
 				main: for (;;) {
 					while (e != n) {
@@ -390,7 +391,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 						PrioritizedByteBuffer next = queue.peek();
 						boolean b = false;
 
-						if (null != next && p + e == next.priority) {
+						if (null != next && p + e + f == next.priority) {
 							if(!next.empty) {
 								b = c.tryOnNext(next.buffer);
 							}
@@ -400,6 +401,8 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 
 							if (b) {
 								e++;
+							} else {
+								f++;
 							}
 
 							if(next.terminal) {
@@ -412,7 +415,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 							}
 						}
 						else {
-							p = POSITION.addAndGet(this, e);
+							p = POSITION.addAndGet(this, e + f);
 							n = REQUESTED.addAndGet(this, -e);
 
 							if(next == null && !scheduled && !done && !cancelled) {

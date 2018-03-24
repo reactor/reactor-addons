@@ -221,7 +221,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	@Test
 	public void shouldEmitZeroElementsOnAlwaysFalseConditionalSubscriber()
 			throws InterruptedException {
-		Path path = Paths.get(DEFAULT_FILE);
+		Path path = Paths.get(SHAKESPEARE_FILE);
 
 		TestSubscriber actual = new ConditionalTestSubscriber(false);
 		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 1024, Runtime.getRuntime().availableProcessors() * 2);
