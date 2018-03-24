@@ -16,6 +16,7 @@
 
 package reactor.file;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -47,12 +48,15 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	public static final Function<Path, Callable<AsynchronousFileChannel>> CREATOR = ptf -> () ->
 			AsynchronousFileChannel.open(ptf, Collections.emptySet(), ForkJoinPool.commonPool());
 
-	public static final String EMPTY_FILE = ClassLoader.getSystemResource("empty.txt")
-	                                                   .getFile();
-	public static final String SHAKESPEARE_FILE = ClassLoader.getSystemResource("shakespeare.txt")
-	                                                         .getFile();
-	public static final String DEFAULT_FILE = ClassLoader.getSystemResource("default.txt")
-	                                                     .getFile();
+	public static final String EMPTY_FILE = new File(ClassLoader.getSystemResource("empty.txt")
+	                                                            .getFile())
+																.getPath();
+	public static final String SHAKESPEARE_FILE = new File(ClassLoader.getSystemResource("shakespeare.txt")
+	                                                                  .getFile())
+																	  .getPath();
+	public static final String DEFAULT_FILE = new File(ClassLoader.getSystemResource("default.txt")
+	                                                              .getFile())
+															   	  .getPath();
 	public static final String FILE_CONTENT =
 			"1\n" + "2\n" + "3\n" + "4\n" + "5\n" + "6\n" + "7\n" + "8\n" + "9\n" + "10 11 12";
 
@@ -193,13 +197,13 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	}
 
 	@Test
-	@Ignore("ignore that test because for some reasons error might be ignored and test may hang")
 	public void shouldNotFailOnConcurrentRequestsAndError()
 			throws IOException, InterruptedException {
-		Path path = Paths.get(DEFAULT_FILE);
+		Path path = Paths.get(SHAKESPEARE_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 1024, Runtime.getRuntime().availableProcessors() * 2);
+		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply
+				(path), 1024, 2);
 
 		fileFlux.subscribe(actual);
 

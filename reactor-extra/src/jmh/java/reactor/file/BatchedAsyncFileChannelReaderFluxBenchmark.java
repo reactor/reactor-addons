@@ -16,6 +16,7 @@
 
 package reactor.file;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Path;
@@ -29,12 +30,14 @@ import org.openjdk.jmh.annotations.Mode;
 import reactor.core.publisher.Operators;
 
 public class BatchedAsyncFileChannelReaderFluxBenchmark {
-	public static final String SHAKESPEARE_FILE = ClassLoader.getSystemResource("shakespeare.txt")
-	                                                         .getFile()
-	                                                         .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh");
-	public static final String DEFAULT_FILE = ClassLoader.getSystemResource("default.txt")
-	                                                     .getFile()
-	                                                     .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh");
+	public static final String SHAKESPEARE_FILE = new File(ClassLoader.getSystemResource("shakespeare.txt")
+	                                                                  .getFile()
+	                                                                  .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh"))
+																	  .getPath();
+	public static final String DEFAULT_FILE = new File(ClassLoader.getSystemResource("default.txt")
+	                                                              .getFile()
+	                                                              .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh"))
+																  .getPath();
 	@Benchmark()
 	@BenchmarkMode({Mode.Throughput, Mode.SampleTime})
 	public void smallFileLowChanksSizeMAXDemand() {

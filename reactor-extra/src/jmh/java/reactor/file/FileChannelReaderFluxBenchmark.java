@@ -16,6 +16,7 @@
 
 package reactor.file;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -32,13 +33,14 @@ import reactor.core.scheduler.Schedulers;
 public class FileChannelReaderFluxBenchmark {
 
 	public static final Scheduler SCHEDULER = Schedulers.fromExecutor(ForkJoinPool.commonPool());
-	public static final String SHAKESPEARE_FILE = ClassLoader.getSystemResource("shakespeare.txt")
-	                                                         .getFile()
-	                                                         .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh");
-	public static final String DEFAULT_FILE = ClassLoader.getSystemResource("default.txt")
-	                                                     .getFile()
-	                                                     .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh");
-
+	public static final String SHAKESPEARE_FILE = new File(ClassLoader.getSystemResource("shakespeare.txt")
+	                                                                  .getFile()
+	                                                                  .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh"))
+																	  .getPath();
+	public static final String DEFAULT_FILE = new File(ClassLoader.getSystemResource("default.txt")
+	                                                              .getFile()
+	                                                              .replaceFirst("^(file\\:)(.*\\/)(libs\\/.*\\.jar!)", "$2resources/jmh"))
+															      .getPath();
 	@Benchmark()
 	@BenchmarkMode({Mode.Throughput, Mode.SampleTime})
 	public void smallFileLowChanksSizeMAXDemand() {

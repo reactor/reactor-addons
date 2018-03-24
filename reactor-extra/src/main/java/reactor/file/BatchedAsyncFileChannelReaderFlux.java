@@ -20,11 +20,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -77,7 +75,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 		final CoreSubscriber<? super ByteBuffer> actual;
 
 		final AsynchronousFileChannel                      channel;
-		final LockFreePriorityQueue<PrioritizedByteBuffer> queue;
+		final PriorityBlockingQueue<PrioritizedByteBuffer> queue;
 		final int                                          capacity;
 		final int                                          batchSize;
 
@@ -123,7 +121,7 @@ public class BatchedAsyncFileChannelReaderFlux extends FileFlux {
 			this.actual = actual;
 			this.capacity = capacity;
 			this.batchSize = batchSize;
-			this.queue = new LockFreePriorityQueue<>();
+			this.queue = new PriorityBlockingQueue<>(batchSize * 4);
 			this.channel = asynchronousFileChannelCallable.call();
 		}
 

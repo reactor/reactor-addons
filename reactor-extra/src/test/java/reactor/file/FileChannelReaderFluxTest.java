@@ -16,6 +16,7 @@
 
 package reactor.file;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -40,12 +41,15 @@ import reactor.test.StepVerifier;
 
 public class FileChannelReaderFluxTest extends PublisherVerification<ByteBuffer> {
 
-	public static final String EMPTY_FILE = ClassLoader.getSystemResource("empty.txt")
-	                                                   .getFile();
-	public static final String SHAKESPEARE_FILE = ClassLoader.getSystemResource("shakespeare.txt")
-	                                                         .getFile();
-	public static final String DEFAULT_FILE = ClassLoader.getSystemResource("default.txt")
-	                                                     .getFile();
+	public static final String EMPTY_FILE = new File(ClassLoader.getSystemResource("empty.txt")
+	                                                            .getFile())
+																.getPath();
+	public static final String SHAKESPEARE_FILE = new File(ClassLoader.getSystemResource("shakespeare.txt")
+	                                                                  .getFile())
+																	  .getPath();
+	public static final String DEFAULT_FILE = new File(ClassLoader.getSystemResource("default.txt")
+	                                                              .getFile())
+																  .getPath();
 	public static final String FILE_CONTENT =
 			"1\n" + "2\n" + "3\n" + "4\n" + "5\n" + "6\n" + "7\n" + "8\n" + "9\n" + "10 11 12";
 
