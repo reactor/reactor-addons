@@ -18,11 +18,13 @@ package reactor.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.Channel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
@@ -40,12 +42,13 @@ import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+import sun.nio.ch.ChannelInputStream;
 
-public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBuffer> {
-	
-	public static final Function<Path, Callable<AsynchronousFileChannel>> CREATOR = ptf -> () ->
-			AsynchronousFileChannel.open(ptf, Collections.emptySet(), ForkJoinPool.commonPool());
+public class InputStreamReaderFluxTest extends PublisherVerification<ByteBuffer> {
+
+	public static final Function<Path, Callable<InputStream>> CREATOR = ptf -> () -> Files.newInputStream(ptf);
 
 	public static final String EMPTY_FILE = new File(ClassLoader.getSystemResource("empty.txt")
 	                                                            .getFile())
@@ -55,11 +58,11 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 																	  .getPath();
 	public static final String DEFAULT_FILE = new File(ClassLoader.getSystemResource("default.txt")
 	                                                              .getFile())
-															   	  .getPath();
+																  .getPath();
 	public static final String FILE_CONTENT =
 			"1\n" + "2\n" + "3\n" + "4\n" + "5\n" + "6\n" + "7\n" + "8\n" + "9\n" + "10 11 12";
 
-	public BatchedAsyncFileChannelReaderFluxTest() {
+	public InputStreamReaderFluxTest() {
 		super(new TestEnvironment());
 	}
 
@@ -68,20 +71,19 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 		Path shakespeareFilePath = Paths.get(SHAKESPEARE_FILE);
 		Path emptyFilePath = Paths.get(EMPTY_FILE);
 		Path defaultFilePath = Paths.get(DEFAULT_FILE);
-		
-		return elements == 0 ? new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(emptyFilePath), 1024, Runtime.getRuntime().availableProcessors() * 2) :
-				elements > 26 ?
-				new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(shakespeareFilePath),
-						1024, Runtime.getRuntime().availableProcessors() * 2) :
-				new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(defaultFilePath), (int)
-						Math.ceil(26d / (double) elements), Runtime.getRuntime().availableProcessors() * 2);
+
+		return elements == 0 ? new InputStreamReaderFlux(CREATOR.apply(emptyFilePath), 1024, Schedulers.parallel()) : elements > 26 ?
+				new InputStreamReaderFlux(CREATOR.apply(shakespeareFilePath), 1024, Schedulers.parallel()) :
+				new InputStreamReaderFlux(CREATOR.apply(defaultFilePath),
+						(int) Math.ceil(26d / (double) elements),
+						Schedulers.parallel());
 	}
 
 	@Override
 	public Publisher<ByteBuffer> createFailedPublisher() {
-		Path wrongFilePath = Paths.get("./src/test/resources/none.txt");
-		return new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(wrongFilePath),
-				2, Runtime.getRuntime().availableProcessors() * 2);
+		return FileFlux.from(Paths.get("./src/test/resources/none.txt"),
+				2,
+				Schedulers.parallel());
 	}
 
 	@org.junit.Test
@@ -93,7 +95,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	public void shouldBeAbleToReadFileInFastPath() {
 		Path path = Paths.get(DEFAULT_FILE);
 
-		Mono<String> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 1024, Runtime.getRuntime().availableProcessors() * 2)
+		Mono<String> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 1024, Schedulers.parallel())
 		                                .reduce(new StringBuffer(),
 				                                (sb, bb) -> sb.append(new String(bb.array())))
 		                                .map(StringBuffer::toString);
@@ -109,46 +111,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	public void shouldBeAbleToReadFileInSlowPath() {
 		Path path = Paths.get(DEFAULT_FILE);
 
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 8, Runtime.getRuntime().availableProcessors() * 2);
-
-		StepVerifier.create(fileFlux, 1)
-		            .expectSubscription()
-		            .expectNextCount(1)
-		            .thenRequest(1)
-		            .expectNextCount(1)
-		            .thenRequest(1)
-		            .expectNextCount(1)
-		            .thenRequest(1)
-		            .expectNextCount(1)
-		            .thenRequest(1)
-		            .expectComplete()
-		            .verify();
-	}
-	@Test
-	public void shouldBeAbleToReadFileInSlowPath1() {
-		Path path = Paths.get(DEFAULT_FILE);
-
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 8, 1);
-
-		StepVerifier.create(fileFlux, 1)
-		            .expectSubscription()
-		            .expectNextCount(1)
-		            .thenRequest(1)
-		            .expectNextCount(1)
-		            .thenRequest(1)
-		            .expectNextCount(1)
-		            .thenRequest(1)
-		            .expectNextCount(1)
-		            .thenRequest(1)
-		            .expectComplete()
-		            .verify();
-	}
-
-	@Test
-	public void shouldBeAbleToReadFileInSlowPath2() {
-		Path path = Paths.get(DEFAULT_FILE);
-
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 8, 2);
+		Flux<ByteBuffer> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 8, Schedulers.parallel());
 
 		StepVerifier.create(fileFlux, 1)
 		            .expectSubscription()
@@ -168,7 +131,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	public void shouldBeAbleToHandleError() {
 		Path path = Paths.get("./src/test/resources/file.t");
 
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 8, 3);
+		Flux<ByteBuffer> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 8, Schedulers.parallel());
 
 		StepVerifier.create(fileFlux)
 		            .expectSubscription()
@@ -181,7 +144,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 1024, Runtime.getRuntime().availableProcessors() * 2);
+		Flux<ByteBuffer> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 1024, Schedulers.parallel());
 
 		fileFlux.subscribe(actual);
 
@@ -198,17 +161,17 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	@Test
 	public void shouldNotFailOnConcurrentRequestsAndError()
 			throws IOException, InterruptedException {
-		Path path = Paths.get(SHAKESPEARE_FILE);
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply
-				(path), 1024, 2);
+		Flux<ByteBuffer> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 1024, Schedulers.parallel());
 
 		fileFlux.subscribe(actual);
 
 		ForkJoinTask<?> submit1 = ForkJoinPool.commonPool()
 		                                      .submit(() -> actual.request(1));
-		actual.s.channel.close();
+
+		actual.s.inputStream.close();
 		ForkJoinTask<?> submit2 = ForkJoinPool.commonPool()
 		                                      .submit(() -> actual.request(1));
 		actual.request(1);
@@ -220,10 +183,10 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 	@Test
 	public void shouldEmitZeroElementsOnAlwaysFalseConditionalSubscriber()
 			throws InterruptedException {
-		Path path = Paths.get(SHAKESPEARE_FILE);
+		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new ConditionalTestSubscriber(false);
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 1024, Runtime.getRuntime().availableProcessors() * 2);
+		Flux<ByteBuffer> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 1024, Schedulers.parallel());
 
 		fileFlux.subscribe(actual);
 
@@ -238,7 +201,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 1024, Runtime.getRuntime().availableProcessors() * 2);
+		Flux<ByteBuffer> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 1024, Schedulers.parallel());
 
 		fileFlux.subscribe(actual);
 
@@ -246,7 +209,8 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 
 		actual.awaitCompletion();
 		actual.assertCompleted();
-		Assert.assertFalse(actual.s.channel.isOpen());
+
+		Assert.assertFalse(isOpen(actual.s.inputStream));
 	}
 
 	@Test
@@ -254,13 +218,13 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 		Path path = Paths.get(DEFAULT_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 1024, Runtime.getRuntime().availableProcessors() * 2);
+		Flux<ByteBuffer> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 1024, Schedulers.parallel());
 
 		fileFlux.subscribe(actual);
 		actual.s.doError(actual, new NullPointerException());
 
 		actual.assertError();
-		Assert.assertFalse(actual.s.channel.isOpen());
+		Assert.assertFalse(isOpen(actual.s.inputStream));
 	}
 
 	@Test
@@ -268,18 +232,18 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 		Path path = Paths.get(SHAKESPEARE_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
-		Flux<ByteBuffer> fileFlux = new BatchedAsyncFileChannelReaderFlux(CREATOR.apply(path), 2, Runtime.getRuntime().availableProcessors() * 2);
+		Flux<ByteBuffer> fileFlux = new InputStreamReaderFlux(() -> Files.newInputStream(path), 2, Schedulers.parallel());
 
 		fileFlux.subscribe(actual);
 		actual.request(Long.MAX_VALUE);
 		actual.cancel();
 
-		Assert.assertFalse(actual.s.channel.isOpen());
+		Assert.assertFalse(isOpen(actual.s.inputStream));
 	}
 
 	static class TestSubscriber implements CoreSubscriber<ByteBuffer> {
 
-		volatile BatchedAsyncFileChannelReaderFlux.AbstractFileReaderSubscription s;
+		volatile InputStreamReaderFlux.AbstractFileReaderSubscription s;
 		volatile Throwable                                            throwable;
 		volatile boolean                                              done;
 		volatile LinkedBlockingQueue<ByteBuffer> queue = new LinkedBlockingQueue<>();
@@ -287,7 +251,7 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 		@Override
 		public void onSubscribe(Subscription s) {
 
-			this.s = (BatchedAsyncFileChannelReaderFlux.AbstractFileReaderSubscription) s;
+			this.s = (InputStreamReaderFlux.AbstractFileReaderSubscription) s;
 		}
 
 		@Override
@@ -374,6 +338,18 @@ public class BatchedAsyncFileChannelReaderFluxTest extends PublisherVerification
 			else {
 				return false;
 			}
+		}
+	}
+
+	public static boolean isOpen(InputStream inputStream) {
+		try {
+			Field ch = ChannelInputStream.class.getDeclaredField("ch");
+			ch.setAccessible(true);
+			Channel channel = (Channel) ch.get(inputStream);
+			return channel.isOpen();
+		}
+		catch (NoSuchFieldException | IllegalAccessException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
