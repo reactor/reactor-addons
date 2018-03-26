@@ -156,7 +156,7 @@ public class AsyncFileChannelReaderFluxTest extends PublisherVerification<ByteBu
 	@Test
 	public void shouldNotFailOnConcurrentRequestsAndError()
 			throws IOException, InterruptedException {
-		Path path = Paths.get(DEFAULT_FILE);
+		Path path = Paths.get(SHAKESPEARE_FILE);
 
 		TestSubscriber actual = new TestSubscriber();
 		Flux<ByteBuffer> fileFlux = new AsyncFileChannelReaderFlux(CREATOR.apply(path), 1024);
