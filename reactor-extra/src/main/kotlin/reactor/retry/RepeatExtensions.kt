@@ -19,7 +19,7 @@ import java.util.function.Consumer
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun <T> Flux<T>.repeatExponentialBackoff(times: Int, first: Duration, max: Duration? = null,
+fun <T> Flux<T>.repeatExponentialBackoff(times: Long, first: Duration, max: Duration? = null,
                                          jitter: Boolean = false,
                                          doOnRepeat: ((RepeatContext<T>) -> Unit)? = null): Flux<T> {
     val repeat = Repeat.times<T>(times)
@@ -45,7 +45,7 @@ fun <T> Flux<T>.repeatExponentialBackoff(times: Int, first: Duration, max: Durat
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun <T> Flux<T>.repeatRandomBackoff(times: Int, first: Duration, max: Duration? = null,
+fun <T> Flux<T>.repeatRandomBackoff(times: Long, first: Duration, max: Duration? = null,
                                     doOnRepeat: ((RepeatContext<T>) -> Unit)? = null): Flux<T> {
     val repeat = Repeat.times<T>(times)
             .randomBackoff(first, max)
@@ -71,7 +71,7 @@ fun <T> Flux<T>.repeatRandomBackoff(times: Int, first: Duration, max: Duration? 
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun <T> Mono<T>.repeatExponentialBackoff(times: Int, first: Duration, max: Duration? = null,
+fun <T> Mono<T>.repeatExponentialBackoff(times: Long, first: Duration, max: Duration? = null,
                                          jitter: Boolean = false,
                                          doOnRepeat: ((RepeatContext<T>) -> Unit)? = null): Flux<T> {
     val repeat = Repeat.times<T>(times)
@@ -97,7 +97,7 @@ fun <T> Mono<T>.repeatExponentialBackoff(times: Int, first: Duration, max: Durat
  * @author Simon Baslé
  * @since 3.1.1
  */
-fun <T> Mono<T>.repeatRandomBackoff(times: Int, first: Duration, max: Duration? = null,
+fun <T> Mono<T>.repeatRandomBackoff(times: Long, first: Duration, max: Duration? = null,
                                     doOnRepeat: ((RepeatContext<T>) -> Unit)? = null): Flux<T> {
     val repeat = Repeat.times<T>(times)
             .randomBackoff(first, max)

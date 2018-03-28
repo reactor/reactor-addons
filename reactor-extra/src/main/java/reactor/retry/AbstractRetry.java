@@ -39,14 +39,14 @@ public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher
 		}
 	};
 
-	final int maxIterations;
+	final long maxIterations;
 	final Duration timeout;
 	final Backoff backoff;
 	final Jitter jitter;
 	final Scheduler backoffScheduler;
 	final T applicationContext;
 
-	AbstractRetry(int maxIterations,
+	AbstractRetry(long maxIterations,
 			Duration timeout,
 			Backoff backoff,
 			Jitter jitter,
