@@ -28,10 +28,15 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 /**
- * Retry function that may be used with {@link Flux#retryWhen(Function)} and
- * {@link Mono#retryWhen(Function)}.
+ * Retry function that may be used with {@link Flux#retryWhen(Function)} and {@link
+ * Mono#retryWhen(Function)}.
+ * <p>
+ * Each change in configuration returns a new instance (copy configuration), which
+ * makes {@link Retry} suitable for creating configuration templates that can be fine
+ * tuned for specific cases without impacting the original general use-case configuration.
  * <p>
  * Example usage:
+ *
  * <pre><code>
  *   retry = Retry.anyOf(IOException.class)
  *                 .randomBackoff(Duration.ofMillis(100), Duration.ofSeconds(60))
@@ -103,13 +108,13 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 	}
 
 	/**
-	 * Retry function that retries only if the predicate returns true, up to
-	 * {@link Integer#MAX_VALUE} times.
+	 * Retry function that retries only if the predicate returns true, with no limit to
+	 * the number of attempts.
 	 * @param predicate Predicate that determines if next retry is performed
 	 * @return Retry function with predicate
 	 */
 	static <T> Retry<T> onlyIf(Predicate<? super RetryContext<T>> predicate) {
-		return DefaultRetry.create(predicate).retryMax(Integer.MAX_VALUE);
+		return DefaultRetry.create(predicate).retryMax(Long.MAX_VALUE);
 	}
 
 	/**
