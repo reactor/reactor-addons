@@ -58,7 +58,7 @@ public interface Repeat<T> extends Function<Flux<Long>, Publisher<Long>> {
 	 * @return Repeat function for one repeat
 	 */
 	static <T> Repeat<T> once() {
-		return times(1);
+		return times(1L);
 	}
 
 	/**
@@ -66,7 +66,7 @@ public interface Repeat<T> extends Function<Flux<Long>, Publisher<Long>> {
 	 * @param n number of repeats
 	 * @return Repeat function for n repeats
 	 */
-	static <T> Repeat<T> times(int n) {
+	static <T> Repeat<T> times(long n) {
 		if (n < 0)
 			throw new IllegalArgumentException("n should be >= 0");
 		return DefaultRepeat.create(context -> true, n);
@@ -78,7 +78,7 @@ public interface Repeat<T> extends Function<Flux<Long>, Publisher<Long>> {
 	 * @param n number of repeats
 	 * @return Repeat function with predicate and n repeats
 	 */
-	static <T> Repeat<T> create(Predicate<? super RepeatContext<T>> predicate, int n) {
+	static <T> Repeat<T> create(Predicate<? super RepeatContext<T>> predicate, long n) {
 		return DefaultRepeat.create(predicate, n);
 	}
 

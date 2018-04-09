@@ -38,7 +38,7 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 	final Consumer<? super RetryContext<T>> onRetry;
 
 	DefaultRetry(Predicate<? super RetryContext<T>> retryPredicate,
-			int maxIterations,
+			long maxIterations,
 			Duration timeout,
 			Backoff backoff,
 			Jitter jitter,
@@ -74,7 +74,7 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 	}
 
 	@Override
-	public Retry<T> retryMax(int maxIterations) {
+	public Retry<T> retryMax(long maxIterations) {
 		if (maxIterations < 0)
 			throw new IllegalArgumentException("maxIterations should be >= 0");
 		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
@@ -110,9 +110,9 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 	@Override
 	public Publisher<Long> apply(Flux<Throwable> errors) {
 		Instant timeoutInstant = calculateTimeout();
-		DefaultContext<T> context = new DefaultContext<>(applicationContext, 0, null, null);
-		return errors.zipWith(Flux.range(1, Integer.MAX_VALUE))
-				.concatMap(tuple -> retry(tuple.getT1(), tuple.getT2(), timeoutInstant, context));
+		DefaultContext<T> context = new DefaultContext<>(applicationContext, 0L, null, null);
+		return errors.index()
+				.concatMap(tuple -> retry(tuple.getT2(), tuple.getT1() + 1L, timeoutInstant, context));
 	}
 
 	Publisher<Long> retry(Throwable e, long iteration, Instant timeoutInstant, DefaultContext<T> context) {

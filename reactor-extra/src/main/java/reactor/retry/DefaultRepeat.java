@@ -37,7 +37,7 @@ public class DefaultRepeat<T> extends AbstractRetry<T, Long> implements Repeat<T
 	final Consumer<? super RepeatContext<T>> onRepeat;
 
 	DefaultRepeat(Predicate<? super RepeatContext<T>> repeatPredicate,
-			int maxRepeats,
+			long maxRepeats,
 			Duration timeout,
 			Backoff backoff,
 			Jitter jitter,
@@ -49,7 +49,7 @@ public class DefaultRepeat<T> extends AbstractRetry<T, Long> implements Repeat<T
 		this.onRepeat = onRepeat;
 	}
 
-	public static <T> DefaultRepeat<T> create(Predicate<? super RepeatContext<T>> repeatPredicate, int n) {
+	public static <T> DefaultRepeat<T> create(Predicate<? super RepeatContext<T>> repeatPredicate, long n) {
 		return new DefaultRepeat<T>(repeatPredicate,
 				n,
 				null,
@@ -103,12 +103,13 @@ public class DefaultRepeat<T> extends AbstractRetry<T, Long> implements Repeat<T
 		Instant timeoutInstant = calculateTimeout();
 		DefaultContext<T> context = new DefaultContext<>(applicationContext, 0, null, -1L);
 		return companionValues
-				.zipWith(Flux.range(1, Integer.MAX_VALUE), (c, i) -> repeatBackoff(c, i, timeoutInstant, context))
+				.index()
+				.map(tuple -> repeatBackoff(tuple.getT2(), tuple.getT1() + 1L, timeoutInstant, context))
 				.takeWhile(backoff -> backoff != RETRY_EXHAUSTED)
 				.concatMap(backoff -> retryMono(backoff.delay));
 	}
 
-	BackoffDelay repeatBackoff(Long companionValue, Integer iteration, Instant timeoutInstant, DefaultContext<T> context) {
+	BackoffDelay repeatBackoff(Long companionValue, Long iteration, Instant timeoutInstant, DefaultContext<T> context) {
 		DefaultContext<T> tmpContext = new DefaultContext<>(applicationContext, iteration, context.lastBackoff, companionValue);
 		BackoffDelay nextBackoff = calculateBackoff(tmpContext, timeoutInstant);
 		DefaultContext<T> repeatContext = new DefaultContext<>(applicationContext, iteration, nextBackoff, companionValue);

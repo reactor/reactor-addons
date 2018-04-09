@@ -46,7 +46,7 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 
 	/**
 	 * Returns a retry function that retries any exception, once.
-	 * More constraints may be added using {@link #retryMax(int)} or {@link #timeout(Duration)}.
+	 * More constraints may be added using {@link #retryMax(long)} or {@link #timeout(Duration)}.
 	 *
 	 * @return retry function that retries on any exception
 	 */
@@ -57,7 +57,7 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 	/**
 	 * Returns a retry function that retries errors resulting from any of the
 	 * specified exceptions, once.
-	 * More constraints may be added using {@link #retryMax(int)}
+	 * More constraints may be added using {@link #retryMax(long)}
 	 * or {@link #timeout(Duration)}.
 	 *
 	 * @param retriableExceptions Exceptions that may be retried
@@ -82,7 +82,7 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 	 * Returns a retry function that retries errors resulting from all exceptions except
 	 * the specified non-retriable exceptions, once.
 	 * More constraints may be added using
-	 * {@link #retryMax(int)} or {@link #timeout(Duration)}.
+	 * {@link #retryMax(long)} or {@link #timeout(Duration)}.
 	 *
 	 * @param nonRetriableExceptions exceptions that may not be retried
 	 * @return retry function that retries all exceptions except the specified non-retriable exceptions.
@@ -151,12 +151,12 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 	 * @param maxRetries number of retries
 	 * @return Retry function for n retries
 	 */
-	Retry<T> retryMax(int maxRetries);
+	Retry<T> retryMax(long maxRetries);
 
 	/**
 	 * Returns a retry function with timeout. The timeout starts from
 	 * the instant that this function is applied, and the function keeps retrying
-	 * until the timeout expires. Use {@link #retryMax(int)} AFTER this method to
+	 * until the timeout expires. Use {@link #retryMax(long)} AFTER this method to
 	 * change that to a "retry until timeout OR n attempts" behaviour.
 	 * All other properties of this retry function are retained in the returned instance.
 	 * @param timeout timeout after which no new retries are initiated
