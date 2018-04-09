@@ -76,8 +76,16 @@ public class DefaultRepeat<T> extends AbstractRetry<T, Long> implements Repeat<T
 	public Repeat<T> timeout(Duration timeout) {
 		if (timeout.isNegative())
 			throw new IllegalArgumentException("timeout should be >= 0");
-		return new DefaultRepeat<>(repeatPredicate, Integer.MAX_VALUE, timeout,
+		return new DefaultRepeat<>(repeatPredicate, maxIterations, timeout,
 				backoff, jitter, backoffScheduler, onRepeat, applicationContext);
+	}
+
+	@Override
+	public Repeat<T> repeatMax(long maxRepeats) {
+		if (maxRepeats < 1)
+			throw new IllegalArgumentException("maxRepeats should be > 0");
+		return new DefaultRepeat<>(repeatPredicate, maxRepeats, timeout, backoff, jitter,
+				backoffScheduler, onRepeat, applicationContext);
 	}
 
 	@Override

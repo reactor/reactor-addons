@@ -85,7 +85,7 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 	public Retry<T> timeout(Duration timeout) {
 		if (timeout.isNegative())
 			throw new IllegalArgumentException("timeout should be >= 0");
-		return new DefaultRetry<>(retryPredicate, Integer.MAX_VALUE, timeout,
+		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
 				backoff, jitter, backoffScheduler, onRetry, applicationContext);
 	}
 

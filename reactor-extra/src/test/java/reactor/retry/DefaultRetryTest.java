@@ -42,9 +42,8 @@ public class DefaultRetryTest {
 				.isEqualTo("Retry{max=3,backoff=" + backoff + ",jitter=Jitter{RANDOM-0.5}}");
 	}
 
-	//TODO change in 3.2.0 to "doesnt change maxIterations" when gh-149 and gh-150 are fixed
 	@Test
-	public void timeoutDoesChangeMaxIterations() {
+	public void timeoutDoesntChangeMaxIterations() {
 		final DefaultRetry<Object> retry1 = (DefaultRetry<Object>) Retry.any()
 		                                                                .retryMax(3);
 
@@ -53,13 +52,13 @@ public class DefaultRetryTest {
 		final DefaultRetry<Object> retry2 =
 				(DefaultRetry<Object>) retry1.timeout(Duration.ofMillis(200));
 
-		assertThat(retry2.maxIterations).as("switched to unlimited by timeout")
-		                                .isEqualTo(Integer.MAX_VALUE);
+		assertThat(retry2.maxIterations).as("not changed by timeout")
+		                                .isEqualTo(3);
 
 		final DefaultRetry<Object> retry3 =
 				(DefaultRetry<Object>) retry2.retryMax(4);
 
-		assertThat(retry3.maxIterations).as("back to limited by retryMax")
+		assertThat(retry3.maxIterations).as("changed by retryMax")
 		                                .isEqualTo(4);
 	}
 
