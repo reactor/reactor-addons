@@ -52,7 +52,7 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 
 	public static <T> DefaultRetry<T> create(Predicate<? super RetryContext<T>> retryPredicate) {
 		return new DefaultRetry<T>(retryPredicate,
-				1,
+				Long.MAX_VALUE,
 				null,
 				Backoff.zero(),
 				Jitter.noJitter(),

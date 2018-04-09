@@ -31,6 +31,10 @@ import reactor.core.scheduler.Scheduler;
  * Repeat function that may be used with {@link Flux#repeatWhen(Function)},
  * {@link Mono#repeatWhen(Function)} and {@link Mono#repeatWhenEmpty(Function)}.
  * <p>
+ * Each change in configuration returns a new instance (copy configuration), which
+ * makes {@link Repeat} suitable for creating configuration templates that can be fine
+ * tuned for specific cases without impacting the original general use-case configuration.
+ * <p>
  * Example usage:
  * <pre><code>
  *   repeat = Repeat.times(10)
@@ -50,7 +54,7 @@ public interface Repeat<T> extends Function<Flux<Long>, Publisher<Long>> {
 	 * @return Repeat function with predicate
 	 */
 	static <T> Repeat<T> onlyIf(Predicate<? super RepeatContext<T>> predicate) {
-		return DefaultRepeat.create(predicate, Integer.MAX_VALUE);
+		return DefaultRepeat.create(predicate, Long.MAX_VALUE);
 	}
 
 	/**
@@ -110,8 +114,10 @@ public interface Repeat<T> extends Function<Flux<Long>, Publisher<Long>> {
 
 	/**
 	 * Returns a repeat function with timeout. The timeout starts from
-	 * the instant that this function is applied. All other properties of
+	 * the instant that this function is applied and switches to unlimited
+	 * number of attempts. All other properties of
 	 * this repeat function are retained in the returned instance.
+	 *
 	 * @param timeout timeout after which no new repeats are initiated
 	 * @return repeat function with timeout
 	 */
