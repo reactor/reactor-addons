@@ -161,11 +161,11 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 	/**
 	 * Returns a retry function with timeout. The timeout starts from
 	 * the instant that this function is applied, and the function keeps retrying
-	 * until the timeout expires. Use {@link #retryMax(long)} AFTER this method to
-	 * change that to a "retry until timeout OR n attempts" behaviour.
-	 * All other properties of this retry function are retained in the returned instance.
+	 * until the timeout expires (or until the configured maximum number of attempts, if
+	 * it has been set). All other properties of this retry function are retained in
+	 * the returned instance.
 	 * @param timeout timeout after which no new retries are initiated
-	 * @return retry function with unlimited attempts until timeout
+	 * @return retry function with global timeout
 	 */
 	Retry<T> timeout(Duration timeout);
 
