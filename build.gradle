@@ -26,6 +26,10 @@ buildscript {
   }
 }
 
+plugins {
+  id "me.champeau.gradle.jmh" version "0.4.4" apply false
+}
+
 description = 'Reactive fast data framework for the JVM'
 
 ext {
@@ -236,13 +240,47 @@ project('reactor-adapter') {
 project('reactor-extra') {
   description = 'Reactor Extra utilities'
 
+  apply plugin: 'me.champeau.gradle.jmh'
+
   repositories {
 	maven { url "http://maven-eclipse.github.io/maven" }
+  }
+
+  task testNG (type: Test) {
+	useTestNG()
+	options {
+	  useDefaultListeners true
+	}
+	testLogging {
+	  events "started", "passed", "failed"
+	  showExceptions true
+	  showStandardStreams true
+	  exceptionFormat "full"
+	  maxGranularity 100
+	  minGranularity 3
+	}
+  }
+
+
+
+  test {
+	useJUnit()
+	dependsOn testNG
+
+	testLogging {
+	  events "started", "passed", "failed"
+	  showExceptions true
+	  exceptionFormat "full"
+	  maxGranularity 3
+	}
   }
 
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
 	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
+
+	testCompile "org.reactivestreams:reactive-streams-tck:1.0.2"
+	testCompile "org.testng:testng:6.14.2"
   }
 }
 
