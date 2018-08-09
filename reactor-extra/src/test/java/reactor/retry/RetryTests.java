@@ -23,14 +23,18 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Consumer;
 
 import org.junit.Test;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -38,6 +42,27 @@ import static org.junit.Assert.assertNotNull;
 public class RetryTests {
 
 	private Queue<RetryContext<?>> retries = new ConcurrentLinkedQueue<>();
+
+	@Test
+	public void shouldTimeoutRetryWithVirtualTime() {
+		// given
+		final int minBackoff = 1;
+		final int maxBackoff = 5;
+		final int timeout = 10;
+
+		// then
+		StepVerifier.withVirtualTime(() ->
+				Mono.<String>error(new RuntimeException("Something went wrong"))
+						.retryWhen(Retry.anyOf(Exception.class)
+								.exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
+								.timeout(Duration.ofSeconds(timeout)))
+						.subscribeOn(Schedulers.elastic()))
+				.expectSubscription()
+//				.expectNoEvent(Duration.ofSeconds(timeout))
+				.thenAwait(Duration.ofSeconds(timeout))
+				.expectError(RetryExhaustedException.class)
+				.verify(Duration.ofSeconds(timeout));
+	}
 
 	@Test
 	public void fluxRetryNoBackoff() {
