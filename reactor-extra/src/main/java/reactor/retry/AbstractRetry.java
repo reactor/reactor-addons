@@ -64,7 +64,7 @@ public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher
 		return timeout != null ? Instant.now().plus(timeout) : Instant.MAX;
 	}
 
-	BackoffDelay calculateBackoff(Context<T> retryContext, Instant timeoutInstant) {
+	BackoffDelay calculateBackoff(IterationContext<T> retryContext, Instant timeoutInstant) {
 		BackoffDelay nextBackoff = backoff.apply(retryContext);
 		Duration minBackoff = nextBackoff.min;
 		Duration maxBackoff = nextBackoff.max;

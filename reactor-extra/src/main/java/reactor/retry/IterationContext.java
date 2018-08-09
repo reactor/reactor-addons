@@ -23,7 +23,7 @@ import java.time.Duration;
  *
  * @param <T> Application context type
  */
-public interface Context<T> {
+public interface IterationContext<T> {
 
 	/**
 	 * Application context that may be used to perform any rollbacks before

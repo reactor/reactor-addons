@@ -22,7 +22,7 @@ package reactor.retry;
  *
  * @param <T> Application context type
  */
-public interface RetryContext<T> extends Context<T> {
+public interface RetryContext<T> extends IterationContext<T> {
 
 	/**
 	 * Returns the exception from the last iteration.
