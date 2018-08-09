@@ -45,7 +45,7 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 			Scheduler backoffScheduler,
 			final Consumer<? super RetryContext<T>> onRetry,
 			T applicationContext) {
-		super(maxIterations, timeout, backoff, jitter, backoffScheduler,applicationContext);
+		super(maxIterations, timeout, backoff, jitter, backoffScheduler, applicationContext);
 		this.retryPredicate = retryPredicate;
 		this.onRetry = onRetry;
 	}

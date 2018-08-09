@@ -25,8 +25,11 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
+import reactor.scheduler.clock.SchedulerClock;
 import reactor.util.Logger;
 import reactor.util.Loggers;
+import reactor.util.annotation.Nullable;
 
 public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher<Long>> {
 
@@ -43,13 +46,16 @@ public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher
 	final Duration timeout;
 	final Backoff backoff;
 	final Jitter jitter;
+	@Nullable
 	final Scheduler backoffScheduler;
+	final SchedulerClock clock;
 	final T applicationContext;
 
 	AbstractRetry(long maxIterations,
 			Duration timeout,
 			Backoff backoff,
 			Jitter jitter,
+			@Nullable
 			Scheduler backoffScheduler,
 			T applicationContext) {
 		this.maxIterations = maxIterations;
@@ -57,11 +63,12 @@ public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher
 		this.backoff = backoff;
 		this.jitter = jitter;
 		this.backoffScheduler = backoffScheduler;
+		this.clock = SchedulerClock.of(backoffScheduler == null ? Schedulers.parallel() : backoffScheduler);
 		this.applicationContext = applicationContext;
 	}
 
 	Instant calculateTimeout() {
-		return timeout != null ? Instant.now().plus(timeout) : Instant.MAX;
+		return timeout != null ? Instant.now(clock).plus(timeout) : Instant.MAX;
 	}
 
 	BackoffDelay calculateBackoff(IterationContext<T> retryContext, Instant timeoutInstant) {
@@ -77,7 +84,7 @@ public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher
 		BackoffDelay sanitizedBackoff = new BackoffDelay(minBackoff, maxBackoff, backoff);
 		Duration jitteredBackoff = jitter.apply(sanitizedBackoff);
 
-		if (retryContext.iteration() > maxIterations || Instant.now().plus(jitteredBackoff).isAfter(timeoutInstant))
+		if (retryContext.iteration() > maxIterations || Instant.now(clock).plus(jitteredBackoff).isAfter(timeoutInstant))
 			return RETRY_EXHAUSTED;
 		else
 			return new BackoffDelay(minBackoff, maxBackoff, jitteredBackoff);
