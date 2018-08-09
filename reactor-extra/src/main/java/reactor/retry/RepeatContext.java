@@ -25,7 +25,7 @@ import reactor.core.publisher.Mono;
  *
  * @param <T> Application context type
  */
-public interface RepeatContext<T> extends Context<T> {
+public interface RepeatContext<T> extends IterationContext<T> {
 
 	/**
 	 * Returns the value provided in the companion Flux for repeats.

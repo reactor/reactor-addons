@@ -42,20 +42,20 @@ import static org.junit.Assert.assertTrue;
 
 public class RetryTestUtils {
 
-	static void assertDelays(Queue<? extends Context<?>> retries, Long... delayMs) {
+	static void assertDelays(Queue<? extends IterationContext<?>> retries, Long... delayMs) {
 		assertEquals(delayMs.length, retries.size());
 		int index = 0;
-		for (Iterator<? extends Context<?>> it = retries.iterator(); it.hasNext(); ) {
-			Context<?> repeatContext = it.next();
+		for (Iterator<? extends IterationContext<?>> it = retries.iterator(); it.hasNext(); ) {
+			IterationContext<?> repeatContext = it.next();
 			assertEquals(delayMs[index].longValue(), repeatContext.backoff().toMillis());
 			index++;
 		}
 	}
 
-	static void assertRandomDelays(Queue<? extends Context<?>> retries, int firstMs, int maxMs) {
+	static void assertRandomDelays(Queue<? extends IterationContext<?>> retries, int firstMs, int maxMs) {
 		long prevMs = 0;
 		int randomValues = 0;
-		for (Context<?> context : retries) {
+		for (IterationContext<?> context : retries) {
 			long backoffMs = context.backoff().toMillis();
 			assertTrue("Unexpected delay " + backoffMs, backoffMs >= firstMs && backoffMs <= maxMs);
 			if (backoffMs != firstMs && backoffMs != prevMs)
@@ -76,7 +76,7 @@ public class RetryTestUtils {
 		CountDownLatch latch = new CountDownLatch(threads);
 		Backoff customBackoff = new Backoff() {
 			@Override
-			public BackoffDelay apply(Context<?> context) {
+			public BackoffDelay apply(IterationContext<?> context) {
 				Duration backoff = context.backoff();
 				if (latch.getCount() > 0) {
 					assertNull("Wrong context, backoff must be null", backoff);

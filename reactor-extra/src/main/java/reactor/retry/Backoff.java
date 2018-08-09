@@ -23,11 +23,11 @@ import java.util.function.Function;
  * Backoff function
  *
  */
-public interface Backoff extends Function<Context<?>, BackoffDelay> {
+public interface Backoff extends Function<IterationContext<?>, BackoffDelay> {
 
 	Backoff ZERO_BACKOFF = new Backoff() {
 		@Override
-		public BackoffDelay apply(Context<?> context) {
+		public BackoffDelay apply(IterationContext<?> context) {
 			return BackoffDelay.ZERO;
 		}
 
@@ -53,7 +53,7 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 	static Backoff fixed(final Duration backoffInterval) {
 		return new Backoff() {
 			@Override
-			public BackoffDelay apply(Context<?> context) {
+			public BackoffDelay apply(IterationContext<?> context) {
 				return new BackoffDelay(backoffInterval);
 			}
 
@@ -90,7 +90,7 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 		if (!basedOnPreviousValue) {
 			return new Backoff() {
 				@Override
-				public BackoffDelay apply(Context<?> context) {
+				public BackoffDelay apply(IterationContext<?> context) {
 					Duration nextBackoff = firstBackoff.multipliedBy((long) Math.pow(factor, (context.iteration() - 1)));
 					return new BackoffDelay(firstBackoff, maxBackoffInterval, nextBackoff);
 				}
@@ -107,7 +107,7 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 		else {
 			return new Backoff() {
 				@Override
-				public BackoffDelay apply(Context<?> context) {
+				public BackoffDelay apply(IterationContext<?> context) {
 					Duration prevBackoff = context.backoff() == null ? Duration.ZERO : context.backoff();
 					Duration nextBackoff = prevBackoff.multipliedBy(factor);
 					nextBackoff = nextBackoff.compareTo(firstBackoff) < 0 ? firstBackoff : nextBackoff;
