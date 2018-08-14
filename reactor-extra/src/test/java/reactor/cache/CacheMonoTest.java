@@ -172,7 +172,7 @@ public class CacheMonoTest {
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap)
 		                                         .materialize()
-		                                         .repeat(4))
+		                                         .repeat(3))
 		            .expectSubscription()
 		            .expectNoEvent(Duration.ofMillis(1000))
 		            .expectNext(Signal.complete())
@@ -199,7 +199,7 @@ public class CacheMonoTest {
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap)
 		                                         .materialize()
-		                                         .repeat(4))
+		                                         .repeat(3))
 		            .expectSubscription()
 		            .expectNoEvent(Duration.ofMillis(1000))
 		            .expectNext(Signal.complete())
@@ -226,7 +226,7 @@ public class CacheMonoTest {
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap)
 		                                         .materialize()
-		                                         .repeat(4))
+		                                         .repeat(3))
 		            .expectSubscription()
 		            .expectNoEvent(Duration.ofMillis(1000))
 		            .expectNext(Signal.error(npe))
@@ -254,7 +254,7 @@ public class CacheMonoTest {
 
 		StepVerifier.withVirtualTime(() -> source.concatMap(flatMap)
 		                                         .materialize()
-		                                         .repeat(4))
+		                                         .repeat(3))
 		            .expectSubscription()
 		            .expectNoEvent(Duration.ofMillis(1000))
 		            .expectNext(Signal.error(npe))
