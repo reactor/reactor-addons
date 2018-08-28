@@ -16,7 +16,10 @@
 
 package reactor.retry;
 
+import reactor.util.annotation.Nullable;
+
 import java.time.Duration;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -81,7 +84,7 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 	 *        be a backoff with jitter applied
 	 * @return Backoff function with exponential delay
 	 */
-	static Backoff exponential(Duration firstBackoff, Duration maxBackoff, int factor, boolean basedOnPreviousValue) {
+	static Backoff exponential(Duration firstBackoff, @Nullable Duration maxBackoff, int factor, boolean basedOnPreviousValue) {
 		if (firstBackoff == null || firstBackoff.isNegative() || firstBackoff.isZero())
 			throw new IllegalArgumentException("firstBackoff must be > 0");
 		Duration maxBackoffInterval = maxBackoff != null ? maxBackoff : Duration.ofSeconds(Long.MAX_VALUE);
@@ -91,7 +94,18 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 			return new Backoff() {
 				@Override
 				public BackoffDelay apply(Context<?> context) {
-					Duration nextBackoff = firstBackoff.multipliedBy((long) Math.pow(factor, (context.iteration() - 1)));
+					Duration nextBackoff;
+					if (context.backoff() != null && context.backoff().compareTo(maxBackoffInterval) >= 0) {
+						nextBackoff = maxBackoffInterval;
+					}
+					else {
+						try {
+							nextBackoff = firstBackoff.multipliedBy((long) Math.pow(factor, (context.iteration() - 1)));
+						}
+						catch (ArithmeticException e) {
+							nextBackoff = maxBackoffInterval;
+						}
+					}
 					return new BackoffDelay(firstBackoff, maxBackoffInterval, nextBackoff);
 				}
 
@@ -109,7 +123,16 @@ public interface Backoff extends Function<Context<?>, BackoffDelay> {
 				@Override
 				public BackoffDelay apply(Context<?> context) {
 					Duration prevBackoff = context.backoff() == null ? Duration.ZERO : context.backoff();
-					Duration nextBackoff = prevBackoff.multipliedBy(factor);
+					Duration nextBackoff;
+					if (prevBackoff.compareTo(maxBackoffInterval) >= 0) {
+						nextBackoff = maxBackoffInterval;
+					}
+					else try {
+						nextBackoff = prevBackoff.multipliedBy(factor);
+					}
+					catch (ArithmeticException e) {
+						nextBackoff = maxBackoffInterval;
+					}
 					nextBackoff = nextBackoff.compareTo(firstBackoff) < 0 ? firstBackoff : nextBackoff;
 					return new BackoffDelay(firstBackoff, maxBackoff, nextBackoff);
 				}
