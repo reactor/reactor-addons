@@ -1,5 +1,6 @@
 package reactor.bool
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import reactor.core.publisher.Mono
 import reactor.test.test
@@ -35,49 +36,58 @@ class BooleanMonoExtensionsTests {
     }
 
     @Test
-    fun booleanAnd() {
-        booleanTable(Mono<Boolean>::andBoolean,
+    fun smokeTest() {
+        assertThat(mTrue.logicalAnd(mFalse).block()).`as`("true AND false").isFalse()
+        assertThat(mTrue.logicalOr(mFalse).block()).`as`("true OR false").isTrue()
+        assertThat(mTrue.logicalNAnd(mFalse).block()).`as`("true NAND false").isTrue()
+        assertThat(mTrue.logicalNOr(mFalse).block()).`as`("true NOR false").isFalse()
+        assertThat(mTrue.logicalXOr(mFalse).block()).`as`("true XOR false").isTrue()
+    }
+
+    @Test
+    fun logicalAnd() {
+        booleanTable(Mono<Boolean>::logicalAnd,
                 true, false,
                 false, false)
     }
 
     @Test
-    fun booleanOr() {
-        booleanTable(Mono<Boolean>::orBoolean,
+    fun logicalOr() {
+        booleanTable(Mono<Boolean>::logicalOr,
                 true, true,
                 true, false)
     }
 
     @Test
-    fun booleanNand() {
-        booleanTable(Mono<Boolean>::nand,
+    fun logicalNand() {
+        booleanTable(Mono<Boolean>::logicalNAnd,
                 false, true,
                 true, true)
     }
 
     @Test
-    fun booleanNor() {
-        booleanTable(Mono<Boolean>::nor,
+    fun logicalNor() {
+        booleanTable(Mono<Boolean>::logicalNOr,
                 false, false,
                 false, true)
     }
 
     @Test
-    fun booleanXor() {
-        booleanTable(Mono<Boolean>::xor,
+    fun logicalXor() {
+        booleanTable(Mono<Boolean>::logicalXOr,
                 false, true,
                 true, false)
     }
 
     @Test
-    fun booleanNot() {
+    fun not() {
         mTrue.not().test().expectNext(false).`as`("not(true)").verifyComplete()
 
         mFalse.not().test().expectNext(true).`as`("not(false)").verifyComplete()
     }
 
     @Test
-    fun booleanNotOperator() {
+    fun notWithOperator() {
         (!mTrue).test().expectNext(false).`as`("!true").verifyComplete()
 
         (!mFalse).test().expectNext(true).`as`("!false").verifyComplete()

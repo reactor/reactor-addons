@@ -17,7 +17,7 @@ operator fun Mono<Boolean>.not(): Mono<Boolean> = BooleanUtils.not(this)
  * @author Simon Baslé
  * @since 3.2.0
  */
-fun Mono<Boolean>.andBoolean(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.and(this, rightHand)
+fun Mono<Boolean>.logicalAnd(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.and(this, rightHand)
 
 /**
  * Extension to logically combine two [Boolean] [Mono] with the Not-AND (NAND) operator.
@@ -25,7 +25,7 @@ fun Mono<Boolean>.andBoolean(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanU
  * @author Simon Baslé
  * @since 3.2.0
  */
-fun Mono<Boolean>.nand(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.nand(this, rightHand)
+fun Mono<Boolean>.logicalNAnd(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.nand(this, rightHand)
 
 /**
  * Extension to logically combine two [Boolean] [Mono] with the OR operator.
@@ -33,7 +33,7 @@ fun Mono<Boolean>.nand(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.n
  * @author Simon Baslé
  * @since 3.2.0
  */
-fun Mono<Boolean>.orBoolean(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.or(this, rightHand)
+fun Mono<Boolean>.logicalOr(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.or(this, rightHand)
 
 /**
  * Extension to logically combine two [Boolean] [Mono] with the Not-OR (NOR) operator.
@@ -41,7 +41,7 @@ fun Mono<Boolean>.orBoolean(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUt
  * @author Simon Baslé
  * @since 3.2.0
  */
-fun Mono<Boolean>.nor(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.nor(this, rightHand)
+fun Mono<Boolean>.logicalNOr(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.nor(this, rightHand)
 
 /**
  * Extension to logically combine two [Boolean] [Mono] with the exclusive-OR (XOR) operator.
@@ -49,4 +49,4 @@ fun Mono<Boolean>.nor(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.no
  * @author Simon Baslé
  * @since 3.2.0
  */
-fun Mono<Boolean>.xor(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.xor(this, rightHand)
+fun Mono<Boolean>.logicalXOr(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.xor(this, rightHand)
