@@ -1,8 +1,9 @@
 package reactor.retry;
 
-import java.time.Duration;
-
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,6 +46,107 @@ public class BackoffTest {
 		assertThat(Backoff.exponential(Duration.ofMillis(1), null,
 				8, true).toString())
 				.isEqualTo("Backoff{exponential,min=1ms,max=NONE,factor=8,basedOnPreviousValue=true}");
+	}
+
+	//TODO 4 tests below have very similar structure and could benefit from JUnitParams
+	@Test
+	public void exponentialDoesntThrowArithmeticException_explicitMax() {
+		final Duration EXPLICIT_MAX = Duration.ofSeconds(100_000);
+		final Duration INIT = Duration.ofSeconds(10);
+
+		Backoff backoff = Backoff.exponential(INIT, EXPLICIT_MAX, 2, false);
+
+		BackoffDelay delay = null;
+		Context<String> context = null;
+		for (int i = 0; i < 71; i++) {
+			if (i == 0) {
+				delay = new BackoffDelay(INIT, EXPLICIT_MAX, INIT);
+			}
+			else {
+				context = new DefaultContext<>(null, i, delay, null);
+				delay = backoff.apply(context);
+			}
+		}
+
+		assertThat(context).isNotNull();
+		assertThat(delay.delay).isEqualTo(EXPLICIT_MAX);
+		assertThat(context.iteration()).isEqualTo(70);
+		assertThat(context.backoff()).isEqualTo(EXPLICIT_MAX);
+	}
+
+	@Test
+	public void exponentialDoesntThrowArithmeticException_noSpecificMax() {
+		final Duration INIT = Duration.ofSeconds(10);
+		final Duration EXPECTED_MAX = Duration.ofSeconds(Long.MAX_VALUE);
+
+		Backoff backoff = Backoff.exponential(INIT, null, 2, false);
+
+		BackoffDelay delay = null;
+		Context<String> context = null;
+		for (int i = 0; i < 71; i++) {
+			if (i == 0) {
+				delay = new BackoffDelay(INIT, null, INIT);
+			}
+			else {
+				context = new DefaultContext<>(null, i, delay, null);
+				delay = backoff.apply(context);
+			}
+		}
+
+		assertThat(context).isNotNull();
+		assertThat(delay.delay).isEqualTo(EXPECTED_MAX);
+		assertThat(context.iteration()).isEqualTo(70);
+		assertThat(context.backoff()).isEqualTo(EXPECTED_MAX);
+	}
+
+	@Test
+	public void exponentialDoesntThrowArithmeticException_explicitMaxDependsOnPrevious() {
+		final Duration EXPLICIT_MAX = Duration.ofSeconds(100_000);
+		final Duration INIT = Duration.ofSeconds(10);
+
+		Backoff backoff = Backoff.exponential(INIT, EXPLICIT_MAX, 2, true);
+
+		BackoffDelay delay = null;
+		Context<String> context = null;
+		for (int i = 0; i < 71; i++) {
+			if (i == 0) {
+				delay = new BackoffDelay(INIT, EXPLICIT_MAX, INIT);
+			}
+			else {
+				context = new DefaultContext<>(null, i, delay, null);
+				delay = backoff.apply(context);
+			}
+		}
+
+		assertThat(context).isNotNull();
+		assertThat(delay.delay).isEqualTo(EXPLICIT_MAX);
+		assertThat(context.iteration()).isEqualTo(70);
+		assertThat(context.backoff()).isEqualTo(EXPLICIT_MAX);
+	}
+
+	@Test
+	public void exponentialDoesntThrowArithmeticException_noSpecificMaxDependsOnPrevious() {
+		final Duration INIT = Duration.ofSeconds(10);
+		final Duration EXPECTED_MAX = Duration.ofSeconds(Long.MAX_VALUE);
+
+		Backoff backoff = Backoff.exponential(INIT, null, 2, true);
+
+		BackoffDelay delay = null;
+		Context<String> context = null;
+		for (int i = 0; i < 71; i++) {
+			if (i == 0) {
+				delay = new BackoffDelay(INIT, null, INIT);
+			}
+			else {
+				context = new DefaultContext<>(null, i, delay, null);
+				delay = backoff.apply(context);
+			}
+		}
+
+		assertThat(context).isNotNull();
+		assertThat(delay.delay).isEqualTo(EXPECTED_MAX);
+		assertThat(context.iteration()).isEqualTo(70);
+		assertThat(context.backoff()).isEqualTo(EXPECTED_MAX);
 	}
 
 }
