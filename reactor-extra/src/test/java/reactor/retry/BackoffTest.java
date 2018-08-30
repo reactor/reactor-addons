@@ -57,7 +57,7 @@ public class BackoffTest {
 		Backoff backoff = Backoff.exponential(INIT, EXPLICIT_MAX, 2, false);
 
 		BackoffDelay delay = null;
-		Context<String> context = null;
+		IterationContext<String> context = null;
 		for (int i = 0; i < 71; i++) {
 			if (i == 0) {
 				delay = new BackoffDelay(INIT, EXPLICIT_MAX, INIT);
@@ -82,7 +82,7 @@ public class BackoffTest {
 		Backoff backoff = Backoff.exponential(INIT, null, 2, false);
 
 		BackoffDelay delay = null;
-		Context<String> context = null;
+		IterationContext<String> context = null;
 		for (int i = 0; i < 71; i++) {
 			if (i == 0) {
 				delay = new BackoffDelay(INIT, null, INIT);
@@ -107,7 +107,7 @@ public class BackoffTest {
 		Backoff backoff = Backoff.exponential(INIT, EXPLICIT_MAX, 2, true);
 
 		BackoffDelay delay = null;
-		Context<String> context = null;
+		IterationContext<String> context = null;
 		for (int i = 0; i < 71; i++) {
 			if (i == 0) {
 				delay = new BackoffDelay(INIT, EXPLICIT_MAX, INIT);
@@ -132,7 +132,7 @@ public class BackoffTest {
 		Backoff backoff = Backoff.exponential(INIT, null, 2, true);
 
 		BackoffDelay delay = null;
-		Context<String> context = null;
+		IterationContext<String> context = null;
 		for (int i = 0; i < 71; i++) {
 			if (i == 0) {
 				delay = new BackoffDelay(INIT, null, INIT);
