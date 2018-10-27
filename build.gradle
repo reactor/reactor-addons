@@ -199,6 +199,34 @@ configure(subprojects) { project ->
 	  }
 	}
   }
+
+  task testNG(type: Test, group: 'verification') {
+	useTestNG()
+	include '**/*Verification.*'
+	doFirst {
+	  println "Additional tests from `testNG` ($includes)"
+	}
+	testLogging {
+	  events "started", "passed", "failed"
+	  showExceptions true
+	  showStandardStreams true
+	  exceptionFormat "full"
+	  maxGranularity 100
+	  minGranularity 3
+	}
+  }
+
+  test {
+	useJUnit()
+	dependsOn testNG
+
+	testLogging {
+	  events "started", "passed", "failed"
+	  showExceptions true
+	  exceptionFormat "full"
+	  maxGranularity 3
+	}
+  }
 }
 
 
@@ -243,6 +271,8 @@ project('reactor-extra') {
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
 	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
+
+	testCompile "org.reactivestreams:reactive-streams-tck:1.0.2"
   }
 }
 
