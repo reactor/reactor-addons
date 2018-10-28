@@ -1,21 +1,68 @@
 package reactor.extra;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.TestPublisher;
 import reactor.test.util.RaceTestUtils;
 import reactor.util.context.Context;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+
 public class SwitchTransformOnFirstFluxTest {
 
+    @Test
+    public void shouldBeAbleToCancelSubscription() throws InterruptedException {
+        for (int j = 0; j < 10; j++) {
+            ArrayList<Long> capturedElements = new ArrayList<>();
+            ArrayList<Boolean> capturedCompletions = new ArrayList<>();
+            for (int i = 0; i < 1000; i++) {
+                TestPublisher<Long> publisher = TestPublisher.createCold();
+                AtomicLong captureElement = new AtomicLong(0L);
+                AtomicBoolean captureCompletion = new AtomicBoolean(false);
+                AtomicLong requested = new AtomicLong();
+                CountDownLatch latch = new CountDownLatch(1);
+                Flux<Long> switchTransformed = publisher.flux()
+                                                        .doOnRequest(requested::addAndGet)
+                                                        .doOnCancel(latch::countDown)
+                                                        .transform(flux -> new SwitchTransformOnFirstFlux<>(
+                                                                flux,
+                                                                (first, innerFlux) -> innerFlux));
+
+                publisher.next(1L);
+
+                switchTransformed.subscribe(captureElement::set,
+                        __ -> {
+                        },
+                        () -> captureCompletion.set(true),
+                        s -> new Thread(() -> RaceTestUtils.race(publisher::complete,
+                                () -> RaceTestUtils.race(s::cancel,
+                                        () -> s.request(1),
+                                        Schedulers.parallel()),
+                                Schedulers.parallel())).start());
+
+                Assert.assertTrue(latch.await(5, TimeUnit.SECONDS));
+                Assert.assertEquals(requested.get(), 1L);
+                capturedElements.add(captureElement.get());
+                capturedCompletions.add(captureCompletion.get());
+            }
+
+            Assume.assumeThat(capturedElements, hasItem(equalTo(0L)));
+            Assume.assumeThat(capturedCompletions, hasItem(equalTo(false)));
+        }
+    }
 
     @Test
     public void shouldRequestExpectedAmountOfElements() throws InterruptedException {

@@ -48,21 +48,40 @@ final class SwitchTransformOnFirstFlux<T, R> extends Flux<R> {
 
     @Override
     public void subscribe(CoreSubscriber<? super R> actual) {
-        source.subscribe(new SwitchTransformMain<>(actual, transformer));
+        source.subscribe(new SwitchTransformOperator<>(actual, transformer));
     }
 
-    static final class SwitchTransformMain<T, R> implements CoreSubscriber<T>, Scannable {
+    static final class SwitchTransformOperator<T, R> extends Flux<T>
+            implements CoreSubscriber<T>, Subscription, Scannable {
 
-        final CoreSubscriber<? super R> actual;
+        final CoreSubscriber<? super R> outer;
         final BiFunction<T, Flux<T>, Publisher<? extends R>> transformer;
 
-        Subscription            s;
-        SwitchTransformInner<T> inner;
+        Subscription s;
+        boolean      done;
+        Throwable    throwable;
 
-        SwitchTransformMain(
-                CoreSubscriber<? super R> actual,
+        volatile T first;
+
+        volatile CoreSubscriber<? super T> inner;
+        @SuppressWarnings("rawtypes")
+        static final AtomicReferenceFieldUpdater<SwitchTransformOperator, CoreSubscriber> INNER =
+                AtomicReferenceFieldUpdater.newUpdater(SwitchTransformOperator.class, CoreSubscriber.class, "inner");
+
+        volatile int wip;
+        @SuppressWarnings("rawtypes")
+        static final AtomicIntegerFieldUpdater<SwitchTransformOperator> WIP =
+                AtomicIntegerFieldUpdater.newUpdater(SwitchTransformOperator.class, "wip");
+
+        volatile int once;
+        @SuppressWarnings("rawtypes")
+        static final AtomicIntegerFieldUpdater<SwitchTransformOperator> ONCE =
+                AtomicIntegerFieldUpdater.newUpdater(SwitchTransformOperator.class, "once");
+
+        SwitchTransformOperator(
+                CoreSubscriber<? super R> outer,
                 BiFunction<T, Flux<T>, Publisher<? extends R>> transformer) {
-            this.actual = actual;
+            this.outer = outer;
             this.transformer = transformer;
         }
 
@@ -77,17 +96,39 @@ final class SwitchTransformOnFirstFlux<T, R> extends Flux<R> {
 
         @Override
         public Context currentContext() {
-            SwitchTransformInner<T> i = inner;
+            CoreSubscriber<? super T> actual = inner;
 
-            if (i != null) {
-                CoreSubscriber<? super T> actual = i.actual;
-
-                if (actual != null) {
-                    return actual.currentContext();
-                }
+            if (actual != null) {
+                return actual.currentContext();
             }
 
-            return actual.currentContext();
+            return outer.currentContext();
+        }
+
+        @Override
+        public void cancel() {
+            if (s != Operators.cancelledSubscription()) {
+                Subscription s = this.s;
+                this.s = Operators.cancelledSubscription();
+
+                if (WIP.getAndIncrement(this) == 0) {
+                    INNER.lazySet(this, null);
+                    first = null;
+                }
+
+                s.cancel();
+            }
+        }
+
+        @Override
+        public void subscribe(CoreSubscriber<? super T> actual) {
+            if (once == 0 && ONCE.compareAndSet(this, 0, 1)) {
+                INNER.lazySet(this, actual);
+                actual.onSubscribe(this);
+            }
+            else {
+                Operators.error(actual, new IllegalStateException("SwitchTransform allows only one Subscriber"));
+            }
         }
 
         @Override
@@ -100,22 +141,20 @@ final class SwitchTransformOnFirstFlux<T, R> extends Flux<R> {
 
         @Override
         public void onNext(T t) {
-            if (s == null) {
+            if (done) {
                 Operators.onNextDropped(t, currentContext());
                 return;
             }
 
-            SwitchTransformInner<T> i = inner;
+            CoreSubscriber<? super T> i = inner;
 
             if (i == null) {
-                i = inner = new SwitchTransformInner<>(this);
-
                 try {
-                    i.first = t;
+                    first = t;
                     Publisher<? extends R> result =
                             Objects.requireNonNull(
-                                    transformer.apply(t, i), "The transformer returned a null value");
-                    result.subscribe(actual);
+                                    transformer.apply(t, this), "The transformer returned a null value");
+                    result.subscribe(outer);
                     return;
                 }
                 catch (Throwable e) {
@@ -124,105 +163,42 @@ final class SwitchTransformOnFirstFlux<T, R> extends Flux<R> {
                 }
             }
 
-            inner.onNext(t);
+            i.onNext(t);
         }
 
         @Override
         public void onError(Throwable t) {
-            if (s == null) {
+            if (done) {
                 Operators.onErrorDropped(t, currentContext());
                 return;
             }
 
-            SwitchTransformInner<T> i = inner;
+            throwable = t;
+            done = true;
+            CoreSubscriber<? super T> i = inner;
 
             if (i != null) {
-                i.onError(t);
+                if (first == null) {
+                    drainRegular();
+                }
             }
             else {
-                s = null;
-                Operators.error(actual, t);
+                Operators.error(outer, t);
             }
         }
 
         @Override
         public void onComplete() {
-            SwitchTransformInner<T> i = inner;
+            done = true;
+            CoreSubscriber<? super T> i = inner;
 
             if (i != null) {
-                i.onComplete();
+                if (first == null) {
+                    drainRegular();
+                }
             }
             else {
-                s = null;
-                Operators.complete(actual);
-            }
-        }
-
-        void cancel() {
-            Subscription s = this.s;
-            if (s != Operators.cancelledSubscription()) {
-                this.s = Operators.cancelledSubscription();
-                s.cancel();
-            }
-        }
-
-        void request(long n) {
-            s.request(n);
-        }
-    }
-
-    static final class SwitchTransformInner<V> extends Flux<V> implements Scannable, Subscription {
-
-
-        final SwitchTransformMain<V, ?> parent;
-
-        boolean   done;
-        Throwable throwable;
-
-        volatile V first;
-
-        volatile CoreSubscriber<? super V> actual;
-        @SuppressWarnings("rawtypes")
-        static final AtomicReferenceFieldUpdater<SwitchTransformInner, CoreSubscriber> ACTUAL =
-                AtomicReferenceFieldUpdater.newUpdater(
-                        SwitchTransformInner.class, CoreSubscriber.class, "actual");
-
-        volatile int wip;
-        @SuppressWarnings("rawtypes")
-        static final AtomicIntegerFieldUpdater<SwitchTransformInner> WIP =
-                AtomicIntegerFieldUpdater.newUpdater(SwitchTransformInner.class, "wip");
-
-        volatile int once;
-        @SuppressWarnings("rawtypes")
-        static final AtomicIntegerFieldUpdater<SwitchTransformInner> ONCE =
-                AtomicIntegerFieldUpdater.newUpdater(SwitchTransformInner.class, "once");
-
-        SwitchTransformInner(SwitchTransformMain<V, ?> parent) {
-            this.parent = parent;
-        }
-
-        @Override
-        @Nullable
-        public Object scanUnsafe(Attr key) {
-            if (key == Attr.PARENT) return parent;
-            if (key == Attr.ACTUAL) return actual;
-
-            return null;
-        }
-
-        public CoreSubscriber<? super V> actual() {
-            return actual;
-        }
-
-        @Override
-        public void subscribe(CoreSubscriber<? super V> actual) {
-            if (once == 0 && ONCE.compareAndSet(this, 0, 1)) {
-                ACTUAL.lazySet(this, actual);
-                actual.onSubscribe(this);
-            }
-            else {
-                actual.onSubscribe(Operators.emptySubscription());
-                actual.onError(new IllegalStateException("SwitchTransform allows only one Subscriber"));
+                Operators.complete(outer);
             }
         }
 
@@ -231,23 +207,11 @@ final class SwitchTransformOnFirstFlux<T, R> extends Flux<R> {
             if (first != null && drainRegular() && n != Long.MAX_VALUE) {
                 n = Operators.addCap(n, -1);
                 if (n > 0) {
-                    parent.request(n);
+                    s.request(n);
                 }
             }
             else {
-                parent.request(n);
-            }
-        }
-
-        @Override
-        public void cancel() {
-            if (actual != null) {
-                if (WIP.getAndIncrement(this) == 0) {
-                    actual = null;
-                    first = null;
-                }
-
-                parent.cancel();
+                s.request(n);
             }
         }
 
@@ -256,11 +220,11 @@ final class SwitchTransformOnFirstFlux<T, R> extends Flux<R> {
                 return false;
             }
 
-            V f = first;
+            T f = first;
             int m = 1;
             boolean sent = false;
-            Subscription s = parent.s;
-            CoreSubscriber<? super V> a = actual;
+            Subscription s = this.s;
+            CoreSubscriber<? super T> a = inner;
 
             for (;;) {
                 if (f != null) {
@@ -298,46 +262,6 @@ final class SwitchTransformOnFirstFlux<T, R> extends Flux<R> {
                     return sent;
                 }
             }
-        }
-
-        void onNext(V t) {
-            if (done) {
-                Operators.onNextDropped(t, currentContext());
-                return;
-            }
-
-            CoreSubscriber<? super V> a = actual;
-
-            if (a != null) {
-                a.onNext(t);
-            }
-        }
-
-        void onError(Throwable t) {
-            if (done) {
-                Operators.onErrorDropped(t, currentContext());
-                return;
-            }
-
-            throwable = t;
-            done = true;
-
-            if (first == null) {
-                drainRegular();
-            }
-        }
-
-        void onComplete() {
-            done = true;
-
-            if (first == null) {
-                drainRegular();
-            }
-        }
-
-        Context currentContext() {
-            CoreSubscriber<? super V> actual = this.actual;
-            return actual != null ? actual.currentContext() : Context.empty();
         }
     }
 }
