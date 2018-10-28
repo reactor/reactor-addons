@@ -217,8 +217,10 @@ public class SwitchTransformOnFirstFluxTest {
     @Test
     public void backpressureTest() {
         TestPublisher<Long> publisher = TestPublisher.createCold();
+        AtomicLong requested = new AtomicLong();
 
         Flux<String> switchTransformed = publisher.flux()
+                                                  .doOnRequest(requested::addAndGet)
                                                   .transform(flux -> new SwitchTransformOnFirstFlux<>(
                                                           flux,
                                                           (first, innerFlux) -> innerFlux.map(String::valueOf)));
@@ -237,6 +239,69 @@ public class SwitchTransformOnFirstFluxTest {
 
         publisher.assertWasRequested();
         publisher.assertNoRequestOverflow();
+
+        Assert.assertEquals(2L, requested.get());
+    }
+
+    @Test
+    public void backpressureConditionalTest() {
+        Flux<Integer> publisher = Flux.range(0, 10000);
+        AtomicLong requested = new AtomicLong();
+
+        Flux<String> switchTransformed = publisher
+                                                  .doOnRequest(requested::addAndGet)
+                                                  .transform(flux -> new SwitchTransformOnFirstFlux<>(
+                                                          flux,
+                                                          (first, innerFlux) -> innerFlux.map(String::valueOf)))
+                                                  .filter(e -> false);
+
+        StepVerifier.create(switchTransformed, 0)
+                    .thenRequest(1)
+                    .expectComplete()
+                    .verify(Duration.ofSeconds(10));
+
+        Assert.assertEquals(2L, requested.get());
+    }
+
+    @Test
+    public void backpressureHiddenConditionalTest() {
+        Flux<Integer> publisher = Flux.range(0, 10000);
+        AtomicLong requested = new AtomicLong();
+
+        Flux<String> switchTransformed = publisher
+                .doOnRequest(requested::addAndGet)
+                .transform(flux -> new SwitchTransformOnFirstFlux<>(
+                        flux,
+                        (first, innerFlux) -> innerFlux.map(String::valueOf)
+                                                       .hide()))
+                .filter(e -> false);
+
+        StepVerifier.create(switchTransformed, 0)
+                    .thenRequest(1)
+                    .expectComplete()
+                    .verify(Duration.ofSeconds(10));
+
+        Assert.assertEquals(10001L, requested.get());
+    }
+
+    @Test
+    public void backpressureDrawbackOnConditionalInTransformTest() {
+        Flux<Integer> publisher = Flux.range(0, 10000);
+        AtomicLong requested = new AtomicLong();
+
+        Flux<String> switchTransformed = publisher
+                .doOnRequest(requested::addAndGet)
+                .transform(flux -> new SwitchTransformOnFirstFlux<>(
+                        flux,
+                        (first, innerFlux) -> innerFlux.map(String::valueOf)
+                                                       .filter(e -> false)));
+
+        StepVerifier.create(switchTransformed, 0)
+                    .thenRequest(1)
+                    .expectComplete()
+                    .verify(Duration.ofSeconds(10));
+
+        Assert.assertEquals(10001L, requested.get());
     }
 
     @Test
