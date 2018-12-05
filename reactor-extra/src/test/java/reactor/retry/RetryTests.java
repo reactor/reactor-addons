@@ -336,7 +336,7 @@ public class RetryTests {
 			for (int j = 1; j <= range; j++)
 				values[i * range + j - 1] = j;
 		}
-		RetryTestUtils.<Throwable>testReuseInParallel(2, 20,
+		RetryTestUtils.<Throwable>testReuseInParallel(2, 19,
 				backoff -> Retry.<Integer>any().retryMax(19).backoff(backoff),
 				retryFunc -> {
 					StepVerifier.create(Flux.range(1, range).concatWith(Mono.error(new SocketException())).retryWhen(retryFunc))

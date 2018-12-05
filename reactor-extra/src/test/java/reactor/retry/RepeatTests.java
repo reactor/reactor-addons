@@ -399,7 +399,7 @@ public class RepeatTests {
 			for (int j = 1; j <= range; j++)
 				values[i * range + j - 1] = j;
 		}
-		RetryTestUtils.<Long>testReuseInParallel(2, 20,
+		RetryTestUtils.<Long>testReuseInParallel(2, 19,
 				backoff -> Repeat.<Integer>times(19).backoff(backoff),
 				repeatFunc -> {
 					StepVerifier.create(Flux.range(1, range).repeatWhen(repeatFunc))
