@@ -115,7 +115,8 @@ public class RetryTestUtils {
 		assertEquals(0, latch.getCount());
 		assertEquals(threads, backoffCounts.size());
 		for (Integer count : backoffCounts.values()) {
-			assertEquals(repeatCount + 1, count.intValue());
+			//backoff not invoked anymore when maxIteration reached
+			assertEquals(repeatCount, count.intValue());
 		}
 	}
 }
