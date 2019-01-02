@@ -3,9 +3,10 @@ package reactor.retry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.naming.OperationNotSupportedException;
 import java.time.Duration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 public class BackoffTest {
 
@@ -147,6 +148,30 @@ public class BackoffTest {
 		assertThat(delay.delay).isEqualTo(EXPECTED_MAX);
 		assertThat(context.iteration()).isEqualTo(70);
 		assertThat(context.backoff()).isEqualTo(EXPECTED_MAX);
+	}
+
+	@Test
+	public void exponentialRejectsMaxLowerThanFirst() {
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> Backoff.exponential(Duration.ofSeconds(2), Duration.ofSeconds(1), 1, false))
+				.as("not based on previous value")
+				.withMessage("maxBackoff must be >= firstBackoff");
+
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> Backoff.exponential(Duration.ofSeconds(2), Duration.ofSeconds(1), 1, true))
+				.as("based on previous value")
+				.withMessage("maxBackoff must be >= firstBackoff");
+	}
+
+	@Test
+	public void exponentialAcceptsMaxEqualToFirst() {
+		assertThatCode(() -> Backoff.exponential(Duration.ofSeconds(1), Duration.ofSeconds(1), 1, false))
+				.as("not based on previous value")
+				.doesNotThrowAnyException();
+
+		assertThatCode(() -> Backoff.exponential(Duration.ofSeconds(1), Duration.ofSeconds(1), 1, true))
+				.as("based on previous value")
+				.doesNotThrowAnyException();
 	}
 
 }
