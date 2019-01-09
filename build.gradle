@@ -243,9 +243,7 @@ project('reactor-extra') {
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
 	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
-	optional 'org.openjfx:javafx-base:12-ea+7'
-    	optional 'org.openjfx:javafx-graphics:12-ea+7'
-	optional 'org.openjfx:javafx-controls:12-ea+7'
+	optional "org.openjfx:javafx-base:11.0.1:${getPlatformShort()}"
   }
 }
 
@@ -253,6 +251,18 @@ task release {
   subprojects.each{
 	if(it.version.endsWith('SNAPSHOT')) return
 	dependsOn it.assemble
+  }
+}
+
+def getPlatformShort() {
+  def currentOS = org.gradle.internal.os.OperatingSystem.current()
+  def platform
+  if (currentOS.isWindows()) {
+      platform = 'win'
+  } else if (currentOS.isLinux()) {
+      platform = 'linux'
+  } else if (currentOS.isMacOsX()) {
+      platform = 'mac'
   }
 }
 

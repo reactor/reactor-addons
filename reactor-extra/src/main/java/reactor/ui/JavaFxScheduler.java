@@ -1,3 +1,18 @@
+/**
+ * Copyright 2017 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*
  * Copyright (c) 2011-2017 Pivotal Software Inc, All Rights Reserved.
  *
@@ -16,14 +31,13 @@
 
 package reactor.ui;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
-import javafx.util.Duration;
 import reactor.core.Disposable;
 import reactor.core.Disposables;
 import reactor.core.Exceptions;
@@ -33,6 +47,18 @@ import reactor.util.context.Context;
 
 /**
  * Scheduler that runs tasks on JavaFx's event dispatch thread.
+ * <p>
+ * This class was adapted from the
+ * io.reactivex.rxjavafx.schedulers.JavaFxScheduler class from
+ * https://github.com/ReactiveX/RxJavaFX
+ * 
+ * <ul>
+ * <li> Make use of Reactor types instead of RxJava types
+ * <li> Make use of a java.util.Timer instead of javafx.animation.TimeLine
+ * </ul>
+ * </p>
+ * 
+ * @see io.reactivex.rxjavafx.schedulers.JavaFxScheduler
  */
 public final class JavaFxScheduler implements Scheduler {
 
@@ -69,7 +95,7 @@ public final class JavaFxScheduler implements Scheduler {
 		JavaFxWorker javaFxWorker = new JavaFxWorker();
 		long initialDelayMillis = unit.toMillis(initialDelay);
 
-		SwtPeriodicDirectAction a = new SwtPeriodicDirectAction(task, javaFxWorker,
+		FxPeriodicDirectAction a = new FxPeriodicDirectAction(task, javaFxWorker,
 				System.currentTimeMillis() + initialDelayMillis, unit.toMillis(period));
 
 		if (initialDelay <= 0) {
@@ -155,13 +181,18 @@ public final class JavaFxScheduler implements Scheduler {
 				return schedule(queuedRunnable);
 			}
 
-			final Timeline timer = new Timeline(
-					new KeyFrame(Duration.millis(delay), event -> schedule(queuedRunnable)));
-			timer.play();
+			Timer timer = new Timer();
+			timer.schedule(new TimerTask() {
+
+				@Override
+				public void run() {
+					queuedRunnable.run();
+				}
+			}, delay);
 
 			return () -> {
 				queuedRunnable.dispose();
-				timer.stop();
+				timer.cancel();
 			};
 		}
 
@@ -204,7 +235,7 @@ public final class JavaFxScheduler implements Scheduler {
 		}
 	}
 
-	static final class SwtPeriodicDirectAction extends AtomicBoolean implements Runnable, Disposable {
+	static final class FxPeriodicDirectAction extends AtomicBoolean implements Runnable, Disposable {
 		/** */
 		private static final long serialVersionUID = 1890399765810263705L;
 
@@ -218,7 +249,7 @@ public final class JavaFxScheduler implements Scheduler {
 
 		private JavaFxWorker javaFxWorker;
 
-		public SwtPeriodicDirectAction(Runnable task, JavaFxWorker javaFxWorker, long start, long periodMillis) {
+		public FxPeriodicDirectAction(Runnable task, JavaFxWorker javaFxWorker, long start, long periodMillis) {
 			this.task = task;
 			this.javaFxWorker = javaFxWorker;
 			this.start = start;
@@ -250,7 +281,7 @@ public final class JavaFxScheduler implements Scheduler {
 			if (delta == 0) {
 				javaFxWorker.schedule(this);
 			} else {
-				javaFxWorker.schedule(this, delta, TimeUnit.MICROSECONDS);
+				javaFxWorker.schedule(this, delta, TimeUnit.MILLISECONDS);
 			}
 		}
 
