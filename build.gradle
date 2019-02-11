@@ -17,12 +17,14 @@
 buildscript {
   ext.kotlinVersion = '1.1.61'
   repositories {
+	mavenCentral()
 	maven { url "https://repo.spring.io/plugins-release" }
   }
   dependencies {
 	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}",
 			'org.springframework.build.gradle:propdeps-plugin:0.0.7',
-			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE'
+			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE',
+            'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
   }
 }
 
@@ -204,6 +206,8 @@ configure(subprojects) { project ->
 project('reactor-adapter') {
   description = 'Scheduler implementations on top of various async boundary providers'
 
+  apply plugin: "biz.aQute.bnd.builder"
+
   dependencies {
 	//Optional RxJava 2 Converter
 	optional "io.reactivex.rxjava2:rxjava:$rxJava2Version"
@@ -221,12 +225,19 @@ project('reactor-adapter') {
               'Implementation-Version': version,
               'Automatic-Module-Name': 'reactor.adapter'
     }
+	bnd(
+			"-exportcontents": "!*internal*,*;-noimport:=true",
+			"-nouses": "true",
+			"Import-Package": "!*internal*,!javax.annotation,kotlin.*;resolution:=optional,*"
+	)
   }
 
 }
 
 project('reactor-extra') {
   description = 'Reactor Extra utilities'
+
+  apply plugin: "biz.aQute.bnd.builder"
 
   repositories {
 	maven { url "https://maven-eclipse.github.io/maven" }
@@ -238,13 +249,18 @@ project('reactor-extra') {
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.3"
 	testCompile "org.mockito:mockito-core:2.23.0"
   }
-  
+
   jar {
     manifest {
       attributes 'Implementation-Title': 'reactor-extra',
               'Implementation-Version': version,
               'Automatic-Module-Name': 'reactor.extra'
     }
+	bnd(
+			"-exportcontents": "!*internal*,*;-noimport:=true",
+			"-nouses": "true",
+			"Import-Package": "!*internal*,!javax.annotation,kotlin.*;resolution:=optional,org.eclipse.*;resolution:=optional,javax.swing.*;resolution:=optional,*"
+	)
   }
 }
 
