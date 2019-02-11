@@ -103,7 +103,15 @@ configure(subprojects) { project ->
 														   "-Xlint:-fallthrough", // intentionally disabled
 														   "-Xlint:-rawtypes"     // TODO enable and fix warnings
   ]
-
+	
+	jar {
+		bnd """
+				-exportcontents: !*internal*,*;-noimport:=true
+				-nouses: true
+				Import-Package: !*internal*,!javax.annotation,kotlin.*;resolution:=optional,org.eclipse.*;resolution:=optional,javax.swing.*;resolution:=optional,*
+		"""
+	}
+	
   compileJava {
 	sourceCompatibility = 1.8
 	targetCompatibility = 1.8
