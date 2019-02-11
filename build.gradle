@@ -17,12 +17,14 @@
 buildscript {
   ext.kotlinVersion = '1.1.61'
   repositories {
-	maven { url "http://repo.spring.io/plugins-release" }
+	  mavenCentral()
+	  maven { url "http://repo.spring.io/plugins-release" }
   }
   dependencies {
 	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}",
 			'org.springframework.build.gradle:propdeps-plugin:0.0.7',
-			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE'
+			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE',
+            'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
   }
 }
 
@@ -60,8 +62,8 @@ ext {
 				  "https://docs.oracle.com/javaee/6/api/",
 				  "http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
 				  "http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
-				  "http://www.reactive-streams.org/reactive-streams-1.0.2-javadoc/"] as
-		  String[]
+				  "http://www.reactive-streams.org/reactive-streams-1.0.2-javadoc/"] as String[]
+  
 }
 
 apply from: "$gradleScriptDir/setup.gradle"
@@ -80,6 +82,7 @@ configure(subprojects) { project ->
   apply plugin: 'java'
   apply plugin: 'kotlin'
   apply from: "${gradleScriptDir}/ide.gradle"
+  apply plugin: "biz.aQute.bnd.builder"
 
   [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
 														   "-Xlint:cast",

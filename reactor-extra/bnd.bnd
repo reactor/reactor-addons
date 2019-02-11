@@ -1,0 +1,3 @@
+-exportcontents: !*internal*,*;-noimport:=true
+-nouses: true
+Import-Package: !javax.annotation,kotlin.*;resolution:=optional,org.eclipse.*;resolution:=optional,javax.swing.*;resolution:=optional,*
