@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *       https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
 
 buildscript {
   repositories {
-	maven { url "http://repo.spring.io/plugins-release" }
+	maven { url "https://repo.spring.io/plugins-release" }
   }
   dependencies {
 	classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7',
@@ -55,11 +55,11 @@ ext {
   mockitoVersion = '1.10.19'
   spockVersion = '1.0-groovy-2.4'
 
-  javadocLinks = ["http://docs.oracle.com/javase/7/docs/api/",
-				  "http://docs.oracle.com/javaee/6/api/",
-				  "http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
-				  "http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
-				  "http://www.reactive-streams.org/reactive-streams-1.0.0-javadoc/"] as String[]
+  javadocLinks = ["https://docs.oracle.com/javase/7/docs/api/",
+				  "https://docs.oracle.com/javaee/6/api/",
+				  "https://fasterxml.github.io/jackson-databind/javadoc/2.5/",
+				  "https://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
+				  "https://www.reactive-streams.org/reactive-streams-1.0.0-javadoc/"] as String[]
 }
 
 apply from: "$gradleScriptDir/setup.gradle"
@@ -138,10 +138,10 @@ configure(subprojects) { project ->
   repositories {
 	if (version.endsWith('BUILD-SNAPSHOT') || project.hasProperty('platformVersion')) {
 	  mavenLocal()
-	  maven { url 'http://repo.spring.io/libs-snapshot' }
+	  maven { url 'https://repo.spring.io/libs-snapshot' }
 	}
 
-	maven { url 'http://repo.spring.io/libs-milestone' }
+	maven { url 'https://repo.spring.io/libs-milestone' }
 	maven { url "https://oss.sonatype.org/content/repositories/releases/" }
 	jcenter()
 	mavenCentral()
@@ -170,7 +170,7 @@ configure(subprojects) { project ->
 	apply plugin: 'spring-io'
 
 	repositories {
-	  maven { url 'http://repo.spring.io/libs-snapshot' }
+	  maven { url 'https://repo.spring.io/libs-snapshot' }
 	}
 
 	dependencyManagement {
@@ -211,7 +211,7 @@ project('reactor-adapter') {
   description = 'Scheduler implementations on top of various async boundary providers'
 
   repositories {
-	maven { url "http://maven-eclipse.github.io/maven" }
+	maven { url "https://maven-eclipse.github.io/maven" }
   }
 
 
