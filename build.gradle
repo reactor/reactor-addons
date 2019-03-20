@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *       https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
 buildscript {
   ext.kotlinVersion = '1.1.61'
   repositories {
-	maven { url "http://repo.spring.io/plugins-release" }
+	maven { url "https://repo.spring.io/plugins-release" }
   }
   dependencies {
 	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}",
@@ -55,12 +55,12 @@ ext {
   mockitoVersion = '1.10.19'
   spockVersion = '1.0-groovy-2.4'
 
-  javadocLinks = ["http://projectreactor.io/docs/core/${reactorCoreVersion}/api/",
+  javadocLinks = ["https://projectreactor.io/docs/core/${reactorCoreVersion}/api/",
 		  		  "https://docs.oracle.com/javase/7/docs/api/",
 				  "https://docs.oracle.com/javaee/6/api/",
-				  "http://fasterxml.github.io/jackson-databind/javadoc/2.5/",
-				  "http://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
-				  "http://www.reactive-streams.org/reactive-streams-1.0.2-javadoc/"] as
+				  "https://fasterxml.github.io/jackson-databind/javadoc/2.5/",
+				  "https://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
+				  "https://www.reactive-streams.org/reactive-streams-1.0.2-javadoc/"] as
 		  String[]
 }
 
@@ -154,10 +154,10 @@ configure(subprojects) { project ->
   repositories {
 	if (version.endsWith('BUILD-SNAPSHOT') || project.hasProperty('platformVersion')) {
 	  mavenLocal()
-	  maven { url 'http://repo.spring.io/libs-snapshot' }
+	  maven { url 'https://repo.spring.io/libs-snapshot' }
 	}
 
-	maven { url 'http://repo.spring.io/libs-milestone' }
+	maven { url 'https://repo.spring.io/libs-milestone' }
 	maven { url "https://oss.sonatype.org/content/repositories/releases/" }
 	jcenter()
 	mavenCentral()
@@ -188,7 +188,7 @@ configure(subprojects) { project ->
 	apply plugin: 'spring-io'
 
 	repositories {
-	  maven { url 'http://repo.spring.io/libs-snapshot' }
+	  maven { url 'https://repo.spring.io/libs-snapshot' }
 	}
 
 	dependencyManagement {
@@ -235,7 +235,7 @@ project('reactor-extra') {
   description = 'Reactor Extra utilities'
 
   repositories {
-	maven { url "http://maven-eclipse.github.io/maven" }
+	maven { url "https://maven-eclipse.github.io/maven" }
   }
 
   dependencies {
