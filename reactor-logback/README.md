@@ -31,4 +31,4 @@ You use the AsyncAppender like any normal Logback appender. You can direct any l
 
 ---
 
-Reactor is [Apache 2.0 licensed](http://www.apache.org/licenses/LICENSE-2.0.html).
+Reactor is [Apache 2.0 licensed](https://www.apache.org/licenses/LICENSE-2.0.html).
