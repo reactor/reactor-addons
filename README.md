@@ -68,4 +68,4 @@ contains a section [about testing](https://projectreactor.io/docs/core/release/r
 
 ## License
 
-Reactor is [Apache 2.0 licensed](http://www.apache.org/licenses/LICENSE-2.0.html).
+Reactor is [Apache 2.0 licensed](https://www.apache.org/licenses/LICENSE-2.0.html).
