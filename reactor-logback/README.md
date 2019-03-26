@@ -9,7 +9,7 @@ The `reactor-logback` module uses the LMAX Disruptor RingBuffer via Reactor's `P
     }
 
     repositories {
-      maven { url 'http://repo.spring.io/libs-snapshot' }
+      maven { url 'https://repo.spring.io/libs-snapshot' }
       mavenCentral()
     }
 

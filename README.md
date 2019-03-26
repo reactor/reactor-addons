@@ -4,7 +4,7 @@
 
 [![Join the chat at https://gitter.im/reactor/reactor](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/reactor/reactor?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Latest addons](https://maven-badges.herokuapp.com/maven-central/io.projectreactor.addons/reactor-test/badge.svg?style=plastic)](http://mvnrepository.com/artifact/io.projectreactor.addons/reactor-test)
+[![Latest addons](https://maven-badges.herokuapp.com/maven-central/io.projectreactor.addons/reactor-test/badge.svg?style=plastic)](https://mvnrepository.com/artifact/io.projectreactor.addons/reactor-test)
 
 # Addons List
 
@@ -47,9 +47,9 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
     }
 
     repositories {
-      //maven { url 'http://repo.spring.io/release' }
-      //maven { url 'http://repo.spring.io/milestone' }
-      maven { url 'http://repo.spring.io/snapshot' }
+      //maven { url 'https://repo.spring.io/release' }
+      //maven { url 'https://repo.spring.io/milestone' }
+      maven { url 'https://repo.spring.io/snapshot' }
       mavenCentral()
     }
 
@@ -67,9 +67,9 @@ Snapshot Maven artifacts are provided in the SpringSource snapshot repositories.
 
 ## Documentation
 
-* [Guides](http://projectreactor.io/docs/) (Notably `reactor-core` reference guide which
-contains a section [about testing](http://projectreactor.io/docs/core/release/reference/docs/index.html#testing))
-* [Reactive Streams](http://www.reactive-streams.org/)
+* [Guides](https://projectreactor.io/docs/) (Notably `reactor-core` reference guide which
+contains a section [about testing](https://projectreactor.io/docs/core/release/reference/docs/index.html#testing))
+* [Reactive Streams](https://www.reactive-streams.org/)
 
 ## Community / Support
 
