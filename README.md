@@ -58,7 +58,7 @@ To add this repo to your Gradle build, specify the URL like the following:
 
 ## Documentation
 
-* [Guides](https://projectreactor.io/docs/) (Notably `reactor-core` reference guide which
+* [Guides](https://projectreactor.io/docs) (Notably `reactor-core` reference guide which
 contains a section [about testing](https://projectreactor.io/docs/core/release/reference/docs/index.html#testing))
 * [Reactive Streams](https://www.reactive-streams.org/)
 
