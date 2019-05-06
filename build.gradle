@@ -26,10 +26,10 @@ buildscript {
   }
 }
 
-description = 'Reactive fast data framework for the JVM'
+description = 'Reactor Core Addons including processors, adapters and more'
 
 ext {
-  reactorCoreVersion ='3.2.6.BUILD-SNAPSHOT'
+  reactorCoreVersion ='3.3.0.BUILD-SNAPSHOT'
 
   gradleVersion = '4.2'
   gradleScriptDir = "${rootProject.projectDir}/gradle"
@@ -198,21 +198,6 @@ configure(subprojects) { project ->
 		}
 	  }
 	}
-  }
-}
-
-
-project('reactor-logback') {
-  description = 'Async Logback appender implementation'
-
-  apply plugin: 'application'
-
-  mainClassName = "reactor.logback.DurableLogUtility"
-
-  dependencies {
-	compile "ch.qos.logback:logback-classic:$logbackVersion",
-			"net.openhft:chronicle:$openHftChronicleVersion",
-			"commons-cli:commons-cli:1.2"
   }
 }
 

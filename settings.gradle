@@ -15,6 +15,5 @@
  */
 rootProject.name = 'reactor-addons'
 
-include 'reactor-logback',
-		'reactor-adapter',
+include 'reactor-adapter',
 		'reactor-extra'
