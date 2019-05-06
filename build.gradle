@@ -215,6 +215,13 @@ project('reactor-adapter') {
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.2"
   }
 
+  jar {
+    manifest {
+      attributes 'Implementation-Title': 'reactor-adapter',
+              'Implementation-Version': version,
+              'Automatic-Module-Name': 'reactor.adapter'
+    }
+  }
 
 }
 
@@ -228,6 +235,14 @@ project('reactor-extra') {
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
 	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
+  }
+  
+  jar {
+    manifest {
+      attributes 'Implementation-Title': 'reactor-extra',
+              'Implementation-Version': version,
+              'Automatic-Module-Name': 'reactor.extra'
+    }
   }
 }
 
