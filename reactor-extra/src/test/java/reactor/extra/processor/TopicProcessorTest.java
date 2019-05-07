@@ -46,7 +46,6 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 import reactor.util.annotation.Nullable;
 import reactor.util.concurrent.Queues;
-import reactor.util.concurrent.WaitStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;

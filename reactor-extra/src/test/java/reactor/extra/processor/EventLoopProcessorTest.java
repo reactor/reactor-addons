@@ -28,7 +28,6 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import reactor.core.CoreSubscriber;
 import reactor.core.Scannable;
-import reactor.util.concurrent.WaitStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static reactor.core.Scannable.Attr.*;
