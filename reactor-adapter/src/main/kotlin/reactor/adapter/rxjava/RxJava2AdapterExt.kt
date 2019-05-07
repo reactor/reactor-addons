@@ -16,6 +16,8 @@ import reactor.core.publisher.Mono
  * @param <T> the value type
  * @return the new Flux instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toFlux()", "reactor.kotlin.adapter.rxjava.toFlux"))
 fun <T> Flowable<T>.toFlux(): Flux<T> {
     return RxJava2Adapter.flowableToFlux<T>(this)
 }
@@ -26,6 +28,8 @@ fun <T> Flowable<T>.toFlux(): Flux<T> {
  * @param <T> the value type
  * @return the new Flux instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toFlowable()", "reactor.kotlin.adapter.rxjava.toFlowable"))
 fun <T> Flux<T>.toFlowable(): Flowable<T> {
     return RxJava2Adapter.fluxToFlowable(this)
 }
@@ -36,6 +40,8 @@ fun <T> Flux<T>.toFlowable(): Flowable<T> {
  * @param <T> the value type
  * @return the new Flux instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toFlowable()", "reactor.kotlin.adapter.rxjava.toFlowable"))
 fun <T> Mono<T>.toFlowable(): Flowable<T> {
     return RxJava2Adapter.monoToFlowable<T>(this)
 }
@@ -44,6 +50,8 @@ fun <T> Mono<T>.toFlowable(): Flowable<T> {
  * Wraps a void-Mono instance into a RxJava Completable.
  * @return the new Completable instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toCompletable()", "reactor.kotlin.adapter.rxjava.toCompletable"))
 fun Mono<*>.toCompletable(): Completable {
     return RxJava2Adapter.monoToCompletable(this)
 }
@@ -52,6 +60,8 @@ fun Mono<*>.toCompletable(): Completable {
  * Wraps a RxJava Completable into a Mono instance.
  * @return the new Mono instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toMono()", "reactor.kotlin.adapter.rxjava.toMono"))
 fun Completable.toMono(): Mono<Void> {
     return RxJava2Adapter.completableToMono(this)
 }
@@ -64,6 +74,8 @@ fun Completable.toMono(): Mono<Void> {
  * @param <T> the value type
  * @return the new Single instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toSingle()", "reactor.kotlin.adapter.rxjava.toSingle"))
 fun <T> Mono<T>.toSingle(): Single<T> {
     return RxJava2Adapter.monoToSingle(this)
 }
@@ -73,6 +85,8 @@ fun <T> Mono<T>.toSingle(): Single<T> {
  * @param <T> the value type
  * @return the new Mono instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toMono()", "reactor.kotlin.adapter.rxjava.toMono"))
 fun <T> Single<T>.toMono(): Mono<T> {
     return RxJava2Adapter.singleToMono<T>(this)
 }
@@ -83,6 +97,8 @@ fun <T> Single<T>.toMono(): Mono<T> {
  * @param strategy the back-pressure strategy, default is BUFFER
  * @return the new Flux instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toFlux(strategy)", "reactor.kotlin.adapter.rxjava.toFlux"))
 fun <T> Observable<T>.toFlux(strategy: BackpressureStrategy = BackpressureStrategy.BUFFER): Flux<T> {
     return RxJava2Adapter.observableToFlux(this, strategy)
 }
@@ -92,6 +108,8 @@ fun <T> Observable<T>.toFlux(strategy: BackpressureStrategy = BackpressureStrate
  * @param <T> the value type
  * @return the new Observable instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toObservable()", "reactor.kotlin.adapter.rxjava.toObservable"))
 fun <T> Flux<T>.toObservable(): Observable<T> {
     return RxJava2Adapter.fluxToFlowable(this).toObservable()
 }
@@ -101,6 +119,8 @@ fun <T> Flux<T>.toObservable(): Observable<T> {
  * @param <T> the value type
  * @return the new Mono instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toMono()", "reactor.kotlin.adapter.rxjava.toMono"))
 fun <T> Maybe<T>.toMono(): Mono<T> {
     return RxJava2Adapter.maybeToMono(this)
 }
@@ -110,6 +130,8 @@ fun <T> Maybe<T>.toMono(): Mono<T> {
  * @param <T> the value type
  * @return the new Maybe instance
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toMaybe()", "reactor.kotlin.adapter.rxjava.toMaybe"))
 fun <T> Mono<T>.toMaybe(): Maybe<T> {
     return RxJava2Adapter.monoToMaybe(this)
 }

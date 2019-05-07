@@ -9,6 +9,8 @@ import reactor.core.publisher.Mono
  * @author Simon Baslé
  * @since 3.2.0
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("not()", "reactor.kotlin.extra.bool.not"))
 operator fun Mono<Boolean>.not(): Mono<Boolean> = BooleanUtils.not(this)
 
 /**
@@ -17,6 +19,8 @@ operator fun Mono<Boolean>.not(): Mono<Boolean> = BooleanUtils.not(this)
  * @author Simon Baslé
  * @since 3.2.0
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("logicalAnd(rightHand)", "reactor.kotlin.extra.bool.logicalHand"))
 fun Mono<Boolean>.logicalAnd(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.and(this, rightHand)
 
 /**
@@ -25,6 +29,8 @@ fun Mono<Boolean>.logicalAnd(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanU
  * @author Simon Baslé
  * @since 3.2.0
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("logicalNAnd(rightHand)", "reactor.kotlin.extra.bool.logicalNAnd"))
 fun Mono<Boolean>.logicalNAnd(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.nand(this, rightHand)
 
 /**
@@ -33,6 +39,8 @@ fun Mono<Boolean>.logicalNAnd(rightHand: Mono<Boolean>): Mono<Boolean> = Boolean
  * @author Simon Baslé
  * @since 3.2.0
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("logicalOr()", "reactor.kotlin.extra.bool.logicalOr"))
 fun Mono<Boolean>.logicalOr(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.or(this, rightHand)
 
 /**
@@ -41,6 +49,8 @@ fun Mono<Boolean>.logicalOr(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUt
  * @author Simon Baslé
  * @since 3.2.0
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("logicalNOr()", "reactor.kotlin.extra.bool.logicalNOr"))
 fun Mono<Boolean>.logicalNOr(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.nor(this, rightHand)
 
 /**
@@ -49,4 +59,6 @@ fun Mono<Boolean>.logicalNOr(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanU
  * @author Simon Baslé
  * @since 3.2.0
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("logicalXOr()", "reactor.kotlin.extra.bool.logicalXOr"))
 fun Mono<Boolean>.logicalXOr(rightHand: Mono<Boolean>): Mono<Boolean> = BooleanUtils.xor(this, rightHand)

@@ -19,6 +19,8 @@ import java.util.function.Consumer
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("repeatExponentialBackoff(times, first, max, jitter, doOnRepeat)", "reactor.kotlin.extra.retry.repeatExponentialBackoff"))
 fun <T> Flux<T>.repeatExponentialBackoff(times: Long, first: Duration, max: Duration? = null,
                                          jitter: Boolean = false,
                                          doOnRepeat: ((RepeatContext<T>) -> Unit)? = null): Flux<T> {
@@ -45,6 +47,8 @@ fun <T> Flux<T>.repeatExponentialBackoff(times: Long, first: Duration, max: Dura
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("repeatRandomBackoff(times, first, max, doOnRepeat)", "reactor.kotlin.extra.retry.repeatRandomBackoff"))
 fun <T> Flux<T>.repeatRandomBackoff(times: Long, first: Duration, max: Duration? = null,
                                     doOnRepeat: ((RepeatContext<T>) -> Unit)? = null): Flux<T> {
     val repeat = Repeat.times<T>(times)
@@ -71,6 +75,8 @@ fun <T> Flux<T>.repeatRandomBackoff(times: Long, first: Duration, max: Duration?
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("repeatExponentialBackoff(times, first, max, jitter, doOnRepeat)", "reactor.kotlin.extra.retry.repeatExponentialBackoff"))
 fun <T> Mono<T>.repeatExponentialBackoff(times: Long, first: Duration, max: Duration? = null,
                                          jitter: Boolean = false,
                                          doOnRepeat: ((RepeatContext<T>) -> Unit)? = null): Flux<T> {
@@ -97,6 +103,8 @@ fun <T> Mono<T>.repeatExponentialBackoff(times: Long, first: Duration, max: Dura
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("repeatRandomBackoff(times, first, max, doOnRepeat)", "reactor.kotlin.extra.retry.repeatRandomBackoff"))
 fun <T> Mono<T>.repeatRandomBackoff(times: Long, first: Duration, max: Duration? = null,
                                     doOnRepeat: ((RepeatContext<T>) -> Unit)? = null): Flux<T> {
     val repeat = Repeat.times<T>(times)

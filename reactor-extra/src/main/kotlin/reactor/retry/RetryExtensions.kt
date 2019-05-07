@@ -19,6 +19,8 @@ import java.util.function.Consumer
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("retryExponentialBackoff(times, first, max, jitter, doOnRetry)", "reactor.kotlin.extra.retry.retryExponentialBackoff"))
 fun <T> Flux<T>.retryExponentialBackoff(times: Long, first: Duration, max: Duration? = null,
                                         jitter: Boolean = false,
                                         doOnRetry: ((RetryContext<T>) -> Unit)? = null): Flux<T> {
@@ -46,6 +48,8 @@ fun <T> Flux<T>.retryExponentialBackoff(times: Long, first: Duration, max: Durat
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("retryRandomBackoff(times, first, max, doOnRetry)", "reactor.kotlin.extra.retry.retryRandomBackoff"))
 fun <T> Flux<T>.retryRandomBackoff(times: Long, first: Duration, max: Duration? = null,
                                    doOnRetry: ((RetryContext<T>) -> Unit)? = null): Flux<T> {
     val retry = Retry.any<T>()
@@ -72,6 +76,8 @@ fun <T> Flux<T>.retryRandomBackoff(times: Long, first: Duration, max: Duration? 
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("retryExponentialBackoff(times, first, max, jitter, doOnRetry)", "reactor.kotlin.extra.retry.retryExponentialBackoff"))
 fun <T> Mono<T>.retryExponentialBackoff(times: Long, first: Duration, max: Duration? = null,
                                         jitter: Boolean = false,
                                         doOnRetry: ((RetryContext<T>) -> Unit)? = null): Mono<T> {
@@ -99,6 +105,8 @@ fun <T> Mono<T>.retryExponentialBackoff(times: Long, first: Duration, max: Durat
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("retryRandomBackoff(times, first, max, doOnRetry)", "reactor.kotlin.extra.retry.retryRandomBackoff"))
 fun <T> Mono<T>.retryRandomBackoff(times: Long, first: Duration, max: Duration? = null,
                                    doOnRetry: ((RetryContext<T>) -> Unit)? = null): Mono<T> {
     val retry = Retry.any<T>()

@@ -9,4 +9,6 @@ import reactor.core.scheduler.Scheduler
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("toScheduler()", "reactor.kotlin.extra.swing.toScheduler"))
 fun Display.toScheduler(): Scheduler = SwtScheduler.from(this)

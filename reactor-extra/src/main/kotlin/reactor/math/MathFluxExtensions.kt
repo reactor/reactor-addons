@@ -14,6 +14,8 @@ import java.util.function.Function
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("sum()", "reactor.kotlin.extra.math.sum"))
 fun <T: Number> Flux<T>.sum(): Mono<Long> = MathFlux.sumLong(this)
 
 /**
@@ -27,7 +29,10 @@ fun <T: Number> Flux<T>.sum(): Mono<Long> = MathFlux.sumLong(this)
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("sumDouble()", "reactor.kotlin.extra.math.sumDouble"))
 fun <T: Number> Flux<T>.sumDouble(): Mono<Double> = MathFlux.sumDouble(this)
+
 /**
  * Extension to compute the [Double] average of all values emitted by a [Flux] of [Number]
  * and return it as a [Mono] of [Double].
@@ -39,6 +44,8 @@ fun <T: Number> Flux<T>.sumDouble(): Mono<Double> = MathFlux.sumDouble(this)
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("average()", "reactor.kotlin.extra.math.average"))
 fun <T: Number> Flux<T>.average(): Mono<Double> = MathFlux.averageDouble(this)
 
 //min and max that work on any comparable
@@ -49,7 +56,10 @@ fun <T: Number> Flux<T>.average(): Mono<Double> = MathFlux.averageDouble(this)
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("min()", "reactor.kotlin.extra.math.min"))
 fun <T: Comparable<T>> Flux<T>.min(): Mono<T> = MathFlux.min(this)
+
 /**
  * Extension to find the highest value in a [Flux] of [Comparable] values and return it
  * as a [Mono] of [T].
@@ -57,6 +67,8 @@ fun <T: Comparable<T>> Flux<T>.min(): Mono<T> = MathFlux.min(this)
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("max()", "reactor.kotlin.extra.math.max"))
 fun <T: Comparable<T>> Flux<T>.max(): Mono<T> = MathFlux.max(this)
 
 //sum/sumDouble/average lambda versions where a converter is provided
@@ -71,8 +83,11 @@ fun <T: Comparable<T>> Flux<T>.max(): Mono<T> = MathFlux.max(this)
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("sum(mapper)", "reactor.kotlin.extra.math.sum"))
 fun <T> Flux<T>.sum(mapper: (T) -> Number): Mono<Long>
         = MathFlux.sumLong(this, Function(mapper))
+
 /**
  * Extension to map arbitrary values in a [Flux] to [Number]s and return the sum of these
  * Numbers as a [Mono] of [Double], thus avoiding rounding
@@ -86,6 +101,9 @@ fun <T> Flux<T>.sum(mapper: (T) -> Number): Mono<Long>
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("sumDouble(mapper)", "reactor.kotlin.extra.math.sumDouble"))
+
 fun <T> Flux<T>.sumDouble(mapper: (T) -> Number): Mono<Double>
         = MathFlux.sumDouble(this, Function(mapper))
 /**
@@ -100,6 +118,8 @@ fun <T> Flux<T>.sumDouble(mapper: (T) -> Number): Mono<Double>
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("average(mapper)", "reactor.kotlin.extra.math.average"))
 fun <T> Flux<T>.average(mapper: (T) -> Number): Mono<Double>
         = MathFlux.averageDouble(this, Function(mapper))
 
@@ -113,7 +133,10 @@ fun <T> Flux<T>.average(mapper: (T) -> Number): Mono<Double>
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("min(comp)", "reactor.kotlin.extra.math.min"))
 fun <T> Flux<T>.min(comp: Comparator<T>): Mono<T> = MathFlux.min(this, comp)
+
 /**
  * Extension to find the lowest value in a [Flux] and return it as a [Mono]. The lowest
  * value is defined by comparisons made using a provided function that behaves like a
@@ -123,7 +146,10 @@ fun <T> Flux<T>.min(comp: Comparator<T>): Mono<T> = MathFlux.min(this, comp)
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("min(comp)", "reactor.kotlin.extra.math.min"))
 fun <T> Flux<T>.min(comp: (T, T) -> Int): Mono<T> = MathFlux.min(this, Comparator(comp))
+
 /**
  * Extension to find the highest value in a [Flux] and return it as a [Mono]. The highest
  * value is defined by comparisons made using a provided [Comparator].
@@ -132,7 +158,10 @@ fun <T> Flux<T>.min(comp: (T, T) -> Int): Mono<T> = MathFlux.min(this, Comparato
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("max(comp)", "reactor.kotlin.extra.math.max"))
 fun <T> Flux<T>.max(comp: Comparator<T>): Mono<T> = MathFlux.max(this, comp)
+
 /**
  * Extension to find the highest value in a [Flux] and return it as a [Mono]. The highest
  * value is defined by comparisons made using a provided function that behaves like a
@@ -142,4 +171,6 @@ fun <T> Flux<T>.max(comp: Comparator<T>): Mono<T> = MathFlux.max(this, comp)
  * @author Simon Baslé
  * @since 3.1.1
  */
+@Deprecated("To be removed in 3.3.0.RELEASE, replaced by module reactor-kotlin-extensions",
+        ReplaceWith("max(comp)", "reactor.kotlin.extra.math.max"))
 fun <T> Flux<T>.max(comp: (T, T) -> Int): Mono<T> = MathFlux.max(this, Comparator(comp))
