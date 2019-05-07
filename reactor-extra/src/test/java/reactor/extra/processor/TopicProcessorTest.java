@@ -68,6 +68,7 @@ public class TopicProcessorTest {
 	}
 
 	@Test
+	@Ignore
 	public void chainedTopicProcessor() throws Exception {
 		ExecutorService es = Executors.newFixedThreadPool(2);
 		try {
@@ -840,6 +841,7 @@ public class TopicProcessorTest {
 	}
 
 	@Test
+	@Ignore
 	public void testForceShutdownWhileWaitingForMoreData() throws InterruptedException {
 		TopicProcessor<String> processor = TopicProcessor.<String>builder().name("processor")
 		                                                                   .bufferSize(4)
@@ -864,6 +866,7 @@ public class TopicProcessorTest {
 	}
 
 	@Test
+	@Ignore
 	public void testForceShutdownWhileWaitingForRequest() throws InterruptedException {
 		TopicProcessor<String> processor = TopicProcessor.<String>builder().name("processor")
 		                                                                   .bufferSize(4)
