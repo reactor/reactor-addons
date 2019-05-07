@@ -1108,7 +1108,7 @@ public class WorkQueueProcessorTest {
 			         throw Exceptions.failWithCancel();
 		         });
 
-		processor.log("wqp.works")
+		processor.log("wqp.works", Level.FINE, SignalType.ON_SUBSCRIBE, SignalType.ON_COMPLETE, SignalType.ON_ERROR, SignalType.CANCEL)
 		         .doOnNext(d -> count.incrementAndGet())
 		         .subscribe(d -> {
 			         latch.countDown();
