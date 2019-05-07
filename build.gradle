@@ -15,11 +15,13 @@
  */
 
 buildscript {
+  ext.kotlinVersion = '1.1.61'
   repositories {
 	maven { url "https://repo.spring.io/plugins-release" }
   }
   dependencies {
-	classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7',
+	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}",
+			'org.springframework.build.gradle:propdeps-plugin:0.0.7',
 			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE'
   }
 }
@@ -76,6 +78,7 @@ configure(subprojects) { project ->
 
   apply plugin: 'propdeps'
   apply plugin: 'java'
+  apply plugin: 'kotlin'
   apply from: "${gradleScriptDir}/ide.gradle"
 
   [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
@@ -106,6 +109,22 @@ configure(subprojects) { project ->
   compileTestJava {
 	sourceCompatibility = 1.8
 	targetCompatibility = 1.8
+  }
+
+  compileKotlin {
+	kotlinOptions.jvmTarget = "1.8"
+	kotlinOptions.freeCompilerArgs = ["-Xjsr305=strict"]
+  }
+
+  compileTestKotlin {
+	kotlinOptions.jvmTarget = "1.8"
+	kotlinOptions.freeCompilerArgs = ["-Xjsr305=strict"]
+  }
+
+  // now that kotlin-gradle-plugin 1.1.60 is out with fix for https://youtrack.jetbrains.com/issue/KT-17564
+  // be wary and fail if the issue of source file duplication in jar comes up again
+  sourcesJar {
+	duplicatesStrategy = DuplicatesStrategy.FAIL
   }
 
   if (JavaVersion.current().isJava8Compatible()) {
@@ -162,6 +181,7 @@ configure(subprojects) { project ->
 			"org.testng:testng:6.8.5"
 	testRuntime "ch.qos.logback:logback-classic:$logbackVersion"
 	testCompile "io.projectreactor:reactor-test:$reactorCoreVersion"
+	testCompile "io.projectreactor.kotlin:reactor-kotlin-extensions:1.0.0.BUILD-SNAPSHOT"
 
   }
 
@@ -191,6 +211,8 @@ project('reactor-adapter') {
 
 	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
 
+	optional "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.2"
   }
 
@@ -213,6 +235,7 @@ project('reactor-extra') {
 
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
+	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.2"
 	testCompile "org.mockito:mockito-core:2.23.0"
   }
