@@ -9,7 +9,7 @@ import org.junit.Test
 import reactor.core.Fuseable
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.test.test
+import reactor.kotlin.test.test
 import java.util.*
 
 
@@ -18,8 +18,8 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Flowable to Flux`() {
         Flowable.range(1, 10)
-            .toFlux()
-            .test()
+                .toFlux()
+                .test()
             .expectFusion()
             .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             .expectComplete()

@@ -3,7 +3,7 @@ package reactor.bool
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import reactor.core.publisher.Mono
-import reactor.test.test
+import reactor.kotlin.test.test
 
 class BooleanMonoExtensionsTests {
 
