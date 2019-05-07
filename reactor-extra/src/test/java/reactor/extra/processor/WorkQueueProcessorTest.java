@@ -57,11 +57,10 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 import reactor.util.annotation.Nullable;
 import reactor.util.concurrent.Queues;
-import reactor.util.concurrent.WaitStrategy;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
-import static reactor.util.concurrent.WaitStrategy.liteBlocking;
+import static reactor.extra.processor.WaitStrategy.liteBlocking;
 
 /**
  *
