@@ -89,7 +89,7 @@ public class CombinationTests {
 		    .log()
 		    .as(StepVerifier::create)
 		    .then(() -> emitValues())
-		    .expectNext(1L, 2L, 3L, 4L)
+		    .expectNext(1L, 3L, 2L, 4L)
 		    .verifyComplete();
 	}
 
