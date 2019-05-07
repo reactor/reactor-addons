@@ -901,6 +901,7 @@ public class TopicProcessorTest {
 	}
 
 	@Test
+	@Ignore
 	public void testShutdownSuccessfulAfterAllDataIsRequested() throws InterruptedException {
 		TopicProcessor<String> processor = TopicProcessor.<String>builder().name("processor")
 		                                                                   .bufferSize(4)
