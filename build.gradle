@@ -29,7 +29,7 @@ buildscript {
 description = 'Reactor Core Addons including processors, adapters and more'
 
 ext {
-  reactorCoreVersion ='3.3.0.BUILD-SNAPSHOT'
+  reactorCoreVersion ='3.3.0.M1'
 
   gradleVersion = '4.2'
   gradleScriptDir = "${rootProject.projectDir}/gradle"

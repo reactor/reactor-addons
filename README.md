@@ -12,15 +12,11 @@
 
 Bridge to RxJava 1 or 2 Observable, Completable, Flowable, Single, Maybe, Scheduler, and also SWT Scheduler, Akka Scheduler ...
 
-# reactor-logback
-
-Logback support over asynchronous Reactor Core Processors.
-
 # reactor-extra
 
-Extra operations for Flux including mathematical operations to compute sum, average, min or max from numerical sources.
+Extra operations and processors for Reactor Core including mathematical operations to compute sum, average, min or max from numerical sources.
 
-# Contributing an Addon
+# Contributing an Add-on
 
 ### Build instructions
 
@@ -40,12 +36,12 @@ Snapshot and pre-release Maven artifacts are provided in the SpringSource snapsh
 To add this repo to your Gradle build, specify the URL like the following:
 
     ext {
-      reactorAddonsVersion = '3.2.3.RELEASE'
+      reactorAddonsVersion = '3.3.0.M1'
     }
 
     repositories {
       //maven { url 'https://repo.spring.io/release' }
-      //maven { url 'https://repo.spring.io/milestone' }
+      maven { url 'https://repo.spring.io/milestone' }
       //maven { url 'https://repo.spring.io/snapshot' }
       mavenCentral()
     }
