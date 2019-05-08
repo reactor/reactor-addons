@@ -181,7 +181,6 @@ configure(subprojects) { project ->
 			"org.testng:testng:6.8.5"
 	testRuntime "ch.qos.logback:logback-classic:$logbackVersion"
 	testCompile "io.projectreactor:reactor-test:$reactorCoreVersion"
-	testCompile "io.projectreactor.kotlin:reactor-kotlin-extensions:1.0.0.BUILD-SNAPSHOT"
 
   }
 

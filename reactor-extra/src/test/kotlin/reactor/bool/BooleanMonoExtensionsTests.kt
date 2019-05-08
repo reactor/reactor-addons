@@ -3,7 +3,7 @@ package reactor.bool
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 import reactor.core.publisher.Mono
-import reactor.kotlin.test.test
+import reactor.test.test
 
 class BooleanMonoExtensionsTests {
 
@@ -88,8 +88,8 @@ class BooleanMonoExtensionsTests {
 
     @Test
     fun notWithOperator() {
-        (!mTrue).test().expectNext(false).`as`("!true").verifyComplete()
+        (mTrue.not()).test().expectNext(false).`as`("!true").verifyComplete()
 
-        (!mFalse).test().expectNext(true).`as`("!false").verifyComplete()
+        (mFalse.not()).test().expectNext(true).`as`("!false").verifyComplete()
     }
 }

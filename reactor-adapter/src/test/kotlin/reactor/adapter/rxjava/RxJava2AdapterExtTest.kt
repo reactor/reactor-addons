@@ -1,15 +1,11 @@
 package reactor.adapter.rxjava
 
-import io.reactivex.Completable
-import io.reactivex.Flowable
-import io.reactivex.Maybe
+import io.reactivex.*
 import io.reactivex.Observable
-import io.reactivex.Single
 import org.junit.Test
 import reactor.core.Fuseable
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.test.test
 import java.util.*
 
 
@@ -29,7 +25,7 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Flux to Flowable`() {
         Flux.range(1, 10)
-            .toFlowable()
+                .toFlowable()
             .test()
             .assertValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             .assertComplete()
@@ -38,7 +34,7 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Mono to Flowable`() {
         Mono.just(1)
-            .toFlowable()
+                .toFlowable()
             .test()
             .assertValues(1)
             .assertNoErrors()
@@ -48,7 +44,7 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Mono to Completable`() {
         Mono.empty<Any>()
-            .toCompletable()
+                .toCompletable()
             .test()
             .assertNoValues()
             .assertNoErrors()
@@ -58,8 +54,8 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Completable to Mono`() {
         Completable.complete()
-            .toMono()
-            .test()
+                .toMono()
+                .test()
             .expectComplete()
             .verify()
     }
@@ -67,7 +63,7 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Mono to Single`() {
         Mono.just(1)
-            .toSingle()
+                .toSingle()
             .test()
             .assertValues(1)
             .assertNoErrors()
@@ -77,7 +73,7 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Empty Mono to Single`() {
         Mono.empty<Int>()
-            .toSingle()
+                .toSingle()
             .test()
             .assertNoValues()
             .assertError(NoSuchElementException::class.java)
@@ -87,8 +83,8 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Single to Mono`() {
         Single.just(1)
-            .toMono()
-            .test()
+                .toMono()
+                .test()
             .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
             .expectNext(1)
             .expectComplete()
@@ -98,8 +94,8 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Observable to Flux`() {
         Observable.range(1, 10)
-            .toFlux()
-            .test()
+                .toFlux()
+                .test()
             .expectFusion()
             .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             .expectComplete()
@@ -109,7 +105,7 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Flux to Observable`() {
         Flux.range(1, 10)
-            .toObservable()
+                .toObservable()
             .test()
             .assertValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             .assertNoErrors()
@@ -119,8 +115,8 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Maybe to Mono`() {
         Maybe.just(1)
-            .toMono()
-            .test()
+                .toMono()
+                .test()
             .expectNext(1)
             .expectComplete()
             .verify()
@@ -129,8 +125,8 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Empty Maybe to Mono`() {
         Maybe.empty<Void>()
-            .toMono()
-            .test()
+                .toMono()
+                .test()
             .expectComplete()
             .verify()
     }
@@ -138,7 +134,7 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Mono to Maybe`() {
         Mono.just(1)
-            .toMaybe()
+                .toMaybe()
             .test()
             .assertResult(1)
     }
@@ -146,7 +142,7 @@ class RxJava2AdapterExtTest {
     @Test
     fun `Empty Mono to Maybe`() {
         Mono.empty<Any>()
-            .toMaybe()
+                .toMaybe()
             .test()
             .assertResult()
     }
