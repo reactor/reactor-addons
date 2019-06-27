@@ -10,7 +10,7 @@
 
 # reactor-adapter
 
-Bridge to RxJava 1 or 2 Observable, Completable, Flowable, Single, Maybe, Scheduler, and also SWT Scheduler, Akka Scheduler ...
+Bridge to RxJava 2 Observable, Completable, Flowable, Single, Maybe, Scheduler, and also SWT Scheduler, Akka Scheduler ...
 
 # reactor-extra
 
