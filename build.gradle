@@ -31,10 +31,10 @@ buildscript {
 description = 'Reactor Core Addons including processors, adapters and more'
 
 ext {
-  reactorCoreVersion ='3.3.1.BUILD-SNAPSHOT'
-
   gradleVersion = '4.2'
   gradleScriptDir = "${rootProject.projectDir}/gradle"
+
+  //NOTE: reactor-core version is declared in gradle.properties
 
   // Languages
   groovyVersion = '2.4.1'
