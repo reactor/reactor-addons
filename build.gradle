@@ -15,29 +15,28 @@
  */
 
 buildscript {
-  ext.kotlinVersion = '1.1.61'
+  ext.kotlinVersion = '1.3.41'
   repositories {
 	mavenCentral()
 	maven { url "https://repo.spring.io/plugins-release" }
   }
   dependencies {
-	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}",
-			'org.springframework.build.gradle:propdeps-plugin:0.0.7',
-			'io.spring.gradle:spring-io-plugin:0.0.4.RELEASE',
-            'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
+	classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
+	classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
   }
+}
+
+plugins {
+	id "com.jfrog.artifactory" version "4.9.8" apply false
 }
 
 description = 'Reactor Core Addons including processors, adapters and more'
 
 ext {
-  gradleVersion = '4.2'
   gradleScriptDir = "${rootProject.projectDir}/gradle"
 
   //NOTE: reactor-core version is declared in gradle.properties
-
-  // Languages
-  groovyVersion = '2.4.1'
 
   // Logging
   slf4jVersion = '1.7.12'
@@ -66,7 +65,6 @@ ext {
 		  String[]
 }
 
-apply from: "$gradleScriptDir/setup.gradle"
 apply from: "$gradleScriptDir/doc.gradle"
 
 configurations.all {
@@ -78,10 +76,10 @@ configurations.all {
 configure(subprojects) { project ->
   group = 'io.projectreactor.addons'
 
-  apply plugin: 'propdeps'
+  apply plugin: 'propdeps' //TODO replace with a simpler local plugin?
   apply plugin: 'java'
   apply plugin: 'kotlin'
-  apply from: "${gradleScriptDir}/ide.gradle"
+  apply from: "${rootDir}/gradle/setup.gradle"
 
   [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
 														   "-Xlint:cast",
@@ -154,7 +152,7 @@ configure(subprojects) { project ->
   }
 
   repositories {
-	if (version.endsWith('BUILD-SNAPSHOT') || project.hasProperty('platformVersion')) {
+	if (version.endsWith('BUILD-SNAPSHOT')) {
 	  mavenLocal()
 	  maven { url 'https://repo.spring.io/libs-snapshot' }
 	}
@@ -185,26 +183,10 @@ configure(subprojects) { project ->
 	testCompile "io.projectreactor:reactor-test:$reactorCoreVersion"
 
   }
-
-  if (project.hasProperty('platformVersion')) {
-	apply plugin: 'spring-io'
-
-	repositories {
-	  maven { url 'https://repo.spring.io/libs-snapshot' }
-	}
-
-	dependencyManagement {
-	  springIoTestRuntime {
-		imports {
-		  mavenBom "io.spring.platform:platform-bom:$platformVersion"
-		}
-	  }
-	}
-  }
 }
 
 project('reactor-adapter') {
-  description = 'Scheduler implementations on top of various async boundary providers'
+  description = 'Adapters on top of various async boundary providers'
 
   apply plugin: "biz.aQute.bnd.builder"
 
@@ -244,7 +226,7 @@ project('reactor-extra') {
   }
 
   dependencies {
-	optional "org.eclipse.swt:org.eclipse.swt.${getPlatform()}:${swtVersionPlatform}"
+	optional "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
 	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
 	testCompile "org.reactivestreams:reactive-streams-tck:1.0.3"
 	testCompile "org.mockito:mockito-core:2.23.0"
@@ -264,15 +246,7 @@ project('reactor-extra') {
   }
 }
 
-task release {
-  subprojects.each{
-	if(it.version.endsWith('SNAPSHOT')) return
-	dependsOn it.assemble
-  }
-}
-
-
-def getPlatform() {
+static def getSwtPlatform() {
   String osname = System.properties['os.name']
   String osarch = System.properties['os.arch']
   if (osname.toLowerCase(Locale.ROOT).contains('win')) {

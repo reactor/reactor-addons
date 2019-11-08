@@ -32,7 +32,7 @@ configure(subprojects) { project ->
 
 	options.addStringOption('charSet', 'UTF-8')
 
-	options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+	options.memberLevel = JavadocMemberLevel.PROTECTED
 	options.author = true
 	options.header = "Reactor Addons: $it.name"
 	options.overview = "$rootDir/docs/src/api/overview.html"
