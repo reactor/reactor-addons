@@ -25,6 +25,10 @@ buildscript {
   }
 }
 
+plugins {
+	id "com.jfrog.artifactory" version "4.9.8" apply false
+}
+
 description = 'Reactive fast data framework for the JVM'
 
 ext {
@@ -59,7 +63,6 @@ ext {
 		  String[]
 }
 
-apply from: "$gradleScriptDir/setup.gradle"
 apply from: "$gradleScriptDir/doc.gradle"
 
 configurations.all {
@@ -71,9 +74,10 @@ configurations.all {
 configure(subprojects) { project ->
   group = 'io.projectreactor.addons'
 
-  apply plugin: 'propdeps'
+  apply plugin: 'propdeps' //TODO replace with a simpler local plugin?
   apply plugin: 'java'
   apply plugin: 'kotlin'
+  apply from: "${rootDir}/gradle/setup.gradle"
 
   [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
 														   "-Xlint:cast",
@@ -224,7 +228,7 @@ project('reactor-extra') {
   }
 }
 
-def getSwtPlatform() {
+static def getSwtPlatform() {
   String osname = System.properties['os.name']
   String osarch = System.properties['os.arch']
   if (osname.toLowerCase(Locale.ROOT).contains('win')) {
