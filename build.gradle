@@ -66,6 +66,7 @@ ext {
 }
 
 apply from: "$gradleScriptDir/doc.gradle"
+apply from: "$gradleScriptDir/releaser.gradle"
 
 configurations.all {
   // check for updates every build
