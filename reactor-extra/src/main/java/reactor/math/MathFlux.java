@@ -16,6 +16,7 @@
 
 package reactor.math;
 
+import java.math.BigInteger;
 import java.util.Comparator;
 import java.util.function.Function;
 
@@ -134,6 +135,29 @@ public final class MathFlux {
 	 */
 	public static final <T> Mono<Double> sumDouble(Publisher<T> source, Function<? super T, ? extends Number> mapping) {
 		return MathMono.onAssembly(new MonoSumDouble<T>(source, mapping));
+	}
+
+	/**
+	 * Computes the {@link BigInteger} sum of items in the source.
+	 *
+	 * @param source the numerical source
+	 * @return {@link Mono} of the sum of items in source
+	 */
+	public static Mono<BigInteger> sumBigInteger(Publisher<? extends Number> source) {
+		return sumBigInteger(source, i -> i);
+	}
+
+	/**
+	 * Computes the {@link BigInteger} sum of items in the source, which are mapped to
+	 * numerical values using provided mapping.
+	 *
+	 * @param source  the source items
+	 * @param mapping a function to map source items to numerical values
+	 * @return {@link Mono} of sum of items in source
+	 */
+	public static final <T> Mono<BigInteger> sumBigInteger(Publisher<T> source,
+			Function<? super T, ? extends Number> mapping) {
+		return MathMono.onAssembly(new MonoSumBigInteger<T>(source, mapping));
 	}
 
 	/**

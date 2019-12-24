@@ -16,6 +16,7 @@
 
 package reactor.math;
 
+import java.math.BigInteger;
 import java.util.Comparator;
 
 import org.junit.Test;
@@ -137,6 +138,42 @@ public class ReactorMathTests {
 	@Test
 	public void emptySumDouble() {
 		verifyEmptyResult(MathFlux.sumDouble(Mono.empty()));
+	}
+
+	@Test
+	public void fluxSumBigInteger() {
+		int count = 10;
+		BigInteger sum = BigInteger.valueOf(sum(count));
+		verifyResult(MathFlux.sumBigInteger(bigIntegerFlux(count)), sum);
+		verifyResult(MathFlux.sumBigInteger(Flux.just(BigInteger.valueOf(Long.MAX_VALUE),
+				BigInteger.valueOf(Long.MAX_VALUE))),
+				BigInteger.valueOf(Long.MAX_VALUE)
+				          .multiply(BigInteger.valueOf(2)));
+		verifyResult(MathFlux.sumBigInteger(intFlux(count),
+				i -> i), sum);
+		verifyResult(MathFlux.sumBigInteger(doubleFlux(count),
+				i -> i), sum);
+		verifyResult(MathFlux.sumBigInteger(stringFlux(count), BigInteger::new), sum);
+
+		verifyResult(bigIntegerFlux(count).as(MathFlux::sumBigInteger), sum);
+		verifyResult(bigIntegerFlux(count).transform(MathFlux::sumBigInteger), sum);
+		verifyResult(doubleFlux(count).as(MathFlux::sumBigInteger), sum);
+		verifyResult(doubleFlux(count).transform(MathFlux::sumBigInteger), sum);
+		verifyResult(intFlux(count).as(MathFlux::sumBigInteger), sum);
+		verifyResult(intFlux(count).transform(MathFlux::sumBigInteger), sum);
+	}
+
+	@Test
+	public void monoSumBigInteger() {
+		verifyResult(MathFlux.sumBigInteger(Mono.just(BigInteger.ONE)), BigInteger.ONE);
+		verifyResult(MathFlux.sumBigInteger(Mono.just("10"), BigInteger::new),
+				BigInteger.TEN);
+		verifyResult(MathFlux.sumBigInteger(Mono.just(1.5)), BigInteger.ONE);
+	}
+
+	@Test
+	public void emptySumBigInteger() {
+		verifyEmptyResult(MathFlux.sumBigInteger(Mono.empty()));
 	}
 
 	@Test
@@ -295,6 +332,10 @@ public class ReactorMathTests {
 
 	Flux<Double> doubleFlux(int count) {
 		return Flux.range(1, count).map(i -> (double) i.intValue());
+	}
+
+	Flux<BigInteger> bigIntegerFlux(int count) {
+		return Flux.range(1, count).map(BigInteger::valueOf);
 	}
 
 	Flux<String> stringFlux(int count) {
