@@ -270,6 +270,81 @@ public class ReactorMathTests {
 	}
 
 	@Test
+	public void fluxAverageBigInteger() {
+		int count = 10;
+		BigInteger average = BigInteger.valueOf(Double.valueOf(average(count))
+		                                              .longValue());
+		verifyResult(MathFlux.averageBigInteger(bigIntegerFlux(count)), average);
+		verifyResult(MathFlux.averageBigInteger(Flux.just(Long.MAX_VALUE,
+				Long.MAX_VALUE)),
+				BigInteger.valueOf(Long.MAX_VALUE)
+				          .multiply(BigInteger.valueOf(2))
+				          .divide(BigInteger.valueOf(2)));
+		verifyResult(MathFlux.averageBigInteger(intFlux(count), i -> i), average);
+		verifyResult(MathFlux.averageBigInteger(stringFlux(count), Long::parseLong),
+				average);
+
+		verifyResult(doubleFlux(count).as(MathFlux::averageBigInteger), average);
+		verifyResult(doubleFlux(count).transform(MathFlux::averageBigInteger), average);
+		verifyResult(intFlux(count).as(MathFlux::averageBigInteger), average);
+		verifyResult(intFlux(count).transform(MathFlux::averageBigInteger), average);
+	}
+
+	@Test
+	public void monoAverageBigInteger() {
+		verifyResult(MathFlux.averageBigInteger(Mono.just(2.5)), BigInteger.valueOf(2));
+		verifyResult(MathFlux.averageBigInteger(Mono.just(2), i -> i),
+				BigInteger.valueOf(2));
+		verifyResult(MathFlux.averageBigInteger(Mono.just("1"), Long::parseLong),
+				BigInteger.ONE);
+	}
+
+	@Test
+	public void emptyAverageBigInteger() {
+		verifyEmptyResult(MathFlux.averageBigInteger(Mono.empty()));
+	}
+
+	@Test
+	public void fluxAverageBigDecimal() {
+		int count = 10;
+		BigDecimal average = BigDecimal.valueOf(average(count));
+		verifyBigDecimalResult(MathFlux.averageBigDecimal(bigDecimalFlux(count)),
+				average);
+		verifyBigDecimalResult(MathFlux.averageBigDecimal(Flux.just(Double.MAX_VALUE,
+				Double.MAX_VALUE)),
+				BigDecimal.valueOf(Double.MAX_VALUE)
+				          .multiply(BigDecimal.valueOf(2))
+				          .divide(BigDecimal.valueOf(2)));
+		verifyBigDecimalResult(MathFlux.averageBigDecimal(intFlux(count), i -> i),
+				average);
+		verifyBigDecimalResult(MathFlux.averageBigDecimal(stringFlux(count),
+				Double::parseDouble), average);
+
+		verifyBigDecimalResult(doubleFlux(count).as(MathFlux::averageBigDecimal),
+				average);
+		verifyBigDecimalResult(doubleFlux(count).transform(MathFlux::averageBigDecimal),
+				average);
+		verifyBigDecimalResult(intFlux(count).as(MathFlux::averageBigDecimal), average);
+		verifyBigDecimalResult(intFlux(count).transform(MathFlux::averageBigDecimal),
+				average);
+	}
+
+	@Test
+	public void monoAverageBigDecimal() {
+		verifyBigDecimalResult(MathFlux.averageBigDecimal(Mono.just(2.5)),
+				BigDecimal.valueOf(2.5));
+		verifyBigDecimalResult(MathFlux.averageBigDecimal(Mono.just(2), i -> i),
+				BigDecimal.valueOf(2));
+		verifyBigDecimalResult(MathFlux.averageBigDecimal(Mono.just("1.5"),
+				Double::parseDouble), BigDecimal.valueOf(1.5));
+	}
+
+	@Test
+	public void emptyAverageBigDecimal() {
+		verifyEmptyResult(MathFlux.averageBigDecimal(Mono.empty()));
+	}
+
+	@Test
 	public void fluxMax() {
 		verifyResult(MathFlux.max(Flux.just(5, 1, 2, 6, 3)), 6);
 		verifyResult(MathFlux.max(Flux.range(1, 10)), 10);

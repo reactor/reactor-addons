@@ -233,6 +233,53 @@ public final class MathFlux {
 	}
 
 	/**
+	 * Computes the {@link BigInteger} average of items in the source.
+	 *
+	 * @param source the numerical source
+	 * @return {@link Mono} of the average of items in source
+	 */
+	public static Mono<BigInteger> averageBigInteger(Publisher<? extends Number> source) {
+		return averageBigInteger(source, i -> i);
+	}
+
+	/**
+	 * Computes the {@link BigInteger} average of items in the source, which are mapped to
+	 * numerical values using the provided mapping.
+	 *
+	 * @param source  the source items
+	 * @param mapping a function to map source items to numerical values
+	 * @return {@link Mono} of the average of items in source
+	 */
+	public static final <T> Mono<BigInteger> averageBigInteger(Publisher<T> source,
+			Function<? super T, ? extends Number> mapping) {
+		return MathMono.onAssembly(new MonoAverageBigInteger<T>(source, mapping));
+	}
+
+
+	/**
+	 * Computes the {@link BigDecimal} average of items in the source.
+	 *
+	 * @param source the numerical source
+	 * @return {@link Mono} of the average of items in source
+	 */
+	public static Mono<BigDecimal> averageBigDecimal(Publisher<? extends Number> source) {
+		return averageBigDecimal(source, i -> i);
+	}
+
+	/**
+	 * Computes the {@link BigDecimal} average of items in the source, which are mapped to
+	 * numerical values using the provided mapping.
+	 *
+	 * @param source  the source items
+	 * @param mapping a function to map source items to numerical values
+	 * @return {@link Mono} of the average of items in source
+	 */
+	public static final <T> Mono<BigDecimal> averageBigDecimal(Publisher<T> source,
+			Function<? super T, ? extends Number> mapping) {
+		return MathMono.onAssembly(new MonoAverageBigDecimal<T>(source, mapping));
+	}
+
+	/**
 	 * Computes the maximum value of items in the source.
 	 *
 	 * @param source the source containing comparable items
