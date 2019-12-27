@@ -16,6 +16,7 @@
 
 package reactor.math;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Comparator;
 
@@ -174,6 +175,44 @@ public class ReactorMathTests {
 	@Test
 	public void emptySumBigInteger() {
 		verifyEmptyResult(MathFlux.sumBigInteger(Mono.empty()));
+	}
+
+	@Test
+	public void fluxSumBigDecimal() {
+		int count = 10;
+		BigDecimal sum = BigDecimal.valueOf(sum(count));
+		verifyBigDecimalResult(MathFlux.sumBigDecimal(bigDecimalFlux(count)), sum);
+		verifyBigDecimalResult(MathFlux.sumBigDecimal(Flux.just(BigDecimal.valueOf(Double.MAX_VALUE),
+				BigDecimal.valueOf(Double.MAX_VALUE))),
+				BigDecimal.valueOf(Double.MAX_VALUE)
+				          .multiply(BigDecimal.valueOf(2)));
+		verifyBigDecimalResult(MathFlux.sumBigDecimal(intFlux(count), i -> i), sum);
+		verifyBigDecimalResult(MathFlux.sumBigDecimal(doubleFlux(count), i -> i), sum);
+		verifyBigDecimalResult(MathFlux.sumBigDecimal(stringFlux(count), BigDecimal::new),
+				sum);
+
+		verifyBigDecimalResult(bigDecimalFlux(count).as(MathFlux::sumBigDecimal), sum);
+		verifyBigDecimalResult(bigDecimalFlux(count).transform(MathFlux::sumBigDecimal),
+				sum);
+		verifyBigDecimalResult(doubleFlux(count).as(MathFlux::sumBigDecimal), sum);
+		verifyBigDecimalResult(doubleFlux(count).transform(MathFlux::sumBigDecimal), sum);
+		verifyBigDecimalResult(intFlux(count).as(MathFlux::sumBigDecimal), sum);
+		verifyBigDecimalResult(intFlux(count).transform(MathFlux::sumBigDecimal), sum);
+	}
+
+	@Test
+	public void monoSumBigDecimal() {
+		verifyBigDecimalResult(MathFlux.sumBigDecimal(Mono.just(BigDecimal.ONE)),
+				BigDecimal.ONE);
+		verifyBigDecimalResult(MathFlux.sumBigDecimal(Mono.just("10"), BigDecimal::new),
+				BigDecimal.TEN);
+		verifyBigDecimalResult(MathFlux.sumBigDecimal(Mono.just(1.5)),
+				BigDecimal.valueOf(1.5D));
+	}
+
+	@Test
+	public void emptySumBigDecimal() {
+		verifyEmptyResult(MathFlux.sumBigDecimal(Mono.empty()));
 	}
 
 	@Test
@@ -338,6 +377,10 @@ public class ReactorMathTests {
 		return Flux.range(1, count).map(BigInteger::valueOf);
 	}
 
+	Flux<BigDecimal> bigDecimalFlux(int count) {
+		return Flux.range(1, count).map(BigDecimal::valueOf);
+	}
+
 	Flux<String> stringFlux(int count) {
 		return Flux.range(1, count).map(i -> i.toString());
 	}
@@ -362,6 +405,15 @@ public class ReactorMathTests {
 		StepVerifier.create(resultMono)
 					.expectComplete()
 					.verify();
+	}
+
+	void verifyBigDecimalResult(Publisher<BigDecimal> resultMono,
+			BigDecimal expectedResult) {
+		StepVerifier.create(resultMono)
+		            .expectNextMatches(t -> expectedResult.compareTo(t) == 0)
+		            .expectNext()
+		            .expectComplete()
+		            .verify();
 	}
 
 	static class StringLengthComparator implements Comparator<String> {
