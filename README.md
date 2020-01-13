@@ -36,7 +36,7 @@ Snapshot and pre-release Maven artifacts are provided in the SpringSource snapsh
 To add this repo to your Gradle build, specify the URL like the following:
 
     ext {
-      reactorAddonsVersion = '3.3.1.RELEASE'
+      reactorAddonsVersion = '3.3.2.RELEASE'
     }
 
     repositories {
