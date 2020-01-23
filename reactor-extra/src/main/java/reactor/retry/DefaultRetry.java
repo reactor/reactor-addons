@@ -19,6 +19,7 @@ package reactor.retry;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.reactivestreams.Publisher;
@@ -33,9 +34,11 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 
 	static final Logger log = Loggers.getLogger(DefaultRetry.class);
 	static final Consumer<? super RetryContext<?>> NOOP_ON_RETRY = r -> {};
+	static final Function<? super RetryContext<?>, Mono<?>> NOOP_ON_RETRY_MONO = r -> Mono.empty();
 
 	final Predicate<? super RetryContext<T>> retryPredicate;
 	final Consumer<? super RetryContext<T>> onRetry;
+	final Function<? super RetryContext<T>, Mono<?>> onRetryMono;
 
 	DefaultRetry(Predicate<? super RetryContext<T>> retryPredicate,
 			long maxIterations,
@@ -44,10 +47,12 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 			Jitter jitter,
 			Scheduler backoffScheduler,
 			final Consumer<? super RetryContext<T>> onRetry,
+			Function<? super RetryContext<T>, Mono<?>> onRetryMono,
 			T applicationContext) {
 		super(maxIterations, timeout, backoff, jitter, backoffScheduler, applicationContext);
 		this.retryPredicate = retryPredicate;
 		this.onRetry = onRetry;
+		this.onRetryMono = onRetryMono;
 	}
 
 	public static <T> DefaultRetry<T> create(Predicate<? super RetryContext<T>> retryPredicate) {
@@ -58,19 +63,26 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 				Jitter.noJitter(),
 				null,
 				NOOP_ON_RETRY,
+				NOOP_ON_RETRY_MONO,
 				(T) null);
 	}
 
 	@Override
 	public Retry<T> withApplicationContext(T applicationContext) {
 		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
-				backoff, jitter, backoffScheduler, onRetry, applicationContext);
+				backoff, jitter, backoffScheduler, onRetry, onRetryMono, applicationContext);
 	}
 
 	@Override
 	public Retry<T> doOnRetry(Consumer<? super RetryContext<T>> onRetry) {
 		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
-				backoff, jitter, backoffScheduler, onRetry, applicationContext);
+				backoff, jitter, backoffScheduler, onRetry, onRetryMono, applicationContext);
+	}
+
+	@Override
+	public Retry<T> onRetryWithMono(Function<? super RetryContext<T>, Mono<?>> onRetryMono) {
+		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
+			backoff, jitter, backoffScheduler, onRetry, onRetryMono, applicationContext);
 	}
 
 	@Override
@@ -78,7 +90,7 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 		if (maxIterations < 0)
 			throw new IllegalArgumentException("maxIterations should be >= 0");
 		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
-				backoff, jitter, backoffScheduler, onRetry, applicationContext);
+				backoff, jitter, backoffScheduler, onRetry, onRetryMono, applicationContext);
 	}
 
 	@Override
@@ -86,25 +98,25 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 		if (timeout.isNegative())
 			throw new IllegalArgumentException("timeout should be >= 0");
 		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
-				backoff, jitter, backoffScheduler, onRetry, applicationContext);
+				backoff, jitter, backoffScheduler, onRetry, onRetryMono, applicationContext);
 	}
 
 	@Override
 	public Retry<T> backoff(Backoff backoff) {
 		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
-				backoff, jitter, backoffScheduler, onRetry, applicationContext);
+				backoff, jitter, backoffScheduler, onRetry, onRetryMono, applicationContext);
 	}
 
 	@Override
 	public Retry<T> jitter(Jitter jitter) {
 		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
-				backoff, jitter, backoffScheduler, onRetry, applicationContext);
+				backoff, jitter, backoffScheduler, onRetry, onRetryMono, applicationContext);
 	}
 
 	@Override
 	public Retry<T> withBackoffScheduler(Scheduler scheduler) {
 		return new DefaultRetry<>(retryPredicate, maxIterations, timeout,
-				backoff, jitter, scheduler, onRetry, applicationContext);
+				backoff, jitter, scheduler, onRetry, onRetryMono, applicationContext);
 	}
 
 	@Override
@@ -132,7 +144,8 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 		else {
 			log.debug("Scheduling retry attempt, retry context: {}", retryContext);
 			onRetry.accept(retryContext);
-			return retryMono(nextBackoff.delay());
+			return onRetryMono.apply(retryContext)
+				.then(Mono.from(retryMono(nextBackoff.delay())));
 		}
 	}
 

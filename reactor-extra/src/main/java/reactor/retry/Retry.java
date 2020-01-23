@@ -151,7 +151,9 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 		return retryMax(1);
 	}
 
-	/**
+    Retry<T> onRetryWithMono(Function<? super RetryContext<T>, Mono<?>> onRetryMono);
+
+    /**
 	 * Retry function that retries n times.
 	 * @param maxRetries number of retries
 	 * @return Retry function for n retries

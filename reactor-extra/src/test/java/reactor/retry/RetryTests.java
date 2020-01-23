@@ -281,6 +281,27 @@ public class RetryTests {
 	}
 
 	@Test
+	public void onRetryWithMono() {
+		Semaphore semaphore = new Semaphore(0);
+		Retry<?> retry = Retry.any()
+				.retryOnce()
+				.fixedBackoff(Duration.ofMillis(500))
+				.onRetryWithMono(context -> Mono.fromRunnable(semaphore::release));
+
+		StepVerifier.withVirtualTime(() -> Flux.range(0, 2).concatWith(Mono.error(new SocketException())).retryWhen(retry))
+					.expectNext(0, 1)
+					.then(semaphore::acquireUninterruptibly)
+					.expectNoEvent(Duration.ofMillis(400))
+					.thenAwait(Duration.ofMillis(200))
+					.expectNext(0, 1)
+					.verifyErrorMatches(e -> isRetryExhausted(e, SocketException.class));
+
+		StepVerifier.withVirtualTime(() -> Mono.error(new SocketException()).retryWhen(retry.noBackoff()))
+					.then(semaphore::acquireUninterruptibly)
+					.verifyErrorMatches(e -> isRetryExhausted(e, SocketException.class));
+	}
+
+	@Test
 	public void retryApplicationContext() {
 		class AppContext {
 			boolean needsRollback;
