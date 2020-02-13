@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2017-2020 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Consumer;
 
 import org.junit.Test;
@@ -34,14 +32,14 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class RetryTests {
 
-	private Queue<RetryContext<?>> retries = new ConcurrentLinkedQueue<>();
+	private final Queue<RetryContext<?>> retries = new ConcurrentLinkedQueue<>();
 
 	@Test
 	public void shouldTimeoutRetryWithVirtualTime() {
@@ -349,6 +347,16 @@ public class RetryTests {
 		return context -> retries.add(context);
 	}
 
+	@Test
+	public void retryExhaustedExceptionShouldExposeIterationCount() {
+		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new IOException()))
+			.retryWhen(Retry.any().noBackoff().retryMax(2).doOnRetry(onRetry()));
+
+		StepVerifier.create(flux)
+					.expectNext(0, 1, 0, 1, 0, 1)
+					.verifyErrorSatisfies(t -> isRetryExhaustedWithIterationCount(t, 3L));
+	}
+
 	@SafeVarargs
 	private final void assertRetries(Class<? extends Throwable>... exceptions) {
 		assertEquals(exceptions.length, retries.size());
@@ -363,6 +371,12 @@ public class RetryTests {
 
 	static boolean isRetryExhausted(Throwable e, Class<? extends Throwable> cause) {
 		return e instanceof RetryExhaustedException && cause.isInstance(e.getCause());
+	}
+
+	static void isRetryExhaustedWithIterationCount(Throwable e, long iterationCount) {
+		assertTrue(e instanceof RetryExhaustedException);
+		RetryExhaustedException retryExhaustedException = (RetryExhaustedException) e;
+		assertEquals(iterationCount, retryExhaustedException.getIterationCount());
 	}
 
 	@Test

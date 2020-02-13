@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2017-2020 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ public class RetryExhaustedException extends RuntimeException {
 
 	private static final long serialVersionUID = 6961442923363481283L;
 
+	private long iterationCount = -1L;
+
 	public RetryExhaustedException() {
 		super();
 	}
@@ -45,5 +47,19 @@ public class RetryExhaustedException extends RuntimeException {
 
 	public RetryExhaustedException(Throwable cause) {
 		super(cause);
+	}
+
+	public RetryExhaustedException(Throwable cause, long iterationCount) {
+		super(cause);
+		this.iterationCount = iterationCount;
+	}
+
+	/**
+	 * Exposes the total number of iterations (i.e. retries + initial attempt) before retries were exhausted.
+	 *
+	 * @return the iteration count or -1 if unavailable.
+	 */
+	public long getIterationCount() {
+		return iterationCount;
 	}
 }

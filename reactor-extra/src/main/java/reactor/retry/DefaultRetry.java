@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Pivotal Software Inc, All Rights Reserved.
+ * Copyright (c) 2017-2020 Pivotal Software Inc, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ public class DefaultRetry<T> extends AbstractRetry<T, Throwable> implements Retr
 		}
 		else if (nextBackoff == RETRY_EXHAUSTED) {
 			log.debug("Retries exhausted, retry context: {}", retryContext);
-			return Mono.error(new RetryExhaustedException(e));
+			return Mono.error(new RetryExhaustedException(e, iteration));
 		}
 		else {
 			log.debug("Scheduling retry attempt, retry context: {}", retryContext);
