@@ -43,6 +43,7 @@ ext {
   // Libraries
   openHftChronicleVersion = '3.4.2'
   rxJava2Version = '2.1.0'
+  rxJava3Version = '3.0.0'
   akkaActorVersion = '2.4.10'
 
   swtVersion = '4.5.2'
@@ -204,6 +205,8 @@ project('reactor-adapter') {
   dependencies {
 	//Optional RxJava 2 Converter
 	optional "io.reactivex.rxjava2:rxjava:$rxJava2Version"
+	//Optional RxJava 3 Converter
+	optional "io.reactivex.rxjava3:rxjava:$rxJava3Version"
 
 	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
 
