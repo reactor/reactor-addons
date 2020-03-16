@@ -29,12 +29,8 @@ import java.util.function.Consumer;
 
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
-import org.testng.asserts.Assertion;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.MonoProcessor;
-import reactor.core.publisher.UnicastProcessor;
-import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.scheduler.clock.SchedulerClock;
 import reactor.test.StepVerifier;
@@ -90,7 +86,7 @@ public class ReconnectTests {
 
 			publisher.next(0);
 
-			Assertions.assertThat(((ReconnectMono)reconnectableSource).subscribers == ReconnectMono.EMPTY_UNSUBSCRIBED);
+			Assertions.assertThat(((DefaultReconnectMono)reconnectableSource).subscribers == DefaultReconnectMono.EMPTY_UNSUBSCRIBED);
 
 			virtualTimeScheduler.advanceTimeBy(Duration.ofSeconds(minBackoff));
 

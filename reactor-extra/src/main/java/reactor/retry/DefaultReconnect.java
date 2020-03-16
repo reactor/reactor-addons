@@ -205,8 +205,8 @@ public class DefaultReconnect<T, C> extends AbstractRetry<C, T> implements Recon
 	}
 
 	@Override
-	public Mono<T> build(BiConsumer<? super T, Runnable> resetHook) {
-		return new ReconnectMono<>(this, resetHook);
+	public ReconnectMono<T> build(BiConsumer<? super T, Runnable> resetHook) {
+		return new DefaultReconnectMono<>(this, resetHook);
 	}
 
 

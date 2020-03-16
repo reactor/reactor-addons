@@ -184,5 +184,5 @@ public interface Reconnect<T, C> {
 		return backoff(Backoff.exponential(firstBackoff, maxBackoff, 3, true)).jitter(Jitter.random());
 	}
 
-	Mono<T> build(BiConsumer<? super T, Runnable> resetHook);
+	ReconnectMono<T> build(BiConsumer<? super T, Runnable> resetHook);
 }
