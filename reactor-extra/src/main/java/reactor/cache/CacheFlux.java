@@ -145,14 +145,14 @@ public class CacheFlux {
 	 */
 	public static <KEY, VALUE> FluxCacheBuilderCacheMiss<KEY, VALUE> lookup(
 			Function<KEY, Mono<List<Signal<VALUE>>>> reader, KEY key) {
-		return otherSupplier -> writer ->
+		return otherSupplier -> (BiFunction<KEY, List<Signal<VALUE>>, Mono<Void>> writer) ->
 				Flux.defer(() ->
 						reader.apply(key)
-						  .switchIfEmpty(otherSupplier.get()
-						                              .materialize()
-						                              .collectList()
-						                              .flatMap(signals -> writer.apply(key, signals)
-						                                                        .then(Mono.just(signals))))
+						      .switchIfEmpty(otherSupplier.get()
+						                         .materialize()
+						                         .collectList()
+						                         .flatMap(signals -> writer.apply(key, signals)
+						                                                   .then(Mono.just(signals))))
 						  .flatMapIterable(Function.identity())
 						  .dematerialize()
 		);

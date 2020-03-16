@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
@@ -367,6 +368,26 @@ public class CacheFluxTest {
 		            .verifyComplete();
 
 		assertThat(cacheMap).hasSize(1);
+	}
+
+
+	@Test
+	public void supplierNotEagerlyCalledIfDataInMapCache() {
+		AtomicBoolean supplierCalled = new AtomicBoolean();
+		Map<String, Object> genericMap = new HashMap<>();
+		genericMap.put("foo", Arrays.asList(Signal.next(123), Signal.next(456), Signal.complete()));
+
+		CacheFlux.lookup(genericMap, "foo", Integer.class)
+		         .onCacheMissResume(() -> {
+			         supplierCalled.set(true);
+			         return Flux.just(100);
+		         })
+		         .as(StepVerifier::create)
+		         .expectNext(123, 456)
+		         .expectComplete()
+		         .verify();
+
+		assertThat(supplierCalled).isFalse();
 	}
 
 }
