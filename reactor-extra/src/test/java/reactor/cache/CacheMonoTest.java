@@ -3,6 +3,7 @@ package reactor.cache;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -398,6 +399,26 @@ public class CacheMonoTest {
 		            .verifyComplete();
 
 		assertThat(count).as("cache hit").hasValue(1);
+	}
+
+	//see https://github.com/reactor/reactor-addons/issues/226
+	@Test
+	public void supplierNotEagerlyCalledIfDataInMapCache() {
+		AtomicBoolean supplierCalled = new AtomicBoolean();
+		Map<String, Object> genericMap = new HashMap<>();
+		genericMap.put("foo", Signal.next(123));
+
+		CacheMono.lookup(genericMap, "foo", Integer.class)
+		         .onCacheMissResume(() -> {
+		         	supplierCalled.set(true);
+		         	return Mono.just(100);
+		         })
+		         .as(StepVerifier::create)
+		         .expectNext(123)
+		         .expectComplete()
+		         .verify();
+
+		assertThat(supplierCalled).isFalse();
 	}
 
 	private static <K, V> Function<K, Mono<Signal<? extends V>>> reader(Map<K, ? extends Signal<? extends V>> cache) {

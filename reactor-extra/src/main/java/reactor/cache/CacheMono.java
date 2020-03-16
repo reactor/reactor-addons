@@ -21,6 +21,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import javax.swing.SingleSelectionModel;
+
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
 
@@ -88,11 +91,19 @@ public class CacheMono {
 	 * @see #lookup(Map, Object, Class)
 	 */
 	public static <KEY, VALUE> MonoCacheBuilderMapMiss<VALUE> lookup(Map<KEY, ? super Signal<? extends VALUE>> cacheMap, KEY key) {
-		return otherSupplier -> Mono.defer(() ->
-				Mono.justOrEmpty(cacheMap.get(key))
-				    .switchIfEmpty(otherSupplier.get().materialize()
-				                    .doOnNext(value -> cacheMap.put(key, value)))
-				    .dematerialize()
+		return otherSupplier -> Mono.defer(() -> {
+					Object fromCache = cacheMap.get(key);
+					if (fromCache == null) {
+						return otherSupplier.get()
+								.materialize()
+								.doOnNext(value -> cacheMap.put(key, value))
+								.dematerialize();
+					}
+					if (fromCache instanceof Signal) {
+						return Mono.just(fromCache).dematerialize();
+					}
+					throw new IllegalArgumentException("Content of cache for key " + key + " must be a Signal");
+				}
 		);
 	}
 
