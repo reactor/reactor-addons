@@ -17,6 +17,21 @@ import reactor.util.context.Context;
 
 public final class ReconnectMono<T> extends Mono<T> implements Invalidate, Disposable, Scannable {
 
+	@SuppressWarnings("rawtypes")
+	static final BiConsumer NOOP_ON_VALUE_RECEIVED = (o, o2) -> {};
+
+	@SuppressWarnings("unchecked")
+	public static <T> ReconnectMono<T> create(Mono<T> source, Consumer<? super T> onValueExpired) {
+		return create(source, onValueExpired, NOOP_ON_VALUE_RECEIVED);
+	}
+
+	public static <T> ReconnectMono<T> create(Mono<T> source,
+			Consumer<? super T> onValueExpired,
+			BiConsumer<? super T, Invalidate> onValueReceived) {
+		return new ReconnectMono<>(source, onValueExpired, onValueReceived);
+	}
+
+
 	final Mono<T>                            source;
 	final BiConsumer<? super T, Invalidate>  onValueReceived;
 	final Consumer<? super T>                onValueExpired;
@@ -50,17 +65,12 @@ public final class ReconnectMono<T> extends Mono<T> implements Invalidate, Dispo
 
 	ReconnectMono(
 		Mono<T> source,
-		Retry<?> retrySpec,
- 		BiConsumer<? super T, Invalidate> onValueReceived,
-		Consumer<? super T> onValueExpired
+		Consumer<? super T> onValueExpired,
+ 		BiConsumer<? super T, Invalidate> onValueReceived
 	) {
-		this.source = source
-			.switchIfEmpty(
-				Mono.error(new IllegalStateException("Empty Upstream"))
-			)
-			.retryWhen(retrySpec);
-		this.onValueReceived = onValueReceived;
+		this.source = source;
 		this.onValueExpired = onValueExpired;
+		this.onValueReceived = onValueReceived;
 		this.mainSubscriber = new ReconnectMainSubscriber<>(this);
 
 		SUBSCRIBERS.lazySet(this, EMPTY_UNSUBSCRIBED);
@@ -297,7 +307,7 @@ public final class ReconnectMono<T> extends Mono<T> implements Invalidate, Dispo
 			}
 
 			if (value == null) {
-				p.terminate(new CancellationException("Unexpected Completion of the Upstream"));
+				p.terminate(new IllegalStateException("Unexpected Completion of the Upstream"));
 			}
 			else {
 				p.complete();

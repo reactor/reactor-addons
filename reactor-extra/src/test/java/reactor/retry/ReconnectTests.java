@@ -72,20 +72,12 @@ public class ReconnectTests {
 				}
 			};
 
-			// given
-			final int minBackoff = 1;
-			final int maxBackoff = 5;
-			final int timeout = 10;
-
 			final ReconnectMono<String> reconnectMono = stringMono
 					.doOnDiscard(Object.class, System.out::println)
 					.as(source -> new ReconnectMono<>(
 							source,
-							Retry.anyOf(Exception.class)
-							     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-							     .timeout(Duration.ofSeconds(timeout)),
-							onValue(),
-							onExpire()
+							onExpire(),
+							onValue()
 					));
 
 			final MonoProcessor<String> processor =
@@ -107,14 +99,8 @@ public class ReconnectTests {
 				          .isInstanceOf(CancellationException.class)
 				          .hasMessage("ReconnectMono has already been disposed");
 
-				// FIXME: May not receive value at all
-				//        Because of retryWhen which uses SerializedSubscriber.
-				//        See https://github.com/reactor/reactor-core/issues/2077.
-				try {
-					Assertions.assertThat(expired)
-					          .containsOnly("value" + i);
-				} catch (Throwable e) {
-				}
+				Assertions.assertThat(expired)
+				          .containsOnly("value" + i);
 			}
 			else {
 				Assertions.assertThat(processor.peek()).isEqualTo("value" + i);
@@ -131,20 +117,12 @@ public class ReconnectTests {
 		for (int i = 0; i < 100000; i++) {
 			final TestPublisher<String> cold = TestPublisher.createNoncompliant(TestPublisher.Violation.REQUEST_OVERFLOW);
 
-			// given
-			final int minBackoff = 1;
-			final int maxBackoff = 5;
-			final int timeout = 10;
-
 			final ReconnectMono<String> reconnectMono = cold
 					.mono()
 					.as(source -> new ReconnectMono<>(
 							source,
-							Retry.anyOf(Exception.class)
-							     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-							     .timeout(Duration.ofSeconds(timeout)),
-							onValue(),
-							onExpire()
+							onExpire(),
+							onValue()
 					));
 
 			final MonoProcessor<String> processor =
@@ -182,26 +160,66 @@ public class ReconnectTests {
 		}
 	}
 
+
+	@Test
+	public void shouldExpireValueOnRacingDisposeAndNoValueComplete() {
+		Hooks.onErrorDropped(t -> {});
+		for (int i = 0; i < 100000; i++) {
+			final TestPublisher<String> cold = TestPublisher.createNoncompliant(TestPublisher.Violation.REQUEST_OVERFLOW);
+
+			final ReconnectMono<String> reconnectMono = cold
+					.mono()
+					.as(source -> new ReconnectMono<>(
+							source,
+							onExpire(),
+							onValue()
+					));
+
+			final MonoProcessor<String> processor =
+					reconnectMono.subscribeWith(MonoProcessor.create());
+
+			Assertions.assertThat(expired)
+			          .isEmpty();
+			Assertions.assertThat(received)
+			          .isEmpty();
+
+			RaceTestUtils.race(cold::complete, reconnectMono::dispose);
+
+			Assertions.assertThat(processor.isTerminated()).isTrue();
+
+			Throwable error = processor.getError();
+
+			if (error instanceof CancellationException) {
+				Assertions.assertThat(error)
+				          .isInstanceOf(CancellationException.class)
+				          .hasMessage("ReconnectMono has already been disposed");
+			} else {
+				Assertions.assertThat(error)
+				          .isInstanceOf(IllegalStateException.class)
+				          .hasMessage("Unexpected Completion of the Upstream");
+
+			}
+
+			Assertions.assertThat(expired)
+			          .isEmpty();
+
+			expired.clear();
+			received.clear();
+		}
+	}
+
 	@Test
 	public void shouldExpireValueOnRacingDisposeAndComplete() {
 		Hooks.onErrorDropped(t -> {});
 		for (int i = 0; i < 100000; i++) {
 			final TestPublisher<String> cold = TestPublisher.createNoncompliant(TestPublisher.Violation.REQUEST_OVERFLOW);
 
-			// given
-			final int minBackoff = 1;
-			final int maxBackoff = 5;
-			final int timeout = 10;
-
 			final ReconnectMono<String> reconnectMono = cold
 					.mono()
 					.as(source -> new ReconnectMono<>(
 							source,
-							Retry.anyOf(Exception.class)
-							     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-							     .timeout(Duration.ofSeconds(timeout)),
-							onValue(),
-							onExpire()
+							onExpire(),
+							onValue()
 					));
 
 			final MonoProcessor<String> processor =
@@ -240,26 +258,18 @@ public class ReconnectTests {
 	}
 
 	@Test
-	public void shouldExpireValueOnRacingDisposeAndErrorWithBackoff() {
+	public void shouldExpireValueOnRacingDisposeAndError() {
 		Hooks.onErrorDropped(t -> {});
 		RuntimeException runtimeException = new RuntimeException("test");
 		for (int i = 0; i < 100000; i++) {
 			final TestPublisher<String> cold = TestPublisher.createNoncompliant(TestPublisher.Violation.REQUEST_OVERFLOW);
 
-			// given
-			final int minBackoff = 1;
-			final int maxBackoff = 5;
-			final int timeout = 10;
-
 			final ReconnectMono<String> reconnectMono = cold
 					.mono()
 					.as(source -> new ReconnectMono<>(
 							source,
-							Retry.anyOf(Exception.class)
-							     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-							     .timeout(Duration.ofSeconds(timeout)),
-							onValue(),
-							onExpire()
+							onExpire(),
+							onValue()
 					));
 
 			final MonoProcessor<String> processor =
@@ -277,9 +287,16 @@ public class ReconnectTests {
 			Assertions.assertThat(processor.isTerminated()).isTrue();
 
 			if (processor.isError()) {
-				Assertions.assertThat(processor.getError())
-				          .isInstanceOf(CancellationException.class)
-				          .hasMessage("ReconnectMono has already been disposed");
+				if (processor.getError() instanceof CancellationException) {
+					Assertions.assertThat(processor.getError())
+					          .isInstanceOf(CancellationException.class)
+					          .hasMessage("ReconnectMono has already been disposed");
+				} else {
+					Assertions.assertThat(processor.getError())
+					          .isInstanceOf(RuntimeException.class)
+					          .hasMessage("test");
+
+				}
 			}
 			else {
 				Assertions.assertThat(received)
@@ -306,14 +323,14 @@ public class ReconnectTests {
 
 			final ReconnectMono<String> reconnectMono = cold
 					.mono()
+					.retryWhen(Retry.anyOf(Exception.class)
+					                .retryMax(1)
+					                .withBackoffScheduler(Schedulers.immediate())
+					                .noBackoff())
 					.as(source -> new ReconnectMono<>(
 							source,
-							Retry.anyOf(Exception.class)
-							     .retryMax(1)
-							     .withBackoffScheduler(Schedulers.immediate())
-							     .noBackoff(),
-							onValue(),
-							onExpire()
+							onExpire(),
+							onValue()
 					));
 
 			final MonoProcessor<String> processor =
@@ -362,36 +379,22 @@ public class ReconnectTests {
 	@Test
 	public void shouldBeScannable() {
 		final TestPublisher<String> publisher = TestPublisher.createNoncompliant(TestPublisher.Violation.REQUEST_OVERFLOW);
-		// given
-		final int minBackoff = 1;
-		final int maxBackoff = 5;
-		final int timeout = 10;
-
-
-		final Retry<?> retrySpec = Retry
-				.anyOf(Exception.class)
-				.exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-				.timeout(Duration.ofSeconds(timeout));
 
 		final Mono<String> parent = publisher.mono();
 		final ReconnectMono<String> reconnectMono = parent
-				.as(source -> {
-					return new ReconnectMono<>(
-							source, retrySpec,
-							onValue(),
-							onExpire()
-					);
-				});
+				.as(source -> new ReconnectMono<>(
+						source,
+						onExpire(),
+						onValue()
+				));
 
 		final Scannable scannableOfReconnect = Scannable.from(reconnectMono);
 
 		Assertions.assertThat((List)scannableOfReconnect.parents()
 		                               .map(s -> s.getClass())
 		                               .collect(Collectors.toList()))
-		          .hasSize(3)
+		          .hasSize(1)
 		          .containsExactly(
-		          		Mono.empty().retryWhen(retrySpec).getClass(),
-		          		Mono.empty().switchIfEmpty(Mono.empty()).getClass(),
 		          		publisher.mono().getClass()
 		          );
 		Assertions.assertThat(scannableOfReconnect.scanUnsafe(Scannable.Attr.TERMINATED))
@@ -408,12 +411,10 @@ public class ReconnectTests {
 		Assertions.assertThat((List)scannableOfMonoProcessor.parents()
 		                                            .map(s -> s.getClass())
 		                                            .collect(Collectors.toList()))
-		          .hasSize(5)
+		          .hasSize(3)
 		          .containsExactly(
 		          		  ReconnectMono.ReconnectInner.class,
 				          ReconnectMono.class,
-				          Mono.empty().retryWhen(retrySpec).getClass(),
-				          Mono.empty().switchIfEmpty(Mono.empty()).getClass(),
 				          publisher.mono().getClass()
 		          );
 
@@ -428,20 +429,13 @@ public class ReconnectTests {
 	@Test
 	public void shouldNotExpiredIfNotCompleted() {
 		final TestPublisher<String> publisher = TestPublisher.createNoncompliant(TestPublisher.Violation.REQUEST_OVERFLOW);
-		// given
-		final int minBackoff = 1;
-		final int maxBackoff = 5;
-		final int timeout = 10;
 
 		final ReconnectMono<String> reconnectMono = publisher
 				.mono()
 				.as(source -> new ReconnectMono<>(
 						source,
-						Retry.anyOf(Exception.class)
-						     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-						     .timeout(Duration.ofSeconds(timeout)),
-						onValue(),
-						onExpire()
+						onExpire(),
+						onValue()
 				));
 
 		MonoProcessor<String> processor = MonoProcessor.create();
@@ -491,20 +485,13 @@ public class ReconnectTests {
 	@Test
 	public void shouldNotEmitUntilCompletion() {
 		final TestPublisher<String> publisher = TestPublisher.createNoncompliant(TestPublisher.Violation.REQUEST_OVERFLOW);
-		// given
-		final int minBackoff = 1;
-		final int maxBackoff = 5;
-		final int timeout = 10;
 
 		final ReconnectMono<String> reconnectMono = publisher
 				.mono()
 				.as(source -> new ReconnectMono<>(
 						source,
-						Retry.anyOf(Exception.class)
-						     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-						     .timeout(Duration.ofSeconds(timeout)),
-						onValue(),
-						onExpire()
+						onExpire(),
+						onValue()
 				));
 
 		MonoProcessor<String> processor = MonoProcessor.create();
@@ -551,11 +538,8 @@ public class ReconnectTests {
 				.mono()
 				.as(source -> new ReconnectMono<>(
 						source,
-						Retry.anyOf(Exception.class)
-						     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-						     .timeout(Duration.ofSeconds(timeout)),
-						onValue(),
-						onExpire()
+						onExpire(),
+						onValue()
 				));
 
 		MonoProcessor<String> processor = MonoProcessor.create();
@@ -608,11 +592,8 @@ public class ReconnectTests {
 				.mono()
 				.as(source -> new ReconnectMono<>(
 						source,
-						Retry.anyOf(Exception.class)
-						     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-						     .timeout(Duration.ofSeconds(timeout)),
-						onValue(),
-						onExpire()
+						onExpire(),
+						onValue()
 				));
 
 		StepVerifier.create(reconnectMono)
@@ -654,11 +635,8 @@ public class ReconnectTests {
 				.mono()
 				.as(source -> new ReconnectMono<>(
 						source,
-						Retry.anyOf(Exception.class)
-						     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-						     .timeout(Duration.ofSeconds(timeout)),
-						onValue(),
-						onExpire()
+						onExpire(),
+						onValue()
 				));
 
 		final MonoProcessor<String> sub1 = MonoProcessor.create();
@@ -720,11 +698,8 @@ public class ReconnectTests {
 					.mono()
 					.as(source -> new ReconnectMono<>(
 						source,
-						Retry.anyOf(Exception.class)
-						     .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-						     .timeout(Duration.ofSeconds(timeout)),
-						onValue(),
-						onExpire()
+						onExpire(),
+						onValue()
 					));
 
 			StepVerifier.create(reconnectMono.subscribeOn(Schedulers.elastic()))
@@ -781,10 +756,10 @@ public class ReconnectTests {
 		// then
 		StepVerifier.withVirtualTime(() ->
 				Mono.<String>error(new RuntimeException("Something went wrong"))
-						.as(m -> new ReconnectMono<>(m, Retry.anyOf(Exception.class)
+						.retryWhen(Retry.anyOf(Exception.class)
 						                .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-						                .timeout(Duration.ofSeconds(timeout)),
-								onValue(), onExpire()))
+						                .timeout(Duration.ofSeconds(timeout)))
+						.as(m -> new ReconnectMono<>(m, onExpire(), onValue()))
 						.subscribeOn(Schedulers.elastic()))
 		            .expectSubscription()
                     .thenAwait(Duration.ofSeconds(timeout))
@@ -798,8 +773,8 @@ public class ReconnectTests {
 	@Test
 	public void monoRetryNoBackoff() {
 		Mono<?> mono = Mono.error(new IOException())
-		                   .as(m -> new ReconnectMono<>(m,
-				                   Retry.any().noBackoff().retryMax(2).doOnRetry(onRetry()), onValue(), onExpire()));
+		                   .retryWhen(Retry.any().noBackoff().retryMax(2).doOnRetry(onRetry()))
+		                   .as(m -> new ReconnectMono<>(m, onExpire(), onValue()));
 
 		StepVerifier.create(mono)
 		            .verifyError(RetryExhaustedException.class);
@@ -813,8 +788,8 @@ public class ReconnectTests {
 	@Test
 	public void monoRetryFixedBackoff() {
 		Mono<?> mono = Mono.error(new IOException())
-		                   .as(m -> new ReconnectMono<>(m,
-				                   Retry.any().fixedBackoff(Duration.ofMillis(500)).retryOnce().doOnRetry(onRetry()), onValue(), onExpire()));
+		                   .retryWhen(Retry.any().fixedBackoff(Duration.ofMillis(500)).retryOnce().doOnRetry(onRetry()))
+		                   .as(m -> new ReconnectMono<>(m, onExpire(), onValue()));
 
 		StepVerifier.withVirtualTime(() -> mono)
 		            .expectSubscription()
@@ -832,10 +807,11 @@ public class ReconnectTests {
 	@Test
 	public void monoRetryExponentialBackoff() {
 		Mono<?> mono = Mono.error(new IOException())
-		                   .as(m -> new ReconnectMono<>(m, Retry.any()
-		                                   .exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
-		                                   .retryMax(4)
-		                                   .doOnRetry(onRetry()), onValue(), onExpire()));
+		                   .retryWhen(Retry.any()
+		                                    .exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
+		                                    .retryMax(4)
+		                                    .doOnRetry(onRetry()))
+		                   .as(m -> new ReconnectMono<>(m, onExpire(), onValue()));
 
 		StepVerifier.withVirtualTime(() -> mono)
 		            .expectSubscription()
@@ -855,11 +831,11 @@ public class ReconnectTests {
 	@Test
 	public void monoRetryRandomBackoff() {
 		Mono<?> mono = Mono.error(new IOException())
-		                   .as(m -> new ReconnectMono<>(m, Retry.any()
-		                                                        .randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000))
-		                                                        .retryMax(4)
-		                                                        .doOnRetry(onRetry()),
-				                   onValue(), onExpire()));
+		                   .retryWhen(Retry.any()
+		                                   .randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000))
+		                                   .retryMax(4)
+		                                   .doOnRetry(onRetry()))
+		                   .as(m -> new ReconnectMono<>(m, onExpire(), onValue()));
 
 		StepVerifier.withVirtualTime(() -> mono)
 		            .expectSubscription()
@@ -887,7 +863,8 @@ public class ReconnectTests {
 		StepVerifier
 			.withVirtualTime(() ->
 				Mono.<Integer>error(new SocketException())
-				.as(m -> new ReconnectMono<>(m, retry, onValue(), onExpire()))
+						.retryWhen(retry)
+				.as(m -> new ReconnectMono<>(m, onExpire(), onValue()))
 			)
 			.then(() -> semaphore.acquireUninterruptibly())
 			.expectNoEvent(Duration.ofMillis(400))
