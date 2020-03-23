@@ -32,7 +32,7 @@ plugins {
 description = 'Reactive fast data framework for the JVM'
 
 ext {
-  reactorCoreVersion ='3.2.13.BUILD-SNAPSHOT'
+  reactorCoreVersion ='3.2.16.RELEASE'
 
   gradleScriptDir = "${rootProject.projectDir}/gradle"
 
