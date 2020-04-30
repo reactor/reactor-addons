@@ -36,19 +36,19 @@ Snapshot and pre-release Maven artifacts are provided in the SpringSource snapsh
 To add this repo to your Gradle build, specify the URL like the following:
 
     ext {
-      reactorAddonsVersion = '3.3.3.RELEASE'
+      reactorAddonsVersion = '3.4.0-SNAPSHOT'
     }
 
     repositories {
       //maven { url 'https://repo.spring.io/release' }
-      maven { url 'https://repo.spring.io/milestone' }
-      //maven { url 'https://repo.spring.io/snapshot' }
+      //maven { url 'https://repo.spring.io/milestone' }
+      maven { url 'https://repo.spring.io/snapshot' }
       mavenCentral()
     }
 
     dependencies {
       // Reactor Adapter (RxJava2, Akka Actors scheduler and more)
-      // compile "io.projectreactor.addons:reactor-adapter:$reactorAddonsVersion"
+      compile "io.projectreactor.addons:reactor-adapter:$reactorAddonsVersion"
     }
 
 
