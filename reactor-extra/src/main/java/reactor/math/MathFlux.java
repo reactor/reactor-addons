@@ -29,7 +29,7 @@ import reactor.core.publisher.Mono;
  * Mathematical utilities that compute sum, average, minimum or maximum values
  * from numerical sources or sources that can be mapped to numerical values using
  * custom mappings. Minimum and maximum values can be computed for any source
- * containing {@link Comparable} values or using custom @link {@link Comparator}.
+ * containing {@link Comparable} values or using custom {@link Comparator}.
  *
  */
 public final class MathFlux {
