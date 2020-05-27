@@ -33,6 +33,9 @@ import reactor.core.publisher.Mono;
  *
  */
 public final class MathFlux {
+	
+	private MathFlux() {
+	}
 
 	/**
 	 * Computes the integer sum of items in the source. Note that in case of an overflow,
