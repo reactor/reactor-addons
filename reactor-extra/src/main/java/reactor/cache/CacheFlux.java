@@ -70,7 +70,9 @@ import reactor.core.publisher.Signal;
  * @author Simon Baslé
  */
 public class CacheFlux {
-
+	
+	private CacheFlux() {
+	}
 
 	/**
 	 * Restore a {@link Flux Flux&lt;VALUE&gt;} from the cache-map given a provided key.

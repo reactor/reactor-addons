@@ -65,6 +65,9 @@ import reactor.core.publisher.Signal;
  * @author Simon Baslé
  */
 public class CacheMono {
+	
+	private CacheMono() {
+	}
 
 	/**
 	 * Restore a {@link Mono Mono&lt;VALUE&gt;} from the cache-map given a provided key. If no value
