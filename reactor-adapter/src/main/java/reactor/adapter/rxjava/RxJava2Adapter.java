@@ -154,7 +154,7 @@ public abstract class RxJava2Adapter {
     }
     
     /**
-     * WRaps Mono instance into an RxJava Maybe.
+     * Wraps Mono instance into an RxJava Maybe.
      * @param <T> the value type
      * @param source the source Mono
      * @return the new Maybe instance
