@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static reactor.util.retry.Retry.withThrowable;
 
 public class RetryTests {
 
@@ -53,9 +54,9 @@ public class RetryTests {
 		// then
 		StepVerifier.withVirtualTime(() ->
 				Mono.<String>error(new RuntimeException("Something went wrong"))
-						.retryWhen(Retry.anyOf(Exception.class)
-								.exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
-								.timeout(Duration.ofSeconds(timeout)))
+						.retryWhen(withThrowable(Retry.anyOf(Exception.class)
+						                              .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
+						                              .timeout(Duration.ofSeconds(timeout))))
 						.subscribeOn(Schedulers.elastic()))
 				.expectSubscription()
 //				.expectNoEvent(Duration.ofSeconds(timeout))
@@ -67,7 +68,7 @@ public class RetryTests {
 	@Test
 	public void fluxRetryNoBackoff() {
 		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new IOException()))
-			.retryWhen(Retry.any().noBackoff().retryMax(2).doOnRetry(onRetry()));
+			.retryWhen(withThrowable(Retry.any().noBackoff().retryMax(2).doOnRetry(onRetry())));
 
 		StepVerifier.create(flux)
 					.expectNext(0, 1, 0, 1, 0, 1)
@@ -79,7 +80,7 @@ public class RetryTests {
 	@Test
 	public void monoRetryNoBackoff() {
 		Mono<?> mono = Mono.error(new IOException())
-				.retryWhen(Retry.any().noBackoff().retryMax(2).doOnRetry(onRetry()));
+				.retryWhen(withThrowable(Retry.any().noBackoff().retryMax(2).doOnRetry(onRetry())));
 
 		StepVerifier.create(mono)
 					.verifyError(RetryExhaustedException.class);
@@ -90,7 +91,7 @@ public class RetryTests {
 	@Test
 	public void fluxRetryFixedBackoff() {
 		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new IOException()))
-				.retryWhen(Retry.any().fixedBackoff(Duration.ofMillis(500)).retryOnce().doOnRetry(onRetry()));
+				.retryWhen(withThrowable(Retry.any().fixedBackoff(Duration.ofMillis(500)).retryOnce().doOnRetry(onRetry())));
 
 		StepVerifier.withVirtualTime(() -> flux)
 					.expectNext(0, 1)
@@ -105,7 +106,7 @@ public class RetryTests {
 	@Test
 	public void monoRetryFixedBackoff() {
 		Mono<?> mono = Mono.error(new IOException())
-				.retryWhen(Retry.any().fixedBackoff(Duration.ofMillis(500)).retryOnce().doOnRetry(onRetry()));
+				.retryWhen(withThrowable(Retry.any().fixedBackoff(Duration.ofMillis(500)).retryOnce().doOnRetry(onRetry())));
 
 		StepVerifier.withVirtualTime(() -> mono)
 					.expectSubscription()
@@ -121,10 +122,10 @@ public class RetryTests {
 	@Test
 	public void fluxRetryExponentialBackoff() {
 		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new IOException()))
-				.retryWhen(Retry.any()
+				.retryWhen(withThrowable(Retry.any()
 									.exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
 									.timeout(Duration.ofMillis(1500))
-									.doOnRetry(onRetry()));
+									.doOnRetry(onRetry())));
 
 		StepVerifier.create(flux)
 		.expectNext(0, 1)
@@ -144,10 +145,10 @@ public class RetryTests {
 	@Test
 	public void monoRetryExponentialBackoff() {
 		Mono<?> mono = Mono.error(new IOException())
-				.retryWhen(Retry.any()
+				.retryWhen(withThrowable(Retry.any()
 						.exponentialBackoff(Duration.ofMillis(100), Duration.ofMillis(500))
 						.retryMax(4)
-						.doOnRetry(onRetry()));
+						.doOnRetry(onRetry())));
 
 		StepVerifier.withVirtualTime(() -> mono)
 					.expectSubscription()
@@ -164,10 +165,10 @@ public class RetryTests {
 	@Test
 	public void fluxRetryRandomBackoff() {
 		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new IOException()))
-				.retryWhen(Retry.any()
+				.retryWhen(withThrowable(Retry.any()
 									.randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000))
 									.retryMax(4)
-									.doOnRetry(onRetry()));
+									.doOnRetry(onRetry())));
 
 		StepVerifier.create(flux)
 					.expectNext(0, 1, 0, 1, 0, 1, 0, 1, 0, 1)
@@ -180,10 +181,10 @@ public class RetryTests {
 	@Test
 	public void monoRetryRandomBackoff() {
 		Mono<?> mono = Mono.error(new IOException())
-				.retryWhen(Retry.any()
+				.retryWhen(withThrowable(Retry.any()
 						.randomBackoff(Duration.ofMillis(100), Duration.ofMillis(2000))
 						.retryMax(4)
-						.doOnRetry(onRetry()));
+						.doOnRetry(onRetry())));
 
 		StepVerifier.withVirtualTime(() -> mono)
 					.expectSubscription()
@@ -201,14 +202,14 @@ public class RetryTests {
 	@Test
 	public void fluxRetriableExceptions() {
 		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new SocketException()))
-			.retryWhen(Retry.anyOf(IOException.class).retryOnce().doOnRetry(onRetry()));
+			.retryWhen(withThrowable(Retry.anyOf(IOException.class).retryOnce().doOnRetry(onRetry())));
 
 		StepVerifier.create(flux)
 					.expectNext(0, 1, 0, 1)
 					.verifyErrorMatches(e -> isRetryExhausted(e, SocketException.class));
 
 		Flux<Integer> nonRetriable = Flux.concat(Flux.range(0, 2), Flux.error(new RuntimeException()))
-				.retryWhen(Retry.anyOf(IOException.class).retryOnce().doOnRetry(onRetry()));
+				.retryWhen(withThrowable(Retry.anyOf(IOException.class).retryOnce().doOnRetry(onRetry())));
 		StepVerifier.create(nonRetriable)
 					.expectNext(0, 1)
 					.verifyError(RuntimeException.class);
@@ -217,8 +218,8 @@ public class RetryTests {
 
 	@Test
 	public void fluxNonRetriableExceptions() {
-
-		Retry<?> retry = Retry.allBut(RuntimeException.class).retryOnce().doOnRetry(onRetry());
+		Retry<?> retryLegacy = Retry.allBut(RuntimeException.class).retryOnce().doOnRetry(onRetry());
+		reactor.util.retry.Retry retry = withThrowable(retryLegacy);
 		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new IllegalStateException())).retryWhen(retry);
 
 		StepVerifier.create(flux)
@@ -234,7 +235,8 @@ public class RetryTests {
 
 	@Test
 	public void fluxRetryAnyException() {
-		Retry<?> retry = Retry.any().retryOnce().doOnRetry(onRetry());
+		Retry<?> retryLegacy = Retry.any().retryOnce().doOnRetry(onRetry());
+		reactor.util.retry.Retry retry = withThrowable(retryLegacy);
 
 		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new SocketException())).retryWhen(retry);
 		StepVerifier.create(flux)
@@ -251,7 +253,7 @@ public class RetryTests {
 	@Test
 	public void fluxRetryOnPredicate() {
 		Flux<Integer> flux = Flux.concat(Flux.range(0, 2), Flux.error(new SocketException()))
-				.retryWhen(Retry.onlyIf(context -> context.iteration() < 3).doOnRetry(onRetry()));
+				.retryWhen(withThrowable(Retry.onlyIf(context -> context.iteration() < 3).doOnRetry(onRetry())));
 
 		StepVerifier.create(flux)
 			.expectNext(0, 1, 0, 1, 0, 1)
@@ -262,10 +264,11 @@ public class RetryTests {
 	@Test
 	public void doOnRetry() {
 		Semaphore semaphore = new Semaphore(0);
-		Retry<?> retry = Retry.any()
+		Retry<?> retryLegacy = Retry.any()
 				.retryOnce()
 				.fixedBackoff(Duration.ofMillis(500))
 				.doOnRetry(context -> semaphore.release());
+		reactor.util.retry.Retry retry = withThrowable(retryLegacy);
 
 		StepVerifier.withVirtualTime(() -> Flux.range(0, 2).concatWith(Mono.error(new SocketException())).retryWhen(retry))
 					.expectNext(0, 1)
@@ -275,7 +278,7 @@ public class RetryTests {
 					.expectNext(0, 1)
 					.verifyErrorMatches(e -> isRetryExhausted(e, SocketException.class));
 
-		StepVerifier.withVirtualTime(() -> Mono.error(new SocketException()).retryWhen(retry.noBackoff()))
+		StepVerifier.withVirtualTime(() -> Mono.error(new SocketException()).retryWhen(withThrowable(retryLegacy.noBackoff())))
 					.then(() -> semaphore.acquireUninterruptibly())
 					.verifyErrorMatches(e -> isRetryExhausted(e, SocketException.class));
 	}
@@ -293,13 +296,14 @@ public class RetryTests {
 			}
 		}
 		AppContext appContext = new AppContext();
-		Retry<?> retry = Retry.<AppContext>any().withApplicationContext(appContext)
+		Retry<?> retryLegacy = Retry.<AppContext>any().withApplicationContext(appContext)
 				.retryMax(2)
 				.doOnRetry(context -> {
 					AppContext ac = context.applicationContext();
 					assertNotNull("Application context not propagated", ac);
 					ac.rollback();
 				});
+		reactor.util.retry.Retry retry = withThrowable(retryLegacy);
 
 		StepVerifier.withVirtualTime(() -> Mono.error(new RuntimeException()).doOnNext(i -> appContext.run()).retryWhen(retry))
 					.verifyErrorMatches(e -> isRetryExhausted(e, RuntimeException.class));
@@ -338,7 +342,8 @@ public class RetryTests {
 		}
 		RetryTestUtils.<Throwable>testReuseInParallel(2, 20,
 				backoff -> Retry.<Integer>any().retryMax(19).backoff(backoff),
-				retryFunc -> {
+				retryFuncLegacy -> {
+					reactor.util.retry.Retry retryFunc = withThrowable(retryFuncLegacy);
 					StepVerifier.create(Flux.range(1, range).concatWith(Mono.error(new SocketException())).retryWhen(retryFunc))
 								.expectNext(values)
 								.verifyErrorMatches(e -> isRetryExhausted(e, SocketException.class));
