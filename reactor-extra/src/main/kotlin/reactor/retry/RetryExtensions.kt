@@ -87,9 +87,9 @@ fun <T> Mono<T>.retryExponentialBackoff(times: Long, first: Duration, max: Durat
             .jitter(if (jitter) Jitter.random() else Jitter.noJitter())
 
     return if (doOnRetry == null)
-        this.retryWhen(retry)
+        this.retryWhen(reactor.util.retry.Retry.withThrowable(retry))
     else
-        this.retryWhen(retry.doOnRetry(doOnRetry))
+        this.retryWhen(reactor.util.retry.Retry.withThrowable(retry.doOnRetry(doOnRetry)))
 }
 
 /**
@@ -114,8 +114,8 @@ fun <T> Mono<T>.retryRandomBackoff(times: Long, first: Duration, max: Duration? 
             .randomBackoff(first, max)
 
     return if (doOnRetry == null)
-        this.retryWhen(retry)
+        this.retryWhen(reactor.util.retry.Retry.withThrowable(retry))
     else
-        this.retryWhen(retry.doOnRetry(doOnRetry))
+        this.retryWhen(reactor.util.retry.Retry.withThrowable(retry.doOnRetry(doOnRetry)))
 }
 

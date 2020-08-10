@@ -28,8 +28,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 /**
- * Retry function that may be used with {@link Flux#retryWhen(Function)} and {@link
- * Mono#retryWhen(Function)}.
+ * Retry function that may be used with {@link Flux#retryWhen(reactor.util.retry.Retry)} and {@link
+ * Mono#retryWhen(reactor.util.retry.Retry)}, after conversion via {@link reactor.util.retry.Retry#withThrowable(Function)}.
  * <p>
  * Each change in configuration returns a new instance (copy configuration), which
  * makes {@link Retry} suitable for creating configuration templates that can be fine
@@ -289,6 +289,6 @@ public interface Retry<T> extends Function<Flux<Throwable>, Publisher<Long>> {
 	 * @return {@link Flux} with the retry properties of this retry function
 	 */
 	default <S> Flux<S> apply(Publisher<S> source) {
-		return Flux.from(source).retryWhen(this);
+		return Flux.from(source).retryWhen(reactor.util.retry.Retry.withThrowable(this));
 	}
 }

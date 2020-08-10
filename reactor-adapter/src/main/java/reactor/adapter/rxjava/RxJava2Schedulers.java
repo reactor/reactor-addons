@@ -58,7 +58,7 @@ public final class RxJava2Schedulers {
         io.reactivex.Scheduler computation = ReactorCoreSchedulerWrapper.from(reactor.core.scheduler.Schedulers.parallel());
         io.reactivex.plugins.RxJavaPlugins.setComputationSchedulerHandler(s -> computation);
         
-        io.reactivex.Scheduler elastic = ReactorCoreSchedulerWrapper.from(reactor.core.scheduler.Schedulers.elastic());
+        io.reactivex.Scheduler elastic = ReactorCoreSchedulerWrapper.from(reactor.core.scheduler.Schedulers.boundedElastic());
         io.reactivex.plugins.RxJavaPlugins.setIoSchedulerHandler(s -> elastic);
         
         io.reactivex.Scheduler single = ReactorCoreSchedulerWrapper.from(reactor.core.scheduler.Schedulers.single());
