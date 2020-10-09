@@ -25,7 +25,10 @@ import java.util.function.LongSupplier;
 
 /**
  * Strategy employed to wait for specific {@link LongSupplier} values with various spinning strategies.
+ *
+ * @deprecated Deprecated along {@link EventLoopProcessor}
  */
+@Deprecated
 public abstract class WaitStrategy {
 
     /**

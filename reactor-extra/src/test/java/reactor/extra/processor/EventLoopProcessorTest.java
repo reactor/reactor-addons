@@ -32,6 +32,7 @@ import reactor.core.Scannable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static reactor.core.Scannable.Attr.*;
 
+@SuppressWarnings("deprecation")
 public class EventLoopProcessorTest {
 
 	EventLoopProcessor<String> test;

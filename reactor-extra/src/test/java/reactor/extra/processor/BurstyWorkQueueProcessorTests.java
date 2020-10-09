@@ -34,6 +34,7 @@ import static org.testng.Assert.assertEquals;
  * @author Michael Lex
  * @link https://github.com/reactor/reactor-core/issues/104
  */
+@SuppressWarnings("deprecation")
 public class BurstyWorkQueueProcessorTests {
 
 	public static final int PRODUCER_LATENCY = 5;
