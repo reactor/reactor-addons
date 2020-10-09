@@ -41,6 +41,7 @@ import static java.util.Arrays.copyOf;
  * This is an adaption of the original LMAX Disruptor RingBuffer code from
  * https://lmax-exchange.github.io/disruptor/.
  */
+@SuppressWarnings("deprecation")
 abstract class RingBuffer<E> implements LongSupplier {
 
 	static <T> void addSequence(final T holder,
@@ -632,6 +633,7 @@ enum  UnsafeSupport {
  * Base class for the various sequencer types (single/multi).  Provides common functionality like the management of
  * gating sequences (add/remove) and ownership of the current cursor.
  */
+@SuppressWarnings("deprecation")
 abstract class RingBufferProducer {
 
 	static final AtomicReferenceFieldUpdater<RingBufferProducer, RingBuffer.Sequence[]>
@@ -779,6 +781,7 @@ abstract class RingBufferProducer {
 	}
 }
 
+@SuppressWarnings("deprecation")
 abstract class SingleProducerSequencerPad extends RingBufferProducer
 {
 	protected long p1, p2, p3, p4, p5, p6, p7;
@@ -788,6 +791,7 @@ abstract class SingleProducerSequencerPad extends RingBufferProducer
 	}
 }
 
+@SuppressWarnings("deprecation")
 abstract class SingleProducerSequencerFields extends SingleProducerSequencerPad
 {
 	SingleProducerSequencerFields(int bufferSize, WaitStrategy waitStrategy, @Nullable Runnable spinObserver)
@@ -808,6 +812,7 @@ abstract class SingleProducerSequencerFields extends SingleProducerSequencerPad
  * to {@code RingBufferProducer.publish(long)} is made.
  */
 
+@SuppressWarnings("deprecation")
 final class SingleProducerSequencer extends SingleProducerSequencerFields {
 	protected long p1, p2, p3, p4, p5, p6, p7;
 
@@ -1291,6 +1296,7 @@ final class UnsafeSequence extends RhsPadding
  * to {@code RingBufferProducer.next()}, to determine the highest available sequence that can be read, then
  * {@code RingBufferProducer.getHighestPublishedSequence(long, long)} should be used.
  */
+@SuppressWarnings("deprecation")
 final class MultiProducerRingBuffer extends RingBufferProducer
 {
 	private static final Unsafe UNSAFE = RingBuffer.getUnsafe();
