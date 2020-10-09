@@ -43,6 +43,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Stephane Maldini
  */
+@SuppressWarnings("deprecation")
 public class ConsistentProcessorTests {
 
 	private Processor<String, String> processor;

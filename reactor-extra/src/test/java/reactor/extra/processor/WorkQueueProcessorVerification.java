@@ -23,6 +23,7 @@ import org.testng.SkipException;
  * @author Stephane Maldini
  */
 @org.testng.annotations.Test
+@SuppressWarnings("deprecation")
 public class WorkQueueProcessorVerification extends AbstractProcessorVerification {
 
 	@Override

@@ -28,6 +28,7 @@ import reactor.core.publisher.FluxProcessor;
  * @author Stephane Maldini
  */
 @org.testng.annotations.Test //FIXME
+@SuppressWarnings("deprecation")
 public class FluxWithProcessorVerification extends AbstractProcessorVerification {
 
 	final AtomicLong cumulated = new AtomicLong(0);
@@ -37,7 +38,6 @@ public class FluxWithProcessorVerification extends AbstractProcessorVerification
 	@Override
 	public Processor<Long, Long> createIdentityProcessor(int bufferSize) {
 		Flux<String> otherStream = Flux.just("test", "test2", "test3");
-//		System.out.println("Providing new downstream");
 		FluxProcessor<Long, Long> p = WorkQueueProcessor.<Long>builder().name("fluxion-raw-fork")
 		                                                                .bufferSize(bufferSize)
 		                                                                .build();

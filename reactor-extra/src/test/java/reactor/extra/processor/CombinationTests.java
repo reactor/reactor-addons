@@ -42,6 +42,7 @@ import reactor.util.annotation.Nullable;
 /**
  * @author Stephane Maldini
  */
+@SuppressWarnings("deprecation")
 public class CombinationTests {
 
 	ReplayProcessor<Long> emitter1;

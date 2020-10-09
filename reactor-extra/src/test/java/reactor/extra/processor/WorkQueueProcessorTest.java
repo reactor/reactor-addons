@@ -62,9 +62,7 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import static reactor.extra.processor.WaitStrategy.liteBlocking;
 
-/**
- *
- */
+@SuppressWarnings("deprecation")
 public class WorkQueueProcessorTest {
 
 	public static void submitInCurrentThread(FluxSink<String> emitter) {

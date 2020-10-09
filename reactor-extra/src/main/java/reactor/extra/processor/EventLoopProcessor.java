@@ -45,7 +45,9 @@ import reactor.util.context.Context;
  * A base processor used by executor backed processors to take care of their ExecutorService
  *
  * @author Stephane Maldini
+ * @deprecated Processors are being phased out entirely. To be removed in 3.5, see https://github.com/reactor/reactor-core/issues/2431
  */
+@Deprecated
 abstract class EventLoopProcessor<IN> extends FluxProcessor<IN, IN>
 		implements Runnable {
 

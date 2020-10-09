@@ -22,6 +22,7 @@ import org.reactivestreams.Processor;
  * @author Stephane Maldini
  */
 @org.testng.annotations.Test
+@SuppressWarnings("deprecation")
 public class TopicProcessorVerification extends AbstractProcessorVerification {
 
 	@Override

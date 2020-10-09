@@ -68,7 +68,9 @@ import reactor.util.concurrent.Queues;
  * @param <E> Type of dispatched signal
  * @author Stephane Maldini
  * @author Anatoly Kadyshev
+ * @deprecated Processors are being phased out entirely. To be removed in 3.5, see https://github.com/reactor/reactor-core/issues/2431
  */
+@Deprecated
 public final class TopicProcessor<E> extends EventLoopProcessor<E>  {
 
 	/**
