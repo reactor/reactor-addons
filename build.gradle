@@ -153,17 +153,15 @@ configure(subprojects) { project ->
 	exclude '**/dummy/Test.*'
   }
 
-  repositories {
-	if (version.endsWith('BUILD-SNAPSHOT')) {
-	  mavenLocal()
-	  maven { url 'https://repo.spring.io/libs-snapshot' }
+	repositories {
+		jcenter()
+		mavenCentral()
+		if (version.endsWith('BUILD-SNAPSHOT')) {
+			mavenLocal()
+			maven { url 'https://repo.spring.io/snapshot' }
+		}
+		maven { url 'https://repo.spring.io/milestone' }
 	}
-
-	maven { url 'https://repo.spring.io/libs-milestone' }
-	maven { url "https://oss.sonatype.org/content/repositories/releases/" }
-	jcenter()
-	mavenCentral()
-  }
 
   // dependencies that are common across all java projects
   dependencies {
@@ -223,11 +221,11 @@ project('reactor-adapter') {
 project('reactor-extra') {
   description = 'Reactor Extra utilities'
 
-  apply plugin: "biz.aQute.bnd.builder"
+	apply plugin: "biz.aQute.bnd.builder"
 
-  repositories {
-	maven { url "https://maven-eclipse.github.io/maven" }
-  }
+	repositories {
+		maven { url "https://maven-eclipse.github.io/maven" }
+	}
 
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
