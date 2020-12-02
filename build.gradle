@@ -244,9 +244,7 @@ project('reactor-adapter') {
 
   jar {
     manifest {
-      attributes 'Implementation-Title': 'reactor-adapter',
-              'Implementation-Version': version,
-              'Automatic-Module-Name': 'reactor.adapter'
+      attributes('Automatic-Module-Name': 'reactor.adapter')
     }
 		bnd(bndOptions)
   }
