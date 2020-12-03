@@ -1,3 +1,6 @@
+import org.gradle.util.VersionNumber
+import java.text.SimpleDateFormat
+
 /*
  * Copyright (c) 2011-2019 Pivotal Software Inc, All Rights Reserved.
  *
@@ -64,6 +67,23 @@ ext {
 				  "https://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
 				  "https://www.reactive-streams.org/reactive-streams-1.0.3-javadoc/"] as
 		  String[]
+
+	versionNumber = VersionNumber.parse(version.toString())
+	if (versionNumber.qualifier == null || versionNumber.qualifier.size() == 0) {
+		osgiVersion = "${version}.RELEASE"
+		println "$version is a release, will use $osgiVersion for bnd"
+	}
+	else if (versionNumber.qualifier.equalsIgnoreCase("SNAPSHOT")) {
+		def sdf = new SimpleDateFormat("yyyyMMddHHmm");
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		def buildTimestamp = sdf.format(new Date())
+		osgiVersion = "${versionNumber.major}.${versionNumber.minor}.${versionNumber.micro}.BUILD-$buildTimestamp"
+		println "$version is a snapshot, will use $osgiVersion for bnd"
+	}
+	else {
+		osgiVersion = "${versionNumber.major}.${versionNumber.minor}.${versionNumber.micro}.${versionNumber.qualifier}"
+		println "$version is neither release nor snapshot, will use $osgiVersion for bnd"
+	}
 }
 
 apply from: "$gradleScriptDir/doc.gradle"
@@ -191,6 +211,21 @@ project('reactor-adapter') {
 
   apply plugin: "biz.aQute.bnd.builder"
 
+	ext {
+		bndOptions = [
+			"-exportcontents": "reactor.*;version=$osgiVersion;-noimport:=true",
+			"Import-Package": [
+				"!*internal*",
+				"!javax.annotation",
+				"kotlin.*;resolution:=optional",
+				"*"
+			].join(","),
+			"Bundle-Name" : "reactor-adapter",
+			"Bundle-SymbolicName" : "io.projectreactor.addons.reactor-adapter",
+			"Bundle-Version" : "$osgiVersion"
+		]
+	}
+
   dependencies {
 	//Optional RxJava 2 Converter
 	optional "io.reactivex.rxjava2:rxjava:$rxJava2Version"
@@ -206,15 +241,9 @@ project('reactor-adapter') {
 
   jar {
     manifest {
-      attributes 'Implementation-Title': 'reactor-adapter',
-              'Implementation-Version': version,
-              'Automatic-Module-Name': 'reactor.adapter'
+      attributes('Automatic-Module-Name': 'reactor.adapter')
     }
-	bnd(
-			"-exportcontents": "!*internal*,*;-noimport:=true",
-			"-nouses": "true",
-			"Import-Package": "!*internal*,!javax.annotation,kotlin.*;resolution:=optional,*"
-	)
+		bnd(bndOptions)
   }
 
 }
@@ -228,6 +257,23 @@ project('reactor-extra') {
 		maven { url "https://maven-eclipse.github.io/maven" }
 	}
 
+	ext {
+		bndOptions = [
+			"-exportcontents" : "reactor.*;version=$osgiVersion;-noimport:=true",
+			"Import-Package": [
+				"!*internal*",
+				"!javax.annotation",
+				"kotlin.*;resolution:=optional",
+				"org.eclipse.*;resolution:=optional",
+				"javax.swing.*;resolution:=optional",
+				"*"
+			].join(","),
+			"Bundle-Name" : "reactor-extra",
+			"Bundle-SymbolicName" : "io.projectreactor.addons.reactor-extra",
+			"Bundle-Version" : "$osgiVersion"
+		]
+	}
+
   dependencies {
 	optional "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
 	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
@@ -237,15 +283,9 @@ project('reactor-extra') {
 
   jar {
     manifest {
-      attributes 'Implementation-Title': 'reactor-extra',
-              'Implementation-Version': version,
-              'Automatic-Module-Name': 'reactor.extra'
+      attributes('Automatic-Module-Name': 'reactor.extra')
     }
-	bnd(
-			"-exportcontents": "!*internal*,*;-noimport:=true",
-			"-nouses": "true",
-			"Import-Package": "!*internal*,!javax.annotation,kotlin.*;resolution:=optional,org.eclipse.*;resolution:=optional,javax.swing.*;resolution:=optional,*"
-	)
+		bnd(bndOptions)
   }
 }
 
