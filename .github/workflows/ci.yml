@@ -22,7 +22,7 @@ jobs:
     - uses: eskatos/gradle-command-action@v1
       name: gradle
       with:
-        arguments: check javadoc --no-daemon
+        arguments: check javadoc
         wrapper-cache-enabled: true
         dependencies-cache-enabled: true
         configuration-cache-enabled: true
