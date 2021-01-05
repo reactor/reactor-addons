@@ -125,10 +125,12 @@ static def repoKeyFor(p) {
 			(~/^\d+\.\d+\.\d+$/) : "libs-release-local",
 			(~/^\d+\.\d+\.\d+-SNAPSHOT$/) : "libs-snapshot-local",
 			(~/^\d+\.\d+\.\d+\.M\d+$/) : "libs-milestone-local",
+			(~/^\d+\.\d+\.\d+\.RC\d+$/) : "libs-milestone-local",
 			// Old scheme
 			(~/^\d+\.\d+\.\d+\.RELEASE$/) : "libs-release-local",
 			(~/^\d+\.\d+\.\d+\.BUILD-SNAPSHOT$/) : "libs-snapshot-local",
 			(~/^\d+\.\d+\.\d+\.M\d+$/) : "libs-milestone-local",
+			(~/^\d+\.\d+\.\d+\.RC\d+$/) : "libs-milestone-local",
 	]
 	return repos.find {e -> p.version =~ e.key}.value
 }
