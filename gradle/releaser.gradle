@@ -82,9 +82,9 @@ String getOrGenerateBuildNumber() {
 	if (project.hasProperty("buildNumber")) {
 		return project.findProperty("buildNumber")
 	}
-	def jenkinsNumber = System.getenv("BUILD_NUMBER")
-	if (jenkinsNumber != null) {
-		return jenkinsNumber
+	def ciNumber = System.getenv("GITHUB_RUN_ID")
+	if (ciNumber != null) {
+		return ciNumber
 	}
 	ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC)
 	long secondsInDay = now.toEpochSecond() - ZonedDateTime.now(ZoneOffset.UTC).withSecond(0).withHour(0).withMinute(0).toEpochSecond()
@@ -107,14 +107,36 @@ if (rootProject.hasProperty("artifactory_publish_password")) {
 			contextUrl = "${artifactory_publish_contextUrl}"
 			publish {
 				repository {
-					repoKey = "${artifactory_publish_repoKey}"
+					repoKey = repoKeyFor(p)
 					username = "${artifactory_publish_username}"
 					password = "${artifactory_publish_password}"
 				}
 			}
 			clientConfig.setIncludeEnvVars(false)
-			clientConfig.info.setBuildName('Reactor - Releaser - Addons')
+			clientConfig.info.setBuildName('Reactor - GitHub Actions - Addons')
 			clientConfig.info.setBuildNumber(buildNumber)
+			if (System.getenv("GITHUB_ACTIONS") == "true") {
+				clientConfig.info.setBuildUrl(System.getenv("GITHUB_SERVER_URL") + "/" + System.getenv("GITHUB_REPOSITORY") + "/actions/runs/" + System.getenv("GITHUB_RUN_ID"))
+				clientConfig.info.setVcsRevision(System.getenv("GITHUB_SHA"))
+			}
 		}
 	}
+}
+
+static def repoKeyFor(p) {
+	def repos = [
+			// New scheme
+			(~/^\d+\.\d+\.\d+$/) : "libs-release-local",
+			(~/^\d+\.\d+\.\d+-SNAPSHOT$/) : "libs-snapshot-local",
+			(~/^\d+\.\d+\.\d+-M\d+$/) : "libs-milestone-local",
+			(~/^\d+\.\d+\.\d+-RC\d+$/) : "libs-milestone-local",
+			// Old scheme
+			(~/^\d+\.\d+\.\d+\.RELEASE$/) : "libs-release-local",
+			(~/^\d+\.\d+\.\d+\.BUILD-SNAPSHOT$/) : "libs-snapshot-local",
+			(~/^\d+\.\d+\.\d+\.M\d+$/) : "libs-milestone-local",
+			(~/^\d+\.\d+\.\d+\.RC\d+$/) : "libs-milestone-local",
+			// Test
+			(~/^\d+\.\d+\.\d+-.+-SNAPSHOT$/) : "libs-snapshot-local",
+	]
+	return repos.find {e -> p.version =~ e.key}.value
 }
