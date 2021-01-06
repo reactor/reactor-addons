@@ -99,18 +99,18 @@ task printBuildNumber() {
 	}
 }
 
-if (rootProject.hasProperty("artifactory_publish_password")) {
+if (rootProject.hasProperty("artifactory_publish_password") || System.getenv("ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_PASSWORD") != null) {
 	configure(rootProject) { p ->
-		println "Hello ${artifactory_publish_contextUrl}"
+		println "Hello ${artifactory_publish_contextUrl} -o- " + System.getenv("ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_CONTEXTURL")
 		apply plugin: "com.jfrog.artifactory"
 		def buildNumber = getOrGenerateBuildNumber()
 		artifactory {
-			contextUrl = "${artifactory_publish_contextUrl}"
+			contextUrl = System.getenv("ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_CONTEXTURL") ?: "${artifactory_publish_contextUrl}"
 			publish {
 				repository {
 					repoKey = repoKeyFor(p)
-					username = "${artifactory_publish_username}"
-					password = "${artifactory_publish_password}"
+					username = System.getenv("ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_USERNAME") ?: "${artifactory_publish_username}"
+					password = System.getenv("ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_PASSWORD") ?: "${artifactory_publish_password}"
 				}
 			}
 			clientConfig.setIncludeEnvVars(false)
