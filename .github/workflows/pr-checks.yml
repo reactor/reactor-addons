@@ -1,12 +1,9 @@
-name: CI
+name: PR Checks
 on:
-  push:
-    branches:
-      - master
-      - "[0-9].[0-9]+.x"
+  pull_request: {}
 jobs:
   checks:
-    name: publication
+    name: checks
     runs-on: ubuntu-latest
     steps:
     # the skip-duplicate-actions step actually applies to the whole workflow
@@ -20,11 +17,8 @@ jobs:
         java-version: 8
     - uses: eskatos/gradle-command-action@v1
       name: gradle
-      env:
-        ORG_GRADLE_PROJECT_artifactory_publish_username: ${{secrets.ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_USERNAME}}
-        ORG_GRADLE_PROJECT_artifactory_publish_password: ${{secrets.ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_PASSWORD}}
       with:
-        arguments: check assemble artifactoryPublish -Partifactory_publish_contextUrl=https://repo.spring.io
+        arguments: check javadoc
         wrapper-cache-enabled: true
         dependencies-cache-enabled: true
         configuration-cache-enabled: true
