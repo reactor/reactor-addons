@@ -101,6 +101,7 @@ task printBuildNumber() {
 
 if (rootProject.hasProperty("artifactory_publish_password")) {
 	configure(rootProject) { p ->
+		println "Hello ${artifactory_publish_contextUrl}"
 		apply plugin: "com.jfrog.artifactory"
 		def buildNumber = getOrGenerateBuildNumber()
 		artifactory {
@@ -136,6 +137,8 @@ static def repoKeyFor(p) {
 			(~/^\d+\.\d+\.\d+\.BUILD-SNAPSHOT$/) : "libs-snapshot-local",
 			(~/^\d+\.\d+\.\d+\.M\d+$/) : "libs-milestone-local",
 			(~/^\d+\.\d+\.\d+\.RC\d+$/) : "libs-milestone-local",
+			// Test
+			(~/^\d+\.\d+\.\d+-.+-SNAPSHOT$/) : "libs-snapshot-local",
 	]
 	return repos.find {e -> p.version =~ e.key}.value
 }
