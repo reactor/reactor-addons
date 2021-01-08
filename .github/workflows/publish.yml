@@ -60,6 +60,6 @@ jobs:
         tag_name: "v${{ steps.read-version.outputs.value }}"
         draft: true
         prerelease: ${{ steps.version-type.outputs.isrelease == 'false' }}
-        body: "Reactor Addons `${{ steps.read-version.outputs.value }}` is part of the **`` release train (codename ``)**. TODO"
+        body: "Reactor Addons `${{ steps.read-version.outputs.value }}` is part of the **`RELEASETRAIN` release train (codename `CODENAME`)**. TODO"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
