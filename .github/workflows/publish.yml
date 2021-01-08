@@ -12,6 +12,33 @@ jobs:
     steps:
     # we DON'T want to cancel previous runs, especially in the case of a "back to snapshots" build right after a release push
     - uses: actions/checkout@v2
+    - uses: christian-draeger/read-properties@1.0.1
+      name: read version
+      id: read-version
+      with:
+        path: './gradle.properties'
+        property: 'version'
+    - uses: frabert/replace-string-action@v1.2
+      id: split-qualifier
+      with:
+        string: ${{ steps.read-version.outputs.value }}
+        pattern: '(\d+\.\d+\.\d+)[.-]?([\w-]*)'
+        replace-with: 'VERSION$2'
+    - name: interpret version
+      id: version-type
+      run: |
+          echo "::set-output name=issnapshot::${{ steps.split-qualifier.outputs.replaced == 'VERSIONSNAPSHOT' || steps.split-qualifier.outputs.replaced == 'VERSIONBUILD-SNAPSHOT'  }}"
+          echo "::set-output name=isprerelease::${{ startsWith(steps.split-qualifier.outputs.replaced,'VERSIONRC') || startsWith(steps.split-qualifier.outputs.replaced,'VERSIONM')  }}"
+          echo "::set-output name=isrelease::${{ steps.split-qualifier.outputs.replaced == 'VERSIONRELEASE' || steps.split-qualifier.outputs.replaced == 'VERSION'  }}"
+          echo "::set-output name=isunknown::${{ startsWith(steps.split-qualifier.outputs.replaced,'VERSION') != true  }}"
+    - name: validate version interpretation
+      if: steps.version-type.outputs.isunknown == 'true'
+      run: |
+          echo "Couldn't classify version"
+          echo "${{ steps.read-version.outputs.value }}"
+          echo "${{ toJson(steps.split-qualifier.outputs) }}"
+          echo "${{ toJson(steps.version-type.outputs) }}"
+          return 1
     - uses: actions/setup-java@v1
       with:
         java-version: 8
