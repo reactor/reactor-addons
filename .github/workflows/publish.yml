@@ -9,11 +9,7 @@ jobs:
     name: publication
     runs-on: ubuntu-latest
     steps:
-    # the skip-duplicate-actions step actually applies to the whole workflow
-    - uses: fkirc/skip-duplicate-actions@master
-      name: cancel previous runs
-      with:
-        github_token: ${{ github.token }}
+    # we DON'T want to cancel previous runs, especially in the case of a "back to snapshots" build right after a release push
     - uses: actions/checkout@v2
     - uses: actions/setup-java@v1
       with:
