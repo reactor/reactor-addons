@@ -42,16 +42,16 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: 8
-    - uses: eskatos/gradle-command-action@v1
-      name: gradle
-      env:
-        ORG_GRADLE_PROJECT_artifactory_publish_username: ${{secrets.ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_USERNAME}}
-        ORG_GRADLE_PROJECT_artifactory_publish_password: ${{secrets.ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_PASSWORD}}
-      with:
-        arguments: check assemble artifactoryPublish -Partifactory_publish_contextUrl=https://repo.spring.io
-        wrapper-cache-enabled: true
-        dependencies-cache-enabled: true
-        configuration-cache-enabled: true
+    # - uses: eskatos/gradle-command-action@v1
+    #   name: gradle
+    #   env:
+    #     ORG_GRADLE_PROJECT_artifactory_publish_username: ${{secrets.ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_USERNAME}}
+    #     ORG_GRADLE_PROJECT_artifactory_publish_password: ${{secrets.ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_PASSWORD}}
+    #   with:
+    #     arguments: check assemble artifactoryPublish -Partifactory_publish_contextUrl=https://repo.spring.io
+    #     wrapper-cache-enabled: true
+    #     dependencies-cache-enabled: true
+    #     configuration-cache-enabled: true
     - uses: avakar/tag-and-release@v1
       name: tag
       # if: steps.version-type.outputs.issnapshot == 'false' && steps.version-type.outputs.isunknown == 'false'
