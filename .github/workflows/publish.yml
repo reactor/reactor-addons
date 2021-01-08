@@ -52,3 +52,13 @@ jobs:
         wrapper-cache-enabled: true
         dependencies-cache-enabled: true
         configuration-cache-enabled: true
+    - uses: avakar/tag-and-release@v1
+      name: tag
+      # if: steps.version-type.outputs.issnapshot == 'false' && steps.version-type.outputs.isunknown == 'false'
+      if: steps.version-type.outputs.isunknown == 'false' #temp for test
+      with:
+        tag_name: "v${{ steps.read-version.outputs.value }}"
+        draft: true
+        prerelease: ${{ steps.version-type.outputs.isrelease == 'false' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
