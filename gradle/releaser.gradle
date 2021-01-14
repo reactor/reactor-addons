@@ -124,19 +124,19 @@ if (rootProject.hasProperty("artifactory_publish_password")) {
 }
 
 static def repoKeyFor(p) {
-	def repos = [
-			// New scheme
-			(~/^\d+\.\d+\.\d+$/) : "libs-release-local",
-			(~/^\d+\.\d+\.\d+-SNAPSHOT$/) : "libs-snapshot-local",
-			(~/^\d+\.\d+\.\d+-M\d+$/) : "libs-milestone-local",
-			(~/^\d+\.\d+\.\d+-RC\d+$/) : "libs-milestone-local",
-			// Old scheme
-			(~/^\d+\.\d+\.\d+\.RELEASE$/) : "libs-release-local",
-			(~/^\d+\.\d+\.\d+\.BUILD-SNAPSHOT$/) : "libs-snapshot-local",
-			(~/^\d+\.\d+\.\d+\.M\d+$/) : "libs-milestone-local",
-			(~/^\d+\.\d+\.\d+\.RC\d+$/) : "libs-milestone-local",
-			// Test
-			(~/^\d+\.\d+\.\d+-.+-SNAPSHOT$/) : "libs-snapshot-local",
-	]
-	return repos.find {e -> p.version =~ e.key}.value
+	switch (p.version) {
+		case (~/^\d+\.\d+\.\d+$/):
+		case (~/^\d+\.\d+\.\d+\.RELEASE$/):
+			return "libs-release-local";
+		case (~/^\d+\.\d+\.\d+-SNAPSHOT$/):
+		case (~/^\d+\.\d+\.\d+\.BUILD-SNAPSHOT$/):
+			return "libs-snapshot-local";
+		case (~/^\d+\.\d+\.\d+-M\d+$/):
+		case (~/^\d+\.\d+\.\d+-RC\d+$/):
+		case (~/^\d+\.\d+\.\d+\.M\d+$/):
+		case (~/^\d+\.\d+\.\d+\.RC\d+$/):
+			return "libs-milestone-local";
+		default:
+			throw new IllegalStateException("Unknown pattern");
+	}
 }
