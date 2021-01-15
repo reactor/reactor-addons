@@ -125,16 +125,16 @@ if (rootProject.hasProperty("artifactory_publish_password")) {
 
 static def repoKeyFor(p) {
 	switch (p.version) {
-		case (~/^\d+\.\d+\.\d+$/): // eg 1.2.3, new scheme
-		case (~/^\d+\.\d+\.\d+\.RELEASE$/): // eg 1.2.3.RELEASE, old scheme
+		case (~/^\d+\.\d+\.\d+$/):                 // eg 1.2.3, new scheme
+		case (~/^\d+\.\d+\.\d+\.RELEASE$/):        // eg 1.2.3.RELEASE, old scheme
 			return "libs-release-local";
-		case (~/^\d+\.\d+\.\d+-SNAPSHOT$/): // eg 1.2.3-SNAPSHOT, new scheme
+		case (~/^\d+\.\d+\.\d+-SNAPSHOT$/):        // eg 1.2.3-SNAPSHOT, new scheme
 		case (~/^\d+\.\d+\.\d+\.BUILD-SNAPSHOT$/): // eg 1.2.3.BUILD-SNAPSHOT, old scheme
 			return "libs-snapshot-local";
-		case (~/^\d+\.\d+\.\d+-M\d+$/): // eg 1.2.3-M4, new scheme
-		case (~/^\d+\.\d+\.\d+-RC\d+$/): // eg 1.2.3-RC4, new scheme
-		case (~/^\d+\.\d+\.\d+\.M\d+$/): // eg 1.2.3.M4, old scheme
-		case (~/^\d+\.\d+\.\d+\.RC\d+$/): // eg 1.2.3.RC4, old scheme
+		case (~/^\d+\.\d+\.\d+-M\d+$/):            // eg 1.2.3-M4, new scheme
+		case (~/^\d+\.\d+\.\d+-RC\d+$/):           // eg 1.2.3-RC4, new scheme
+		case (~/^\d+\.\d+\.\d+\.M\d+$/):           // eg 1.2.3.M4, old scheme
+		case (~/^\d+\.\d+\.\d+\.RC\d+$/):          // eg 1.2.3.RC4, old scheme
 			return "libs-milestone-local";
 		default:
 			throw new IllegalStateException("Unknown pattern");
