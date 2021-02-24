@@ -1,63 +1,110 @@
 name: publish
 on:
   push:
-    branches:
+    branches: # For branches, better to list them explicitly than regexp include
       - master
-      - "[0-9].[0-9]+.x"
+      - 3.3.x
 jobs:
-  checks:
-    name: publication
+  # General job notes: we DON'T want to cancel any previous runs, especially in the case of a "back to snapshots" build right after a release push
+  prepare:
+    # Notes on prepare: this job has no access to secrets, only github token. As a result, all non-core actions are centralized here
+    # This includes the tagging and drafting of release notes. Still, when possible we favor plain run of gradle tasks
+    name: prepare
     runs-on: ubuntu-latest
+    outputs:
+      versionType: ${{ steps.version.outputs.versionType }}
     steps:
-    # we DON'T want to cancel previous runs, especially in the case of a "back to snapshots" build right after a release push
     - uses: actions/checkout@v2
-    - uses: christian-draeger/read-properties@1.0.1
-      name: read version
-      id: read-version
+    - name: setup java
+      uses: actions/setup-java@v1
       with:
-        path: './gradle.properties'
-        property: 'version'
-    - uses: frabert/replace-string-action@v1.2
-      id: split-qualifier
-      with:
-        string: ${{ steps.read-version.outputs.value }}
-        pattern: '(\d+\.\d+\.\d+)[.-]?([\w-]*)'
-        replace-with: 'VERSION$2'
+        java-version: 8
     - name: interpret version
-      id: version-type
+      id: version
+      #we only run the qualifyVersionGha task so that no other console printing can hijack this step's output
+      #output: versionType, fullVersion
+      run: ./gradlew qualifyVersionGha
+    - name: fail-if-bad
+      if: steps.version.outputs.versionType == 'BAD'
       run: |
-          echo "::set-output name=issnapshot::${{ steps.split-qualifier.outputs.replaced == 'VERSIONSNAPSHOT' || steps.split-qualifier.outputs.replaced == 'VERSIONBUILD-SNAPSHOT'  }}"
-          echo "::set-output name=isprerelease::${{ startsWith(steps.split-qualifier.outputs.replaced,'VERSIONRC') || startsWith(steps.split-qualifier.outputs.replaced,'VERSIONM')  }}"
-          echo "::set-output name=isrelease::${{ steps.split-qualifier.outputs.replaced == 'VERSIONRELEASE' || steps.split-qualifier.outputs.replaced == 'VERSION'  }}"
-          echo "::set-output name=isunknown::${{ startsWith(steps.split-qualifier.outputs.replaced,'VERSION') != true  }}"
-    - name: validate version interpretation
-      if: steps.version-type.outputs.isunknown == 'true'
-      run: |
-          echo "Couldn't classify version"
-          echo "${{ steps.read-version.outputs.value }}"
-          echo "${{ toJson(steps.split-qualifier.outputs) }}"
-          echo "${{ toJson(steps.version-type.outputs) }}"
+          echo "Couldn't classify version ${{ steps.version.outputs.fullVersion }}, see warning in above step"
           return 1
+    - name: run checks
+      id: checks
+      run: ./gradlew check
+    - name: tag
+      uses: avakar/tag-and-release@v1
+      if: steps.version.outputs.versionType == 'RELEASE' || steps.gradle.outputs.versionType == 'MILESTONE'
+      with:
+        tag_name: "v${{ steps.version.outputs.fullVersion }}"
+        draft: true
+        prerelease: ${{ steps.version.outputs.versionType == 'MILESTONE' }}
+        body: "Reactor Addons `${{ steps.version.outputs.fullVersion }}` is part of the **`RELEASETRAIN` release train (codename `CODENAME`)**. TODO"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  #deploy the snapshot artifacts to Artifactory
+  deploySnapshot:
+    name: deploySnapshot
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: needs.prepare.outputs.versionType == 'SNAPSHOT'
+    environment: snapshots
+    steps:
+    - uses: actions/checkout@v2
     - uses: actions/setup-java@v1
       with:
         java-version: 8
-    - uses: eskatos/gradle-command-action@v1
-      name: gradle
+    - name: deploy
       env:
-        ORG_GRADLE_PROJECT_artifactory_publish_username: ${{secrets.ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_USERNAME}}
-        ORG_GRADLE_PROJECT_artifactory_publish_password: ${{secrets.ORG_GRADLE_PROJECT_ARTIFACTORY_PUBLISH_PASSWORD}}
+        ORG_GRADLE_PROJECT_artifactory_publish_username: ${{secrets.ARTIFACTORY_SNAPSHOT_USERNAME}}
+        ORG_GRADLE_PROJECT_artifactory_publish_password: ${{secrets.ARTIFACTORY_PASSWORD}}
+      run: |
+          ./gradlew assemble artifactoryPublish -Partifactory_publish_contextUrl=https://repo.spring.io -Partifactory_publish_repoKey=libs-snapshot-local
+
+  #sign the milestone artifacts and deploy them to Artifactory
+  deployMilestone:
+    name: deployMilestone
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: needs.prepare.outputs.versionType == 'MILESTONE'
+    environment: releases
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v1
       with:
-        arguments: check assemble artifactoryPublish -Partifactory_publish_contextUrl=https://repo.spring.io
-        wrapper-cache-enabled: true
-        dependencies-cache-enabled: true
-        configuration-cache-enabled: true
-    - uses: avakar/tag-and-release@v1
-      name: tag
-      if: steps.version-type.outputs.issnapshot == 'false' && steps.version-type.outputs.isunknown == 'false'
-      with:
-        tag_name: "v${{ steps.read-version.outputs.value }}"
-        draft: true
-        prerelease: ${{ steps.version-type.outputs.isrelease == 'false' }}
-        body: "Reactor Addons `${{ steps.read-version.outputs.value }}` is part of the **`RELEASETRAIN` release train (codename `CODENAME`)**. TODO"
+        java-version: 8
+    - name: deploy
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ORG_GRADLE_PROJECT_artifactory_publish_username: ${{secrets.ARTIFACTORY_USERNAME}}
+        ORG_GRADLE_PROJECT_artifactory_publish_password: ${{secrets.ARTIFACTORY_PASSWORD}}
+        ORG_GRADLE_PROJECT_signingKey: ${{secrets.SIGNING_KEY}}
+        ORG_GRADLE_PROJECT_signingPassword: ${{secrets.SIGNING_PASSPHRASE}}
+      run: |
+          ./gradlew assemble sign artifactoryPublish -Partifactory_publish_contextUrl=https://repo.spring.io -Partifactory_publish_repoKey=libs-milestone-local
+
+  #sign the release artifacts and deploy them to Artifactory
+  deployRelease:
+    name: deployRelease
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: needs.prepare.outputs.versionType == 'RELEASE'
+    environment: releases
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v1
+      with:
+        java-version: 8
+    - name: deploy
+      env:
+        ORG_GRADLE_PROJECT_artifactory_publish_username: ${{secrets.ARTIFACTORY_USERNAME}}
+        ORG_GRADLE_PROJECT_artifactory_publish_password: ${{secrets.ARTIFACTORY_PASSWORD}}
+        ORG_GRADLE_PROJECT_signingKey: ${{secrets.SIGNING_KEY}}
+        ORG_GRADLE_PROJECT_signingPassword: ${{secrets.SIGNING_PASSPHRASE}}
+        ORG_GRADLE_PROJECT_sonatypeUsername: ${{secrets.SONATYPE_USERNAME}}
+        ORG_GRADLE_PROJECT_sonatypePassword: ${{secrets.SONATYPE_PASSWORD}}
+      run: |
+          ./gradlew assemble sign artifactoryPublish -Partifactory_publish_contextUrl=https://repo.spring.io  -Partifactory_publish_repoKey=libs-release-local publishMavenJavaPublicationToSonatypeRepository
+
+# For Gradle configuration of signing, see https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys
+# publishMavenJavaPublicationToSonatypeRepository only sends to a staging repository
