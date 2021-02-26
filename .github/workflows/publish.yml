@@ -6,11 +6,12 @@ on:
       - 3.3.x
 jobs:
   # General job notes: we DON'T want to cancel any previous runs, especially in the case of a "back to snapshots" build right after a release push
+  # We specify the ubuntu version to minimize the chances we have to deal with a migration during a release
   prepare:
     # Notes on prepare: this job has no access to secrets, only github token. As a result, all non-core actions are centralized here
     # This includes the tagging and drafting of release notes. Still, when possible we favor plain run of gradle tasks
     name: prepare
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       versionType: ${{ steps.version.outputs.versionType }}
     steps:
@@ -23,12 +24,8 @@ jobs:
       id: version
       #we only run the qualifyVersionGha task so that no other console printing can hijack this step's output
       #output: versionType, fullVersion
+      #fails if versionType is BAD, which interrupts the workflow
       run: ./gradlew qualifyVersionGha
-    - name: fail-if-bad
-      if: steps.version.outputs.versionType == 'BAD'
-      run: |
-          echo "Couldn't classify version ${{ steps.version.outputs.fullVersion }}, see warning in above step"
-          return 1
     - name: run checks
       id: checks
       run: ./gradlew check
@@ -46,7 +43,7 @@ jobs:
   #deploy the snapshot artifacts to Artifactory
   deploySnapshot:
     name: deploySnapshot
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: prepare
     if: needs.prepare.outputs.versionType == 'SNAPSHOT'
     environment: snapshots
@@ -65,7 +62,7 @@ jobs:
   #sign the milestone artifacts and deploy them to Artifactory
   deployMilestone:
     name: deployMilestone
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: prepare
     if: needs.prepare.outputs.versionType == 'MILESTONE'
     environment: releases
@@ -86,7 +83,7 @@ jobs:
   #sign the release artifacts and deploy them to Artifactory
   deployRelease:
     name: deployRelease
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: prepare
     if: needs.prepare.outputs.versionType == 'RELEASE'
     environment: releases
