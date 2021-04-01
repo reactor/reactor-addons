@@ -15,17 +15,16 @@
  */
 
 buildscript {
-  ext.kotlinVersion = '1.3.41'
-  repositories {
-	jcenter()
-	mavenCentral()
-	maven { url "https://repo.spring.io/plugins-release" }
-  }
-  dependencies {
-	classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
-	classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
-	classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
-  }
+	ext.kotlinVersion = '1.3.41'
+	repositories {
+		mavenCentral()
+		maven { url "https://repo.spring.io/plugins-release" }
+	}
+	dependencies {
+		classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
+		classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
+	}
 }
 
 plugins {
@@ -155,7 +154,6 @@ configure(subprojects) { project ->
   }
 
 	repositories {
-		jcenter()
 		mavenCentral()
 		if (version.endsWith('BUILD-SNAPSHOT')) {
 			mavenLocal()
