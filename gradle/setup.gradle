@@ -66,11 +66,13 @@ task qualifyVersionGha() {
 
 publishing {
 	publications {
+		extras(MavenPublication) {
+//			other project-specific artifacts must be added to this publication, in each project's builds
+		}
 		mavenJava(MavenPublication) {
 			from components.java
 			artifact sourcesJar
 			artifact javadocJar
-			//other project-specific artifacts must be added in each project's builds
 
 			pom {
 				afterEvaluate {
@@ -152,7 +154,7 @@ if (rootProject.hasProperty("artifactory_publish_password")) {
 	apply plugin: "com.jfrog.artifactory"
 
 	artifactoryPublish {
-		publications(publishing.publications.mavenJava)
+		publications(publishing.publications.mavenJava, publishing.publications.extras)
 	}
 }
 
