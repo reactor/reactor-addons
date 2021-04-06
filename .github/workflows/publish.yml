@@ -30,15 +30,15 @@ jobs:
       id: checks
       run: ./gradlew check
     - name: tag
-      uses: avakar/tag-and-release@v1
-      if: steps.version.outputs.versionType == 'RELEASE' || steps.gradle.outputs.versionType == 'MILESTONE'
+      if: steps.version.outputs.versionType == 'RELEASE' || steps.version.outputs.versionType == 'MILESTONE'
       with:
         tag_name: "v${{ steps.version.outputs.fullVersion }}"
-        draft: true
-        prerelease: ${{ steps.version.outputs.versionType == 'MILESTONE' }}
-        body: "Reactor Addons `${{ steps.version.outputs.fullVersion }}` is part of the **`RELEASETRAIN` release train (codename `CODENAME`)**. TODO"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        tag_comment: "Release version ${{ steps.version.outputs.fullVersion }}"
+      run: |
+        git config --local user.name 'reactorbot'
+        git config --local user.email '32325210+reactorbot@users.noreply.github.com'
+        git tag -m "${{ tag_comment }}" ${{ tag_name }} ${{ github.sha }}
+        git push --tags
 
   #deploy the snapshot artifacts to Artifactory
   deploySnapshot:
