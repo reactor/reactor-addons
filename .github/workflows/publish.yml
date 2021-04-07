@@ -4,7 +4,6 @@ on:
     branches: # For branches, better to list them explicitly than regexp include
       - master
       - 3.3.x
-      - polishPublishWorkflow #temp for testing
 jobs:
   # General job notes: we DON'T want to cancel any previous runs, especially in the case of a "back to snapshots" build right after a release push
   # We specify the ubuntu version to minimize the chances we have to deal with a migration during a release
@@ -31,7 +30,7 @@ jobs:
       id: checks
       run: ./gradlew check
     - name: tag
-      if: steps.version.outputs.versionType == 'RELEASE' || steps.version.outputs.versionType == 'MILESTONE' || steps.version.outputs.fullVersion == '3.3.6.BUILD-SNAPSHOT'
+      if: steps.version.outputs.versionType == 'RELEASE' || steps.version.outputs.versionType == 'MILESTONE'
       run: |
         git config --local user.name 'reactorbot'
         git config --local user.email '32325210+reactorbot@users.noreply.github.com'
