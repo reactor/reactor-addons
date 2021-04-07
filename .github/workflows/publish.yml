@@ -31,7 +31,7 @@ jobs:
       id: checks
       run: ./gradlew check
     - name: tag
-      if: steps.version.outputs.versionType == 'RELEASE' || steps.version.outputs.versionType == 'MILESTONE'
+      if: steps.version.outputs.versionType == 'RELEASE' || steps.version.outputs.versionType == 'MILESTONE' || steps.version.outputs.fullVersion == '3.3.6.BUILD-SNAPSHOT'
       run: |
         git config --local user.name 'reactorbot'
         git config --local user.email '32325210+reactorbot@users.noreply.github.com'
