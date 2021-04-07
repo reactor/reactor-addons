@@ -107,13 +107,13 @@ if (rootProject.hasProperty("artifactory_publish_password")) {
 			contextUrl = "${artifactory_publish_contextUrl}"
 			publish {
 				repository {
-					repoKey = repoKeyFor(p)
+					repoKey = "${artifactory_publish_repoKey}"
 					username = "${artifactory_publish_username}"
 					password = "${artifactory_publish_password}"
 				}
 			}
 			clientConfig.setIncludeEnvVars(false)
-			clientConfig.info.setBuildName('Reactor - GitHub Actions - Addons')
+			clientConfig.info.setBuildName('Reactor - Addons')
 			clientConfig.info.setBuildNumber(buildNumber)
 			if (System.getenv("GITHUB_ACTIONS") == "true") {
 				clientConfig.info.setBuildUrl(System.getenv("GITHUB_SERVER_URL") + "/" + System.getenv("GITHUB_REPOSITORY") + "/actions/runs/" + System.getenv("GITHUB_RUN_ID"))
@@ -121,22 +121,4 @@ if (rootProject.hasProperty("artifactory_publish_password")) {
 			}
 		}
 	}
-}
-
-static def repoKeyFor(p) {
-	def repos = [
-			// New scheme
-			(~/^\d+\.\d+\.\d+$/) : "libs-release-local",
-			(~/^\d+\.\d+\.\d+-SNAPSHOT$/) : "libs-snapshot-local",
-			(~/^\d+\.\d+\.\d+-M\d+$/) : "libs-milestone-local",
-			(~/^\d+\.\d+\.\d+-RC\d+$/) : "libs-milestone-local",
-			// Old scheme
-			(~/^\d+\.\d+\.\d+\.RELEASE$/) : "libs-release-local",
-			(~/^\d+\.\d+\.\d+\.BUILD-SNAPSHOT$/) : "libs-snapshot-local",
-			(~/^\d+\.\d+\.\d+\.M\d+$/) : "libs-milestone-local",
-			(~/^\d+\.\d+\.\d+\.RC\d+$/) : "libs-milestone-local",
-			// Test
-			(~/^\d+\.\d+\.\d+-.+-SNAPSHOT$/) : "libs-snapshot-local",
-	]
-	return repos.find {e -> p.version =~ e.key}.value
 }
