@@ -42,7 +42,7 @@ import reactor.core.publisher.Signal;
  *     		        key)
  *     		.onCacheMissResume(Mono.just(123))
  *     		.andWriteWith((k, sig) -> Mono.fromRunnable(() ->
- *     	            storeRef.updateAndGet(ctx -> ctx.put(k, sig.get())));
+ *     	            storeRef.updateAndGet(ctx -> ctx.put(k, sig.get()))));
  * </code></pre>
  * <p>
  * Map entry points example:
