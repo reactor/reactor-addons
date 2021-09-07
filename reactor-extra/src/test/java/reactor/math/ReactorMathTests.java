@@ -180,34 +180,47 @@ public class ReactorMathTests {
 	@Test
 	public void fluxSumBigDecimal() {
 		int count = 10;
+		BigDecimal sumDouble = BigDecimal.valueOf(Double.valueOf(sum(count)));
 		BigDecimal sum = BigDecimal.valueOf(sum(count));
-		verifyBigDecimalResult(MathFlux.sumBigDecimal(bigDecimalFlux(count)), sum);
-		verifyBigDecimalResult(MathFlux.sumBigDecimal(Flux.just(BigDecimal.valueOf(Double.MAX_VALUE),
+		verifyResult(MathFlux.sumBigDecimal(bigDecimalFlux(count)), sum);
+		verifyResult(MathFlux.sumBigDecimal(Flux.just(BigDecimal.valueOf(Double.MAX_VALUE),
 				BigDecimal.valueOf(Double.MAX_VALUE))),
 				BigDecimal.valueOf(Double.MAX_VALUE)
 				          .multiply(BigDecimal.valueOf(2)));
-		verifyBigDecimalResult(MathFlux.sumBigDecimal(intFlux(count), i -> i), sum);
-		verifyBigDecimalResult(MathFlux.sumBigDecimal(doubleFlux(count), i -> i), sum);
-		verifyBigDecimalResult(MathFlux.sumBigDecimal(stringFlux(count), BigDecimal::new),
+		verifyResult(MathFlux.sumBigDecimal(intFlux(count), i -> i), sum);
+		verifyResult(MathFlux.sumBigDecimal(doubleFlux(count), i -> i), sumDouble);
+		verifyResult(MathFlux.sumBigDecimal(stringFlux(count), BigDecimal::new),
 				sum);
 
-		verifyBigDecimalResult(bigDecimalFlux(count).as(MathFlux::sumBigDecimal), sum);
-		verifyBigDecimalResult(bigDecimalFlux(count).transform(MathFlux::sumBigDecimal),
+		verifyResult(bigDecimalFlux(count).as(MathFlux::sumBigDecimal), sum);
+		verifyResult(bigDecimalFlux(count).transform(MathFlux::sumBigDecimal),
 				sum);
-		verifyBigDecimalResult(doubleFlux(count).as(MathFlux::sumBigDecimal), sum);
-		verifyBigDecimalResult(doubleFlux(count).transform(MathFlux::sumBigDecimal), sum);
-		verifyBigDecimalResult(intFlux(count).as(MathFlux::sumBigDecimal), sum);
-		verifyBigDecimalResult(intFlux(count).transform(MathFlux::sumBigDecimal), sum);
+		verifyResult(doubleFlux(count).as(MathFlux::sumBigDecimal), sumDouble);
+		verifyResult(doubleFlux(count).transform(MathFlux::sumBigDecimal), sumDouble);
+		verifyResult(intFlux(count).as(MathFlux::sumBigDecimal), sum);
+		verifyResult(intFlux(count).transform(MathFlux::sumBigDecimal), sum);
+	}
+
+	@Test
+	public void fluxSumBigDecimalWithPrecision() {
+		BigDecimal ONE = new BigDecimal("1.0000");
+		verifyResult(MathFlux.sumBigDecimal(Flux.just(ONE,ONE)),ONE.add(ONE));
 	}
 
 	@Test
 	public void monoSumBigDecimal() {
-		verifyBigDecimalResult(MathFlux.sumBigDecimal(Mono.just(BigDecimal.ONE)),
+		verifyResult(MathFlux.sumBigDecimal(Mono.just(BigDecimal.ONE)),
 				BigDecimal.ONE);
-		verifyBigDecimalResult(MathFlux.sumBigDecimal(Mono.just("10"), BigDecimal::new),
+		verifyResult(MathFlux.sumBigDecimal(Mono.just("10"), BigDecimal::new),
 				BigDecimal.TEN);
-		verifyBigDecimalResult(MathFlux.sumBigDecimal(Mono.just(1.5)),
+		verifyResult(MathFlux.sumBigDecimal(Mono.just(1.5)),
 				BigDecimal.valueOf(1.5D));
+	}
+
+	@Test
+	public void monoSumBigDecimalWithPrecision() {
+		BigDecimal ONE = new BigDecimal("1.0000");
+		verifyResult(MathFlux.sumBigDecimal(Mono.just(ONE)),ONE);
 	}
 
 	@Test
@@ -308,34 +321,34 @@ public class ReactorMathTests {
 	public void fluxAverageBigDecimal() {
 		int count = 10;
 		BigDecimal average = BigDecimal.valueOf(average(count));
-		verifyBigDecimalResult(MathFlux.averageBigDecimal(bigDecimalFlux(count)),
+		verifyResult(MathFlux.averageBigDecimal(bigDecimalFlux(count)),
 				average);
 		verifyBigDecimalResult(MathFlux.averageBigDecimal(Flux.just(Double.MAX_VALUE,
 				Double.MAX_VALUE)),
 				BigDecimal.valueOf(Double.MAX_VALUE)
 				          .multiply(BigDecimal.valueOf(2))
 				          .divide(BigDecimal.valueOf(2)));
-		verifyBigDecimalResult(MathFlux.averageBigDecimal(intFlux(count), i -> i),
+		verifyResult(MathFlux.averageBigDecimal(intFlux(count), i -> i),
 				average);
-		verifyBigDecimalResult(MathFlux.averageBigDecimal(stringFlux(count),
+		verifyResult(MathFlux.averageBigDecimal(stringFlux(count),
 				Double::parseDouble), average);
 
-		verifyBigDecimalResult(doubleFlux(count).as(MathFlux::averageBigDecimal),
+		verifyResult(doubleFlux(count).as(MathFlux::averageBigDecimal),
 				average);
-		verifyBigDecimalResult(doubleFlux(count).transform(MathFlux::averageBigDecimal),
+		verifyResult(doubleFlux(count).transform(MathFlux::averageBigDecimal),
 				average);
-		verifyBigDecimalResult(intFlux(count).as(MathFlux::averageBigDecimal), average);
-		verifyBigDecimalResult(intFlux(count).transform(MathFlux::averageBigDecimal),
+		verifyResult(intFlux(count).as(MathFlux::averageBigDecimal), average);
+		verifyResult(intFlux(count).transform(MathFlux::averageBigDecimal),
 				average);
 	}
 
 	@Test
 	public void monoAverageBigDecimal() {
-		verifyBigDecimalResult(MathFlux.averageBigDecimal(Mono.just(2.5)),
+		verifyResult(MathFlux.averageBigDecimal(Mono.just(2.5)),
 				BigDecimal.valueOf(2.5));
-		verifyBigDecimalResult(MathFlux.averageBigDecimal(Mono.just(2), i -> i),
+		verifyResult(MathFlux.averageBigDecimal(Mono.just(2), i -> i),
 				BigDecimal.valueOf(2));
-		verifyBigDecimalResult(MathFlux.averageBigDecimal(Mono.just("1.5"),
+		verifyResult(MathFlux.averageBigDecimal(Mono.just("1.5"),
 				Double::parseDouble), BigDecimal.valueOf(1.5));
 	}
 
@@ -486,7 +499,6 @@ public class ReactorMathTests {
 			BigDecimal expectedResult) {
 		StepVerifier.create(resultMono)
 		            .expectNextMatches(t -> expectedResult.compareTo(t) == 0)
-		            .expectNext()
 		            .expectComplete()
 		            .verify();
 	}

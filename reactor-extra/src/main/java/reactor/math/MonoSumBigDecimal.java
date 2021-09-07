@@ -74,7 +74,8 @@ public class MonoSumBigDecimal<T> extends MonoFromFluxOperator<T, BigDecimal>
 		@Override
 		protected void updateResult(T newValue) {
 			Number number = mapping.apply(newValue);
-			BigDecimal bigDecimalValue = BigDecimal.valueOf(number.doubleValue());
+			BigDecimal bigDecimalValue = (number instanceof BigDecimal) ?
+				(BigDecimal) number : new BigDecimal(number.toString());
 			sum = hasValue ? sum.add(bigDecimalValue) : bigDecimalValue;
 			hasValue = true;
 		}
