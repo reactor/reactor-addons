@@ -19,7 +19,7 @@ import java.text.SimpleDateFormat
 
 buildscript {
 	// we define kotlin version for benefit of both adapter and extra (see kotlin-gradle-plugin below)
-	ext.kotlinVersion = '1.3.41'
+	ext.kotlinVersion = '1.5.31'
 	repositories {
 		mavenCentral()
 		maven { url "https://repo.spring.io/plugins-release-local" }
@@ -219,11 +219,16 @@ project('reactor-adapter') {
 	dependencies {
 		//Optional RxJava 2 Converter
 		compileOnly "io.reactivex.rxjava2:rxjava:$rxJava2Version"
+		testImplementation "io.reactivex.rxjava2:rxjava:$rxJava2Version"
 		//Optional RxJava 3 Converter
 		compileOnly "io.reactivex.rxjava3:rxjava:$rxJava3Version"
+		testImplementation "io.reactivex.rxjava3:rxjava:$rxJava3Version"
 
 		compileOnly "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
+		testImplementation "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
+
 		compileOnly "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+		testImplementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
 
 		testImplementation "org.reactivestreams:reactive-streams-tck:1.0.3"
 	}
@@ -265,7 +270,9 @@ project('reactor-extra') {
 
 	dependencies {
 		compileOnly "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
+		testImplementation "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
 		compileOnly("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
+		testImplementation("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
 		testImplementation "org.reactivestreams:reactive-streams-tck:1.0.3"
 		testImplementation "org.mockito:mockito-core:2.23.0"
 	}
