@@ -83,7 +83,7 @@ ext {
 	}
 }
 
-apply from: "$gradleScriptDir/releaser.gradle"
+apply from: "${rootDir}/gradle/releaser.gradle"
 
 configurations.all {
   // check for updates every build
