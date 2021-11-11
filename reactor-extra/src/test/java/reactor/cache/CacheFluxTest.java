@@ -406,4 +406,24 @@ public class CacheFluxTest {
 		assertThat(supplierCalled).isFalse();
 	}
 
+	@Test
+	public void supplierNotEagerlyCalledIfDataProvidedByReader() {
+		AtomicBoolean supplierCalled = new AtomicBoolean();
+		Map<String, List> genericMap = new HashMap<>();
+		genericMap.put("foo", Arrays.asList(Signal.next(123), Signal.next(456), Signal.complete()));
+
+		CacheFlux.lookup(reader(genericMap), "foo")
+				.onCacheMissResume(() -> {
+					supplierCalled.set(true);
+					return Flux.just(100);
+				})
+				.andWriteWith(writer(genericMap))
+				.as(StepVerifier::create)
+				.expectNext(123, 456)
+				.expectComplete()
+				.verify();
+
+		assertThat(supplierCalled).isFalse();
+	}
+
 }

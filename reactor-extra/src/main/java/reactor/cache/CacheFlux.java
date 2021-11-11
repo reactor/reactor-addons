@@ -148,7 +148,7 @@ public class CacheFlux {
 		return otherSupplier -> (BiFunction<KEY, List<Signal<VALUE>>, Mono<Void>> writer) ->
 				Flux.defer(() ->
 						reader.apply(key)
-						      .switchIfEmpty(otherSupplier.get()
+						      .switchIfEmpty(Flux.defer(otherSupplier)
 						                         .materialize()
 						                         .collectList()
 						                         .flatMap(signals -> writer.apply(key, signals)
