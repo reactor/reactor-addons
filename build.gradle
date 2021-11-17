@@ -94,12 +94,12 @@ configurations.all {
 configure(subprojects) { project ->
   group = 'io.projectreactor.addons'
 
-  apply plugin: 'java-library'
+	apply plugin: 'java-library'
   apply plugin: 'kotlin'
   apply from: "${rootDir}/gradle/setup.gradle"
 	apply from: "${rootDir}/gradle/javadoc.gradle"
 
-	[compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
+  [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
 														   "-Xlint:cast",
 														   "-Xlint:classfile",
 														   "-Xlint:dep-ann",
@@ -216,29 +216,29 @@ project('reactor-adapter') {
 		]
 	}
 
-	dependencies {
-		//Optional RxJava 2 Converter
-		compileOnly "io.reactivex.rxjava2:rxjava:$rxJava2Version"
-		testImplementation "io.reactivex.rxjava2:rxjava:$rxJava2Version"
-		//Optional RxJava 3 Converter
-		compileOnly "io.reactivex.rxjava3:rxjava:$rxJava3Version"
-		testImplementation "io.reactivex.rxjava3:rxjava:$rxJava3Version"
+  dependencies {
+	//Optional RxJava 2 Converter
+	compileOnly "io.reactivex.rxjava2:rxjava:$rxJava2Version"
+	testImplementation "io.reactivex.rxjava2:rxjava:$rxJava2Version"
+	//Optional RxJava 3 Converter
+	compileOnly "io.reactivex.rxjava3:rxjava:$rxJava3Version"
+	testImplementation "io.reactivex.rxjava3:rxjava:$rxJava3Version"
 
-		compileOnly "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
-		testImplementation "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
+	compileOnly "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
+	testImplementation "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
 
-		compileOnly "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
-		testImplementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+	compileOnly "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+	testImplementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
 
-		testImplementation "org.reactivestreams:reactive-streams-tck:1.0.3"
-	}
+	testImplementation "org.reactivestreams:reactive-streams-tck:1.0.3"
+  }
 
-	jar {
-		manifest {
-			attributes('Automatic-Module-Name': 'reactor.adapter')
-		}
+  jar {
+    manifest {
+      attributes('Automatic-Module-Name': 'reactor.adapter')
+    }
 		bnd(bndOptions)
-	}
+  }
 
 }
 
@@ -268,21 +268,21 @@ project('reactor-extra') {
 		]
 	}
 
-	dependencies {
-		compileOnly "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
-		testImplementation "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
-		compileOnly("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
-		testImplementation("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
-		testImplementation "org.reactivestreams:reactive-streams-tck:1.0.3"
-		testImplementation "org.mockito:mockito-core:2.23.0"
-	}
+  dependencies {
+	compileOnly "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
+	testImplementation "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
+	compileOnly("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
+	testImplementation("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
+	testImplementation "org.reactivestreams:reactive-streams-tck:1.0.3"
+	testImplementation "org.mockito:mockito-core:2.23.0"
+ }
 
-	jar {
-		manifest {
-			attributes('Automatic-Module-Name': 'reactor.extra')
-		}
+  jar {
+    manifest {
+      attributes('Automatic-Module-Name': 'reactor.extra')
+    }
 		bnd(bndOptions)
-	}
+  }
 }
 
 static def getSwtPlatform() {
