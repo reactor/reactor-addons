@@ -26,12 +26,12 @@ buildscript {
 	}
 	dependencies {
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
-		classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.24.18" //applied in individual submodules
+		classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.24.23" //applied in individual submodules
 	}
 }
 
 plugins {
-	id 'biz.aQute.bnd.builder' version '5.3.0' apply false
+	id 'biz.aQute.bnd.builder' version '6.0.0' apply false
 }
 
 description = 'Reactor Core Addons including processors, adapters and more'
@@ -41,7 +41,7 @@ ext {
 
   // Logging
   slf4jVersion = '1.7.32'
-  logbackVersion = '1.2.5'
+  logbackVersion = '1.2.6'
 
   // Libraries
   rxJava2Version = '2.2.8'
@@ -54,7 +54,7 @@ ext {
   // Testing
   assertJVersion = '3.21.0'
   quickTheoriesVersion = '0.25'
-  mockitoVersion = '3.12.4'
+  mockitoVersion = '4.0.0'
 
 	//javadoc for JDK detection
 	jdk = JavaVersion.current().majorVersion
