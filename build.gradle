@@ -22,7 +22,7 @@ buildscript {
 	ext.kotlinVersion = '1.5.31'
 	repositories {
 		mavenCentral()
-		maven { url "https://repo.spring.io/plugins-release-local" }
+		maven { url "https://repo.spring.io/plugins-release" }
 	}
 	dependencies {
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
