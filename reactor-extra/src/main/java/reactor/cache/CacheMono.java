@@ -170,7 +170,7 @@ public class CacheMono {
 			Function<KEY, Mono<Signal<? extends VALUE>>> reader, KEY key) {
 		return otherSupplier -> writer -> Mono.defer(() ->
 				reader.apply(key)
-				  .switchIfEmpty(Mono.defer(() -> otherSupplier.get())
+				  .switchIfEmpty(Mono.defer(otherSupplier)
 				                              .materialize()
 				                              .flatMap(signal -> writer.apply(key, signal)
 				                                                       .then(Mono.just(signal))
