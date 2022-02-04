@@ -86,7 +86,7 @@ public interface Backoff extends Function<IterationContext<?>, BackoffDelay> {
 	static Backoff exponential(Duration firstBackoff, @Nullable Duration maxBackoff, int factor, boolean basedOnPreviousValue) {
 		if (firstBackoff == null || firstBackoff.isNegative() || firstBackoff.isZero())
 			throw new IllegalArgumentException("firstBackoff must be > 0");
-		Duration maxBackoffInterval = maxBackoff != null ? maxBackoff : Duration.ofSeconds(Long.MAX_VALUE);
+		Duration maxBackoffInterval = maxBackoff != null ? maxBackoff : Duration.ofMillis(Long.MAX_VALUE);
 		if (maxBackoffInterval.compareTo(firstBackoff) < 0)
 			throw new IllegalArgumentException("maxBackoff must be >= firstBackoff");
 		if (!basedOnPreviousValue) {
