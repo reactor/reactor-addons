@@ -60,13 +60,17 @@ ext {
   mockitoVersion = '1.10.19'
   spockVersion = '1.0-groovy-2.4'
 
-  javadocLinks = ["https://projectreactor.io/docs/core/${reactorCoreVersion}/api/",
-		  		  "https://docs.oracle.com/javase/7/docs/api/",
-				  "https://docs.oracle.com/javaee/6/api/",
-				  "https://fasterxml.github.io/jackson-databind/javadoc/2.5/",
-				  "https://www.goldmansachs.com/gs-collections/javadoc/5.1.0/",
-				  "https://www.reactive-streams.org/reactive-streams-1.0.3-javadoc/"] as
-		  String[]
+	jdk = JavaVersion.current().majorVersion
+	jdkJavadoc = "https://docs.oracle.com/javase/$jdk/docs/api/"
+	if (JavaVersion.current().isJava11Compatible()) {
+		jdkJavadoc = "https://docs.oracle.com/en/java/javase/$jdk/docs/api/"
+	}
+	println "JDK Javadoc link for this build is ${rootProject.jdkJavadoc}"
+  javadocLinks = [
+		"https://projectreactor.io/docs/core/${libs.versions.reactorCore.get()}/api/",
+		jdkJavadoc,
+		"https://www.reactive-streams.org/reactive-streams-${libs.versions.reactiveStreams.get()}-javadoc/"
+	] as String[]
 
 	versionNumber = VersionNumber.parse(version.toString())
 	if (versionNumber.qualifier == null || versionNumber.qualifier.size() == 0) {
@@ -86,7 +90,6 @@ ext {
 	}
 }
 
-apply from: "$gradleScriptDir/doc.gradle"
 apply from: "$gradleScriptDir/releaser.gradle"
 
 configurations.all {
@@ -98,10 +101,10 @@ configurations.all {
 configure(subprojects) { project ->
   group = 'io.projectreactor.addons'
 
-  apply plugin: 'propdeps' //TODO replace with a simpler local plugin?
-  apply plugin: 'java'
+  apply plugin: 'java-library'
   apply plugin: 'kotlin'
   apply from: "${rootDir}/gradle/setup.gradle"
+  apply from: "${rootDir}/gradle/javadoc.gradle"
 
   [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
 														   "-Xlint:cast",
@@ -133,15 +136,23 @@ configure(subprojects) { project ->
 	targetCompatibility = 1.8
   }
 
-  compileKotlin {
-	kotlinOptions.jvmTarget = "1.8"
-	kotlinOptions.freeCompilerArgs = ["-Xjsr305=strict"]
-  }
+	compileKotlin {
+		kotlinOptions {
+			jvmTarget = "1.8"
+			freeCompilerArgs = ["-Xjsr305=strict"]
+			languageVersion = "1.3" //TODO kotlin languageVersion 1.3 is now deprecated
+			apiVersion = "1.3"
+		}
+	}
 
-  compileTestKotlin {
-	kotlinOptions.jvmTarget = "1.8"
-	kotlinOptions.freeCompilerArgs = ["-Xjsr305=strict"]
-  }
+	compileTestKotlin {
+		kotlinOptions {
+			jvmTarget = "1.8"
+			freeCompilerArgs = ["-Xjsr305=strict"]
+			languageVersion = "1.3" //TODO kotlin languageVersion 1.3 is now deprecated
+			apiVersion = "1.3"
+		}
+	}
 
   // now that kotlin-gradle-plugin 1.1.60 is out with fix for https://youtrack.jetbrains.com/issue/KT-17564
   // be wary and fail if the issue of source file duplication in jar comes up again
@@ -149,29 +160,20 @@ configure(subprojects) { project ->
 	duplicatesStrategy = DuplicatesStrategy.FAIL
   }
 
-  if (JavaVersion.current().isJava8Compatible()) {
+	if (JavaVersion.current().isJava8Compatible()) {
 	compileTestJava.options.compilerArgs += "-parameters"
-	tasks.withType(Javadoc) {
-	  options.addStringOption('Xdoclint:none', '-quiet')
-	}
   }
 
   [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
   sourceSets.test.resources.srcDirs = ["src/test/resources", "src/test/java"]
 
-  project.tasks.withType(Test).all {
-	systemProperty("java.awt.headless", "true")
-	systemProperty("reactor.trace.cancel", "true")
-	systemProperty("reactor.trace.nocapacity", "true")
-	systemProperty("testGroups", project.properties.get("testGroups"))
-	scanForTestClasses = false
-	include '**/*Tests.*'
-	include '**/*Test.*'
-	include '**/*Spec.*'
-	exclude '**/*Abstract*.*'
-	exclude '**/dummy/Test.*'
-  }
+	project.tasks.withType(Test).all {
+		scanForTestClasses = false
+		include '**/*Tests.*'
+		include '**/*Test.*'
+		exclude '**/*Abstract*.*'
+	}
 
 	repositories {
 		mavenCentral()
@@ -202,7 +204,9 @@ configure(subprojects) { project ->
 	testRuntime "ch.qos.logback:logback-classic:$logbackVersion"
 	testCompile "io.projectreactor:reactor-test:$reactorCoreVersion"
 
-  }
+configure(subprojects) { p ->
+	// these apply once the above configure is done, but before project-specific build.gradle have applied
+	apply from: "${rootDir}/gradle/javadoc.gradle"
 }
 
 project('reactor-adapter') {
