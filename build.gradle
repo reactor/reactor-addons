@@ -18,20 +18,16 @@ import java.text.SimpleDateFormat
  */
 
 buildscript {
-	ext.kotlinVersion = '1.3.41'
 	repositories {
 		mavenCentral()
 		maven { url "https://repo.spring.io/plugins-release" }
 	}
-	dependencies {
-		classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
-		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
-		classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
-	}
 }
 
 plugins {
-	id "com.jfrog.artifactory" version "4.15.2" apply false
+	alias(libs.plugins.kotlin)
+	alias(libs.plugins.bnd) apply false
+	alias(libs.plugins.artifactory) apply false
 }
 
 description = 'Reactor Core Addons including processors, adapters and more'
@@ -39,26 +35,8 @@ description = 'Reactor Core Addons including processors, adapters and more'
 ext {
   gradleScriptDir = "${rootProject.projectDir}/gradle"
 
-  //NOTE: reactor-core version is declared in gradle.properties
-
-  // Logging
-  slf4jVersion = '1.7.12'
-  logbackVersion = '1.1.2'
-
-  // Libraries
-  openHftChronicleVersion = '3.4.2'
-  rxJava2Version = '2.2.8'
-  rxJava3Version = '3.0.0'
-  akkaActorVersion = '2.4.10'
-
-  swtVersion = '4.5.2'
-  swtVersionPlatform = '4.5.2'
-
-  // Testing
-  assertJVersion = '3.9.0'
-  quickTheoriesVersion = '0.24'
-  mockitoVersion = '1.10.19'
-  spockVersion = '1.0-groovy-2.4'
+	//NOTE: reactor-core version is declared in gradle.properties
+	//NOTE: all other dependencies, including plugins, are in gradle/libs.versions.toml catalog
 
 	jdk = JavaVersion.current().majorVersion
 	jdkJavadoc = "https://docs.oracle.com/javase/$jdk/docs/api/"
@@ -185,24 +163,29 @@ configure(subprojects) { project ->
 		maven { url 'https://repo.spring.io/milestone' }
 	}
 
-  // dependencies that are common across all java projects
-  dependencies {
-	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
+	// dependencies that are common across all java projects
+	dependencies {
+		api libs.reactorCore
 
-	// JSR-305 annotations
-	optional "com.google.code.findbugs:jsr305:3.0.2"
+		// JSR-305 annotations
+		compileOnly libs.jsr305
+		testCompileOnly libs.jsr305
 
-	// Logging
-	optional "org.slf4j:slf4j-api:$slf4jVersion"
+		// Logging
+		compileOnly libs.slf4j
+		testCompileOnly libs.slf4j
 
-	// Testing
-	testCompile 'junit:junit:4.12',
-			"org.hamcrest:hamcrest-library:1.3",
-			"org.assertj:assertj-core:$assertJVersion",
-			"org.quicktheories:quicktheories:$quickTheoriesVersion",
-			"org.testng:testng:6.8.5"
-	testRuntime "ch.qos.logback:logback-classic:$logbackVersion"
-	testCompile "io.projectreactor:reactor-test:$reactorCoreVersion"
+		// Testing
+		testImplementation libs.junit4
+		testImplementation libs.hamcrest
+		testImplementation libs.assertj
+		testImplementation libs.quickTheories
+		testImplementation libs.testNg
+		testImplementation libs.reactorTest
+
+		testRuntimeOnly libs.logback
+	}
+}
 
 configure(subprojects) { p ->
 	// these apply once the above configure is done, but before project-specific build.gradle have applied
@@ -229,18 +212,23 @@ project('reactor-adapter') {
 		]
 	}
 
-  dependencies {
-	//Optional RxJava 2 Converter
-	optional "io.reactivex.rxjava2:rxjava:$rxJava2Version"
-	//Optional RxJava 3 Converter
-	optional "io.reactivex.rxjava3:rxjava:$rxJava3Version"
+	dependencies {
+		//Optional RxJava 2 Converter
+		compileOnly libs.rxJava2
+		testImplementation libs.rxJava2
 
-	optional "com.typesafe.akka:akka-actor_2.11:$akkaActorVersion"
+		//Optional RxJava 3 Converter
+		compileOnly libs.rxJava3
+		testImplementation libs.rxJava3
 
-	optional "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+		compileOnly libs.akkaActor
+		testImplementation libs.akkaActor
 
-	testCompile "org.reactivestreams:reactive-streams-tck:1.0.3"
-  }
+		compileOnly libs.kotlin.stdlib
+		testImplementation libs.kotlin.stdlib
+
+		testImplementation libs.reactiveStreams.tck
+	}
 
   jar {
     manifest {
@@ -277,12 +265,14 @@ project('reactor-extra') {
 		]
 	}
 
-  dependencies {
-	optional "org.eclipse.swt:org.eclipse.swt.${getSwtPlatform()}:${swtVersionPlatform}"
-	optional("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
-	testCompile "org.reactivestreams:reactive-streams-tck:1.0.3"
-	testCompile "org.mockito:mockito-core:2.23.0"
-  }
+	dependencies {
+		compileOnly getSwtPlatform()
+		testImplementation getSwtPlatform()
+		compileOnly libs.kotlin.stdlib
+		testImplementation libs.kotlin.stdlib
+		testImplementation libs.reactiveStreams.tck
+		testImplementation libs.mockito
+	}
 
   jar {
     manifest {
@@ -292,23 +282,23 @@ project('reactor-extra') {
   }
 }
 
-static def getSwtPlatform() {
-  String osname = System.properties['os.name']
-  String osarch = System.properties['os.arch']
-  if (osname.toLowerCase(Locale.ROOT).contains('win')) {
-	if (osarch.contains("64")) {
-	  return "win32.win32.x86_64"
+def getSwtPlatform() {
+	String osname = System.properties['os.name']
+	String osarch = System.properties['os.arch']
+	if (osname.toLowerCase(Locale.ROOT).contains('win')) {
+		if (osarch.contains("64")) {
+			return libs.swt.windows64
+		}
+		return libs.swt.windows
 	}
-	return "win32.win32.x86"
-  }
-  if (osname.toLowerCase(Locale.ROOT).contains("nux")) {
-	if (osarch.contains("64")) {
-	  return "gtk.linux.x86_64"
+	if (osname.toLowerCase(Locale.ROOT).contains("nux")) {
+		if (osarch.contains("64")) {
+			return libs.swt.linux64
+		}
+		return libs.swt.linux
 	}
-	return "gtk.linux.x86"
-  }
-  if (osname.toLowerCase(Locale.ROOT).contains("mac")) {
-	return "cocoa.macosx.x86_64"
-  }
-  throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch)
+	if (osname.toLowerCase(Locale.ROOT).contains("mac")) {
+		return libs.swt.mac
+	}
+	throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch)
 }
