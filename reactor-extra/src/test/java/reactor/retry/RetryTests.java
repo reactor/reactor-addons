@@ -57,7 +57,7 @@ public class RetryTests {
 						.retryWhen(withThrowable(Retry.anyOf(Exception.class)
 						                              .exponentialBackoffWithJitter(Duration.ofSeconds(minBackoff), Duration.ofSeconds(maxBackoff))
 						                              .timeout(Duration.ofSeconds(timeout))))
-						.subscribeOn(Schedulers.elastic()))
+						.subscribeOn(Schedulers.boundedElastic()))
 				.expectSubscription()
 //				.expectNoEvent(Duration.ofSeconds(timeout))
 				.thenAwait(Duration.ofSeconds(timeout))
