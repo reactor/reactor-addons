@@ -185,11 +185,6 @@ configure(subprojects) { project ->
 	}
 }
 
-configure(subprojects) { p ->
-	// these apply once the above configure is done, but before project-specific build.gradle have applied
-	apply from: "${rootDir}/gradle/javadoc.gradle"
-}
-
 project('reactor-adapter') {
 	ext {
 		shortDescription = "Reactor Adapter"
