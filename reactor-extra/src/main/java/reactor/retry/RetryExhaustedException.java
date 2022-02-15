@@ -18,7 +18,7 @@ package reactor.retry;
 
 /**
  * Exception indicating that retries have been exhausted after
- * {@link Retry#timeout(java.time.Duration)} or {@link Retry#retryMax(int)}.
+ * {@link Retry#timeout(java.time.Duration)} or {@link Retry#retryMax(long)}.
  * For retries, {@link #getCause()} returns the original exception from the
  * last retry attempt that generated this exception.
  */

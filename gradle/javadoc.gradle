@@ -30,6 +30,9 @@ javadoc {
 
 	options.links(rootProject.ext.javadocLinks)
 
+	options.tags = [ "apiNote:a:API Note:", "implSpec:a:Implementation Requirements:",
+									 "implNote:a:Implementation Note:" ]
+
 	maxMemory = "1024m"
 	destinationDir = new File(project.buildDir, "docs/javadoc")
 

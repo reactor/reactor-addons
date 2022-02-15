@@ -97,7 +97,7 @@ public abstract class RxJava3Adapter {
      *
      * @param source the source {@link Mono}, which value to ignore
      * @return the new {@link Completable} instance
-     * @see Mono#ignoreElement()}
+     * @see Mono#ignoreElement()
      * @see #monoToCompletable(Mono, Consumer)
      */
     public static Completable monoToCompletable(Mono<?> source) {
@@ -112,7 +112,7 @@ public abstract class RxJava3Adapter {
      *
      * @param source the source {@link Mono}, which value to ignore and discard
      * @return the new {@link Completable} instance
-     * @see Mono#ignoreElement()}
+     * @see Mono#ignoreElement()
      * @see #monoToCompletable(Mono)
      */
     public static <T> Completable monoToCompletable(Mono<T> source, Consumer<T> discardHandler) {
