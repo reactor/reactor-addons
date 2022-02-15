@@ -33,8 +33,7 @@ plugins {
 description = 'Reactor Core Addons including processors, adapters and more'
 
 ext {
-	//NOTE: reactor-core version is declared in gradle.properties
-	//NOTE: all other dependencies, including plugins, are in gradle/libs.versions.toml catalog
+	//NOTE: all dependencies, including plugins, are defined in gradle/libs.versions.toml catalog
 
 	jdk = JavaVersion.current().majorVersion
 	jdkJavadoc = "https://docs.oracle.com/javase/$jdk/docs/api/"
