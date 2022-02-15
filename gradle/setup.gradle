@@ -90,7 +90,7 @@ publishing {
 
 			pom {
 				afterEvaluate {
-					name = project.description
+					name = project.shortDescription
 					description = project.description
 				}
 				packaging = 'jar' //if not explicitly set, end up as `pom` in output. omitted in output if set as `jar`...

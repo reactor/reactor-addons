@@ -191,7 +191,10 @@ configure(subprojects) { p ->
 }
 
 project('reactor-adapter') {
-  description = 'Adapters on top of various async boundary providers'
+	ext {
+		shortDescription = "Reactor Adapter"
+	}
+	description = 'Adapters from/to RxJava2, RxJava3 and Akka'
 
 	apply plugin: "biz.aQute.bnd.builder"
 
@@ -238,7 +241,10 @@ project('reactor-adapter') {
 }
 
 project('reactor-extra') {
-  description = 'Reactor Extra utilities'
+	ext {
+		shortDescription = "Reactor Extra"
+	}
+  description = 'Reactor Extra utilities, helpers and custom operators'
 
 	apply plugin: "biz.aQute.bnd.builder"
 
