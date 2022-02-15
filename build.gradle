@@ -27,11 +27,13 @@ buildscript {
 		classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
 		classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
+		classpath "org.jacoco:org.jacoco.core:0.8.3"
 	}
 }
 
 plugins {
 	id "com.jfrog.artifactory" version "4.15.2" apply false
+	id 'jacoco'
 }
 
 description = 'Reactor Core Addons including processors, adapters and more'
@@ -88,10 +90,15 @@ ext {
 
 apply from: "$gradleScriptDir/doc.gradle"
 apply from: "$gradleScriptDir/releaser.gradle"
+apply plugin: 'jacoco'
 
 configurations.all {
   // check for updates every build
   resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+	apply plugin: 'jacoco'
+	repositories {
+		mavenCentral()
+	}
 }
 
 
@@ -102,6 +109,7 @@ configure(subprojects) { project ->
   apply plugin: 'java'
   apply plugin: 'kotlin'
   apply from: "${rootDir}/gradle/setup.gradle"
+	apply plugin: 'jacoco'
 
   [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
 														   "-Xlint:cast",
@@ -142,6 +150,14 @@ configure(subprojects) { project ->
 	kotlinOptions.jvmTarget = "1.8"
 	kotlinOptions.freeCompilerArgs = ["-Xjsr305=strict"]
   }
+
+	jacocoTestReport {
+		reports {
+			html.enabled = true
+			xml.enabled = true
+			csv.enabled = true
+		}
+	}
 
   // now that kotlin-gradle-plugin 1.1.60 is out with fix for https://youtrack.jetbrains.com/issue/KT-17564
   // be wary and fail if the issue of source file duplication in jar comes up again
@@ -186,6 +202,7 @@ configure(subprojects) { project ->
   // dependencies that are common across all java projects
   dependencies {
 	compile "io.projectreactor:reactor-core:$reactorCoreVersion"
+	  compile 'org.jacoco:org.jacoco.agent:0.8.3'
 
 	// JSR-305 annotations
 	optional "com.google.code.findbugs:jsr305:3.0.2"
@@ -203,6 +220,37 @@ configure(subprojects) { project ->
 	testCompile "io.projectreactor:reactor-test:$reactorCoreVersion"
 
   }
+}
+
+task jacocoMergeAll(type: JacocoMerge) {
+	dependsOn(subprojects.test, subprojects.jacocoTestReport)
+	subprojects.each { subproject ->
+		// exclude common and integration subprojects
+		if (subproject.name != 'integration' &&
+				subproject.name != 'common') {
+			executionData subproject.tasks.withType(Test)
+		}
+	}
+}
+
+task jacocoRootReport(type: JacocoReport, group: 'verification') {
+	description = 'Generates an aggregate report from all subprojects'
+	dependsOn(jacocoMergeAll)
+
+	additionalSourceDirs.from =
+			files(subprojects.sourceSets.main.allSource.srcDirs)
+	sourceDirectories.from =
+			files(subprojects.sourceSets.main.allSource.srcDirs)
+	classDirectories.from =
+			files(subprojects.sourceSets.main.output)
+	executionData.from =
+			files("${buildDir}/jacoco/jacocoMergeAll.exec")
+
+	reports {
+		html.enabled = true
+		xml.enabled = false
+		csv.enabled = true
+	}
 }
 
 project('reactor-adapter') {
