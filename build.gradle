@@ -47,6 +47,7 @@ ext {
 		"https://www.reactive-streams.org/reactive-streams-${libs.versions.reactiveStreams.get()}-javadoc/"
 	] as String[]
 
+	//OSGI version number
 	versionNumber = VersionNumber.parse(version.toString())
 	if (versionNumber.qualifier == null || versionNumber.qualifier.size() == 0) {
 		osgiVersion = "${version}.RELEASE"
@@ -76,10 +77,10 @@ configurations.all {
 configure(subprojects) { project ->
   group = 'io.projectreactor.addons'
 
-  apply plugin: 'java-library'
-  apply plugin: 'kotlin'
-  apply from: "${rootDir}/gradle/setup.gradle"
-  apply from: "${rootDir}/gradle/javadoc.gradle"
+	apply plugin: 'java-library'
+	apply plugin: 'kotlin'
+	apply from: "${rootDir}/gradle/setup.gradle"
+	apply from: "${rootDir}/gradle/javadoc.gradle"
 
   [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
 														   "-Xlint:cast",

@@ -122,6 +122,8 @@ publishing {
 					system = "GitHub Issues"
 					url = "https://github.com/reactor/reactor-addons/issues"
 				}
+				//NB: only the direct dependencies are published in the pom (ie. only reactive-streams)
+				//optional dependencies are not published anymore, see https://github.com/reactor/reactor-core/issues/2262
 			}
 		}
 	}
