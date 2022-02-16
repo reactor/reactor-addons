@@ -14,38 +14,35 @@
  * limitations under the License.
  */
 
-configure(subprojects) { project ->
-	apply plugin: "java"
-
-  javadoc {
+javadoc {
 	dependsOn jar
-	group = "Reactor Addons Javadoc"
-
+	group = "documentation"
 	description = "Generates Javadoc API documentation."
+
 	title = "$project.name $project.version"
-
-	if (JavaVersion.current().isJava8Compatible()) {
-	  compileTestJava.options.compilerArgs += "-parameters"
-	  tasks.withType(Javadoc) {
-		options.addStringOption('Xdoclint:none', '-quiet')
-	  }
-	}
-
 	options.addStringOption('charSet', 'UTF-8')
+	options.author = true
+	options.header = "Reactor Addons: $project.name"
+	options.overview = "$rootDir/docs/api/overview.html"
+	options.stylesheetFile = file("$rootDir/docs/api/stylesheet.css")
 
 	options.memberLevel = JavadocMemberLevel.PROTECTED
-	options.author = true
-	options.header = "Reactor Addons: $it.name"
-	options.overview = "$rootDir/docs/src/api/overview.html"
-	options.stylesheetFile = rootProject.file("docs/src/api/stylesheet.css")
+
 	options.links(rootProject.ext.javadocLinks)
 
+	options.tags = [ "apiNote:a:API Note:", "implSpec:a:Implementation Requirements:",
+									 "implNote:a:Implementation Note:" ]
+
 	maxMemory = "1024m"
-	destinationDir = new File(buildDir, "docs/javadoc")
+	destinationDir = new File(project.buildDir, "docs/javadoc")
+
+
+	if (JavaVersion.current().isJava8Compatible()) {
+		options.addStringOption('Xdoclint:none', '-quiet')
+	}
+
 	source project.sourceSets.main.allJava
 	doFirst {
 	  classpath = files(project.sourceSets.main.compileClasspath)
 	}
-  }
-
 }
