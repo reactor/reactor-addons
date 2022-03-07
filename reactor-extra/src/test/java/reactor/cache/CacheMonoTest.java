@@ -38,6 +38,7 @@ import reactor.util.context.Context;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Deprecated
 public class CacheMonoTest {
 
 	@Test

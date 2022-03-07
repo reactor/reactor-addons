@@ -42,6 +42,7 @@ import reactor.util.function.Tuples;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Deprecated
 @SuppressWarnings("unchecked")
 public class CacheFluxTest {
 

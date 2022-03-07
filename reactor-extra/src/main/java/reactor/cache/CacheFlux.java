@@ -68,7 +68,11 @@ import reactor.core.publisher.Signal;
  *
  * @author Oleh Dokuka
  * @author Simon Baslé
+ * @deprecated To be removed in 4.0.0. There is no great solution for generic caches, other
+ * than specific implementations with async support and cache stampede protection (like Caffeine).
+ * see https://github.com/reactor/reactor-addons/issues/237
  */
+@Deprecated
 public class CacheFlux {
 	
 	private CacheFlux() {
