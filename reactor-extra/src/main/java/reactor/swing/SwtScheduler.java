@@ -29,7 +29,9 @@ import reactor.util.context.Context;
 
 /** 
  * Scheduler that runs tasks on Swt's event dispatch thread. 
+ * @deprecated To be removed exceptionally fast in 3.5.0. See https://github.com/reactor/reactor-addons/issues/273
  */
+@Deprecated
 public final class SwtScheduler implements Scheduler {
 
 	/**
