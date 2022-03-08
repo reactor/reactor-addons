@@ -25,7 +25,6 @@ buildscript {
 }
 
 plugins {
-	alias(libs.plugins.kotlin) apply false
 	alias(libs.plugins.bnd) apply false
 	alias(libs.plugins.artifactory) apply false
 }
@@ -78,7 +77,6 @@ configure(subprojects) { project ->
   group = 'io.projectreactor.addons'
 
 	apply plugin: 'java-library'
-	apply plugin: 'kotlin'
 	apply from: "${rootDir}/gradle/setup.gradle"
 	apply from: "${rootDir}/gradle/javadoc.gradle"
 
@@ -110,30 +108,6 @@ configure(subprojects) { project ->
   compileTestJava {
 	sourceCompatibility = 1.8
 	targetCompatibility = 1.8
-  }
-
-	compileKotlin {
-		kotlinOptions {
-			jvmTarget = "1.8"
-			freeCompilerArgs = ["-Xjsr305=strict"]
-			languageVersion = "1.3" //TODO kotlin languageVersion 1.3 is now deprecated
-			apiVersion = "1.3"
-		}
-	}
-
-	compileTestKotlin {
-		kotlinOptions {
-			jvmTarget = "1.8"
-			freeCompilerArgs = ["-Xjsr305=strict"]
-			languageVersion = "1.3" //TODO kotlin languageVersion 1.3 is now deprecated
-			apiVersion = "1.3"
-		}
-	}
-
-  // now that kotlin-gradle-plugin 1.1.60 is out with fix for https://youtrack.jetbrains.com/issue/KT-17564
-  // be wary and fail if the issue of source file duplication in jar comes up again
-  sourcesJar {
-	duplicatesStrategy = DuplicatesStrategy.FAIL
   }
 
 	if (JavaVersion.current().isJava8Compatible()) {
@@ -199,7 +173,6 @@ project('reactor-adapter') {
 			"Import-Package": [
 				"!*internal*",
 				"!javax.annotation",
-				"kotlin.*;resolution:=optional",
 				"*"
 			].join(","),
 			"Bundle-Name" : "reactor-adapter",
@@ -219,9 +192,6 @@ project('reactor-adapter') {
 
 		compileOnly libs.akkaActor
 		testImplementation libs.akkaActor
-
-		compileOnly libs.kotlin.stdlib
-		testImplementation libs.kotlin.stdlib
 
 		testImplementation libs.reactiveStreams.tck
 	}
@@ -253,7 +223,6 @@ project('reactor-extra') {
 			"Import-Package": [
 				"!*internal*",
 				"!javax.annotation",
-				"kotlin.*;resolution:=optional",
 				"org.eclipse.*;resolution:=optional",
 				"javax.swing.*;resolution:=optional",
 				"*"
@@ -267,8 +236,6 @@ project('reactor-extra') {
 	dependencies {
 		compileOnly getSwtPlatform()
 		testImplementation getSwtPlatform()
-		compileOnly libs.kotlin.stdlib
-		testImplementation libs.kotlin.stdlib
 		testImplementation libs.reactiveStreams.tck
 		testImplementation libs.mockito
 	}
