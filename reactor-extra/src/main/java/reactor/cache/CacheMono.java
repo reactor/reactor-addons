@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2022 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,11 @@ import reactor.core.publisher.Signal;
  *
  * @author Oleh Dokuka
  * @author Simon Baslé
+ * @deprecated To be removed in 3.6.0 at the earliest. There is no great solution for generic caches, other
+ * than specific implementations with async support and cache stampede protection (like Caffeine).
+ * see https://github.com/reactor/reactor-addons/issues/237
  */
+@Deprecated
 public class CacheMono {
 	
 	private CacheMono() {
