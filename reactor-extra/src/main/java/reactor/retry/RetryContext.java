@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2022 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ package reactor.retry;
  * the retry callback {@link Retry#doOnRetry(java.util.function.Consumer)}.
  *
  * @param <T> Application context type
+ * @deprecated To be removed in 3.6.0 at the earliest. Use equivalent features of reactor-core like
+ * {@link reactor.util.retry.RetrySpec} and {@link reactor.util.retry.RetryBackoffSpec} instead.
  */
+@Deprecated
 public interface RetryContext<T> extends IterationContext<T> {
 
 	/**

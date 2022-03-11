@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2018-2022 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class AbstractRetryTest {
             }
         };
 
-        RetryContext<String> retryContext = new DefaultContext<>(null, 1, BackoffDelay.ZERO, null);
+        RepeatContext<String> retryContext = new DefaultContext<>(null, 1, BackoffDelay.ZERO, null);
 
         BackoffDelay backoff = abstractRetry.calculateBackoff(retryContext, timeoutInstant);
         assertThat(backoff)
@@ -106,7 +106,7 @@ public class AbstractRetryTest {
             }
         };
 
-        RetryContext<String> retryContext = new DefaultContext<>(null, 1, BackoffDelay.ZERO, null);
+        RepeatContext<String> retryContext = new DefaultContext<>(null, 1, BackoffDelay.ZERO, null);
 
         BackoffDelay backoff = abstractRetry.calculateBackoff(retryContext, timeoutInstant);
         assertThat(backoff)

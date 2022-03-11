@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2022 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ package reactor.retry;
  * {@link Retry#timeout(java.time.Duration)} or {@link Retry#retryMax(long)}.
  * For retries, {@link #getCause()} returns the original exception from the
  * last retry attempt that generated this exception.
+ * @deprecated To be removed in 3.6.0 at the earliest. Use equivalent features of reactor-core like
+ * {@link reactor.core.Exceptions#retryExhausted(String, Throwable)} and {@link reactor.core.Exceptions#isRetryExhausted(Throwable)} instead.
  */
+@Deprecated
 public class RetryExhaustedException extends RuntimeException {
 
 	private static final long serialVersionUID = 6961442923363481283L;
