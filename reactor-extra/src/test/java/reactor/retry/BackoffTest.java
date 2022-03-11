@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2022 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ public class BackoffTest {
 
 		BackoffDelay delay = null;
 		IterationContext<String> context = null;
+		//note: reaches max in about 15 iterations
 		for (int i = 0; i < 71; i++) {
 			if (i == 0) {
 				delay = new BackoffDelay(INIT, EXPLICIT_MAX, INIT);
@@ -82,6 +83,11 @@ public class BackoffTest {
 			else {
 				context = new DefaultContext<>(null, i, delay, null);
 				delay = backoff.apply(context);
+
+				RandomJitter jitter = new RandomJitter(0.5d);
+				assertThat(jitter.highJitterBound(delay, 250))
+					.as("jitter applied without exception in round #" + i)
+					.isNotNegative();
 			}
 		}
 
@@ -94,12 +100,13 @@ public class BackoffTest {
 	@Test
 	public void exponentialDoesntThrowArithmeticException_noSpecificMax() {
 		final Duration INIT = Duration.ofSeconds(10);
-		final Duration EXPECTED_MAX = Duration.ofSeconds(Long.MAX_VALUE);
+		final Duration EXPECTED_MAX = Duration.ofMillis(Long.MAX_VALUE);
 
 		Backoff backoff = Backoff.exponential(INIT, null, 2, false);
 
 		BackoffDelay delay = null;
 		IterationContext<String> context = null;
+		//note: reaches max in about 50 iterations
 		for (int i = 0; i < 71; i++) {
 			if (i == 0) {
 				delay = new BackoffDelay(INIT, null, INIT);
@@ -107,6 +114,11 @@ public class BackoffTest {
 			else {
 				context = new DefaultContext<>(null, i, delay, null);
 				delay = backoff.apply(context);
+
+				RandomJitter jitter = new RandomJitter(0.5d);
+				assertThat(jitter.highJitterBound(delay, 250))
+					.as("jitter applied without exception in round #" + i)
+					.isNotNegative();
 			}
 		}
 
@@ -125,6 +137,7 @@ public class BackoffTest {
 
 		BackoffDelay delay = null;
 		IterationContext<String> context = null;
+		//note: reaches max in about 15 iterations
 		for (int i = 0; i < 71; i++) {
 			if (i == 0) {
 				delay = new BackoffDelay(INIT, EXPLICIT_MAX, INIT);
@@ -132,6 +145,11 @@ public class BackoffTest {
 			else {
 				context = new DefaultContext<>(null, i, delay, null);
 				delay = backoff.apply(context);
+
+				RandomJitter jitter = new RandomJitter(0.5d);
+				assertThat(jitter.highJitterBound(delay, 250))
+					.as("jitter applied without exception in round #" + i)
+			.isNotNegative();
 			}
 		}
 
@@ -144,12 +162,13 @@ public class BackoffTest {
 	@Test
 	public void exponentialDoesntThrowArithmeticException_noSpecificMaxDependsOnPrevious() {
 		final Duration INIT = Duration.ofSeconds(10);
-		final Duration EXPECTED_MAX = Duration.ofSeconds(Long.MAX_VALUE);
+		final Duration EXPECTED_MAX = Duration.ofMillis(Long.MAX_VALUE);
 
 		Backoff backoff = Backoff.exponential(INIT, null, 2, true);
 
 		BackoffDelay delay = null;
 		IterationContext<String> context = null;
+		//note: reaches max in about 50 iterations
 		for (int i = 0; i < 71; i++) {
 			if (i == 0) {
 				delay = new BackoffDelay(INIT, null, INIT);
@@ -157,6 +176,11 @@ public class BackoffTest {
 			else {
 				context = new DefaultContext<>(null, i, delay, null);
 				delay = backoff.apply(context);
+
+				RandomJitter jitter = new RandomJitter(0.5d);
+				assertThat(jitter.highJitterBound(delay, 250))
+					.as("jitter applied without exception in round #" + i)
+					.isNotNegative();
 			}
 		}
 
@@ -177,6 +201,23 @@ public class BackoffTest {
 				.isThrownBy(() -> Backoff.exponential(Duration.ofSeconds(2), Duration.ofSeconds(1), 1, true))
 				.as("based on previous value")
 				.withMessage("maxBackoff must be >= firstBackoff");
+	}
+
+	@Test
+	public void exponentialRejectsMaxGreaterThanLongMaxMilliseconds() {
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> Backoff.exponential(Duration.ofSeconds(2),
+					Duration.ofMillis(Long.MAX_VALUE).plusMillis(10),
+					1, false))
+				.as("not based on previous value")
+				.withMessage("maxBackoff must be less than Long.MAX_VALUE milliseconds");
+
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> Backoff.exponential(Duration.ofSeconds(2),
+					Duration.ofMillis(Long.MAX_VALUE).plusMillis(10),
+					1, true))
+				.as("based on previous value")
+				.withMessage("maxBackoff must be less than Long.MAX_VALUE milliseconds");
 	}
 
 	@Test
