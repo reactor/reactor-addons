@@ -25,7 +25,9 @@ import reactor.test.StepVerifier;
 
 /**
  * @author Stephane Maldini
+ * @deprecated To be removed in 3.6.0. See https://github.com/reactor/reactor-addons/issues/273
  */
+@Deprecated
 public class SwtAdapterTest {
 
 	@Test

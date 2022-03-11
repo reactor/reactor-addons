@@ -29,9 +29,11 @@ import reactor.core.publisher.Operators;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.context.Context;
 
-/** 
- * Scheduler that runs tasks on Swing's event dispatch thread. 
+/**
+ * Scheduler that runs tasks on Swing's event dispatch thread.
+ * @deprecated To be removed in 3.6.0. See https://github.com/reactor/reactor-addons/issues/273
  */
+@Deprecated
 public final class SwingScheduler implements Scheduler {
 
 	/**
