@@ -152,14 +152,10 @@ public class ReactorMathTests {
 				          .multiply(BigInteger.valueOf(2)));
 		verifyResult(MathFlux.sumBigInteger(intFlux(count),
 				i -> i), sum);
-		verifyResult(MathFlux.sumBigInteger(doubleFlux(count),
-				i -> i), sum);
 		verifyResult(MathFlux.sumBigInteger(stringFlux(count), BigInteger::new), sum);
 
 		verifyResult(bigIntegerFlux(count).as(MathFlux::sumBigInteger), sum);
 		verifyResult(bigIntegerFlux(count).transform(MathFlux::sumBigInteger), sum);
-		verifyResult(doubleFlux(count).as(MathFlux::sumBigInteger), sum);
-		verifyResult(doubleFlux(count).transform(MathFlux::sumBigInteger), sum);
 		verifyResult(intFlux(count).as(MathFlux::sumBigInteger), sum);
 		verifyResult(intFlux(count).transform(MathFlux::sumBigInteger), sum);
 	}
@@ -169,7 +165,6 @@ public class ReactorMathTests {
 		verifyResult(MathFlux.sumBigInteger(Mono.just(BigInteger.ONE)), BigInteger.ONE);
 		verifyResult(MathFlux.sumBigInteger(Mono.just("10"), BigInteger::new),
 				BigInteger.TEN);
-		verifyResult(MathFlux.sumBigInteger(Mono.just(1.5)), BigInteger.ONE);
 	}
 
 	@Test
@@ -309,15 +304,13 @@ public class ReactorMathTests {
 		verifyResult(MathFlux.averageBigInteger(stringFlux(count), Long::parseLong),
 				average);
 
-		verifyResult(doubleFlux(count).as(MathFlux::averageBigInteger), average);
-		verifyResult(doubleFlux(count).transform(MathFlux::averageBigInteger), average);
 		verifyResult(intFlux(count).as(MathFlux::averageBigInteger), average);
 		verifyResult(intFlux(count).transform(MathFlux::averageBigInteger), average);
 	}
 
 	@Test
 	public void monoAverageBigInteger() {
-		verifyResult(MathFlux.averageBigInteger(Mono.just(2.5)), BigInteger.valueOf(2));
+		verifyResult(MathFlux.averageBigInteger(Mono.just(2)), BigInteger.valueOf(2));
 		verifyResult(MathFlux.averageBigInteger(Mono.just(2), i -> i),
 				BigInteger.valueOf(2));
 		verifyResult(MathFlux.averageBigInteger(Mono.just("1"), Long::parseLong),
