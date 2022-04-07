@@ -74,7 +74,6 @@ final class MonoSumBigInteger<T> extends MonoFromFluxOperator<T, BigInteger>
 		@Override
 		protected void updateResult(T newValue) {
 			Number number = mapping.apply(newValue);
-
 			BigInteger bigIntegerValue = (number instanceof BigInteger) ?
 					(BigInteger) number : new BigInteger(number.toString());
 			sum = hasValue ? sum.add(bigIntegerValue) : bigIntegerValue;

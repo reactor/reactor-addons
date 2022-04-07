@@ -178,6 +178,22 @@ public class ReactorMathTests {
 	}
 
 	@Test
+	public void monoBigIntegerRange() {
+		long longValue = 1100000000000000L;
+		String bigValue = "12319800000000000000";
+		verifyResult(MathFlux.sumBigInteger(Mono.just(BigInteger.valueOf(longValue))), BigInteger.valueOf(longValue));
+		verifyResult(MathFlux.sumBigInteger(Mono.just(new BigInteger(bigValue, 10))), new BigInteger(bigValue, 10));
+		verifyResult(
+				MathFlux.sumBigInteger(Flux.just(BigInteger.valueOf(longValue), new BigInteger(bigValue, 10))),
+				new BigInteger(bigValue, 10).add(BigInteger.valueOf(longValue))
+		);
+		verifyResult(
+				MathFlux.averageBigInteger(Flux.just(BigInteger.valueOf(longValue), new BigInteger(bigValue, 10))),
+				new BigInteger(bigValue, 10).add(BigInteger.valueOf(longValue)).divide(BigInteger.valueOf(2L))
+		);
+	}
+
+	@Test
 	public void fluxSumBigDecimal() {
 		int count = 10;
 		BigDecimal sumDouble = BigDecimal.valueOf(Double.valueOf(sum(count)));
