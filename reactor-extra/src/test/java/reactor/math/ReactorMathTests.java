@@ -152,14 +152,10 @@ public class ReactorMathTests {
 				          .multiply(BigInteger.valueOf(2)));
 		verifyResult(MathFlux.sumBigInteger(intFlux(count),
 				i -> i), sum);
-		verifyResult(MathFlux.sumBigInteger(doubleFlux(count),
-				i -> i), sum);
 		verifyResult(MathFlux.sumBigInteger(stringFlux(count), BigInteger::new), sum);
 
 		verifyResult(bigIntegerFlux(count).as(MathFlux::sumBigInteger), sum);
 		verifyResult(bigIntegerFlux(count).transform(MathFlux::sumBigInteger), sum);
-		verifyResult(doubleFlux(count).as(MathFlux::sumBigInteger), sum);
-		verifyResult(doubleFlux(count).transform(MathFlux::sumBigInteger), sum);
 		verifyResult(intFlux(count).as(MathFlux::sumBigInteger), sum);
 		verifyResult(intFlux(count).transform(MathFlux::sumBigInteger), sum);
 	}
@@ -169,12 +165,23 @@ public class ReactorMathTests {
 		verifyResult(MathFlux.sumBigInteger(Mono.just(BigInteger.ONE)), BigInteger.ONE);
 		verifyResult(MathFlux.sumBigInteger(Mono.just("10"), BigInteger::new),
 				BigInteger.TEN);
-		verifyResult(MathFlux.sumBigInteger(Mono.just(1.5)), BigInteger.ONE);
 	}
 
 	@Test
 	public void emptySumBigInteger() {
 		verifyEmptyResult(MathFlux.sumBigInteger(Mono.empty()));
+	}
+
+	@Test
+	public void noOverflowSumBigInteger() {
+		long longValue = 1100000000000000L;
+		String bigValue = "12319800000000000000";
+		verifyResult(MathFlux.sumBigInteger(Mono.just(BigInteger.valueOf(longValue))), BigInteger.valueOf(longValue));
+		verifyResult(MathFlux.sumBigInteger(Mono.just(new BigInteger(bigValue, 10))), new BigInteger(bigValue, 10));
+		verifyResult(
+				MathFlux.sumBigInteger(Flux.just(BigInteger.valueOf(longValue), new BigInteger(bigValue, 10))),
+				new BigInteger(bigValue, 10).add(BigInteger.valueOf(longValue))
+		);
 	}
 
 	@Test
@@ -297,15 +304,13 @@ public class ReactorMathTests {
 		verifyResult(MathFlux.averageBigInteger(stringFlux(count), Long::parseLong),
 				average);
 
-		verifyResult(doubleFlux(count).as(MathFlux::averageBigInteger), average);
-		verifyResult(doubleFlux(count).transform(MathFlux::averageBigInteger), average);
 		verifyResult(intFlux(count).as(MathFlux::averageBigInteger), average);
 		verifyResult(intFlux(count).transform(MathFlux::averageBigInteger), average);
 	}
 
 	@Test
 	public void monoAverageBigInteger() {
-		verifyResult(MathFlux.averageBigInteger(Mono.just(2.5)), BigInteger.valueOf(2));
+		verifyResult(MathFlux.averageBigInteger(Mono.just(2)), BigInteger.valueOf(2));
 		verifyResult(MathFlux.averageBigInteger(Mono.just(2), i -> i),
 				BigInteger.valueOf(2));
 		verifyResult(MathFlux.averageBigInteger(Mono.just("1"), Long::parseLong),
@@ -315,6 +320,18 @@ public class ReactorMathTests {
 	@Test
 	public void emptyAverageBigInteger() {
 		verifyEmptyResult(MathFlux.averageBigInteger(Mono.empty()));
+	}
+
+	@Test
+	public void noOverflowAverageBigInteger() {
+		long longValue = 1100000000000000L;
+		String bigValue = "12319800000000000000";
+		verifyResult(MathFlux.averageBigInteger(Mono.just(BigInteger.valueOf(longValue))), BigInteger.valueOf(longValue));
+		verifyResult(MathFlux.averageBigInteger(Mono.just(new BigInteger(bigValue, 10))), new BigInteger(bigValue, 10));
+		verifyResult(
+				MathFlux.averageBigInteger(Flux.just(BigInteger.valueOf(longValue), new BigInteger(bigValue, 10))),
+				new BigInteger(bigValue, 10).add(BigInteger.valueOf(longValue)).divide(BigInteger.valueOf(2L))
+		);
 	}
 
 	@Test
