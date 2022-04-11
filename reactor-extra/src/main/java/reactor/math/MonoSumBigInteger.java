@@ -16,6 +16,7 @@
 
 package reactor.math;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.function.Function;
 
@@ -50,7 +51,7 @@ final class MonoSumBigInteger<T> extends MonoFromFluxOperator<T, BigInteger>
 
 		private final Function<? super T, ? extends Number> mapping;
 
-		BigInteger sum;
+		BigDecimal sum;
 
 		boolean hasValue;
 
@@ -62,20 +63,29 @@ final class MonoSumBigInteger<T> extends MonoFromFluxOperator<T, BigInteger>
 
 		@Override
 		protected void reset() {
-			sum = BigInteger.ZERO;
+			sum = BigDecimal.ZERO;
 			hasValue = false;
 		}
 
 		@Override
 		protected BigInteger result() {
-			return (hasValue ? sum : null);
+			return (hasValue ? sum.toBigInteger() : null);
 		}
 
 		@Override
 		protected void updateResult(T newValue) {
 			Number number = mapping.apply(newValue);
-			BigInteger bigIntegerValue = BigInteger.valueOf(number.longValue());
-			sum = hasValue ? sum.add(bigIntegerValue) : bigIntegerValue;
+			BigDecimal bigDecimalValue;
+			if (number instanceof BigDecimal) {
+				bigDecimalValue = (BigDecimal) number;
+			}
+			else if (number instanceof BigInteger) {
+				bigDecimalValue = new BigDecimal((BigInteger) number);
+			}
+			else {
+				bigDecimalValue = new BigDecimal(number.toString());
+			}
+			sum = hasValue ? sum.add(bigDecimalValue) : bigDecimalValue;
 			hasValue = true;
 		}
 	}

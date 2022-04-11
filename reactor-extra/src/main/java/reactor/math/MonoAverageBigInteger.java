@@ -16,7 +16,9 @@
 
 package reactor.math;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.function.Function;
 
 import org.reactivestreams.Publisher;
@@ -52,7 +54,7 @@ public class MonoAverageBigInteger<T> extends MonoFromFluxOperator<T, BigInteger
 
 		private int count;
 
-		private BigInteger sum = BigInteger.ZERO;
+		private BigDecimal sum = BigDecimal.ZERO;
 
 		AverageBigIntegerSubscriber(CoreSubscriber<? super BigInteger> actual,
 				Function<? super T, ? extends Number> mapping) {
@@ -63,19 +65,28 @@ public class MonoAverageBigInteger<T> extends MonoFromFluxOperator<T, BigInteger
 		@Override
 		protected void reset() {
 			count = 0;
-			sum = BigInteger.ZERO;
+			sum = BigDecimal.ZERO;
 		}
 
 		@Override
 		protected BigInteger result() {
-			return (count == 0 ? null : sum.divide(BigInteger.valueOf(count)));
+			return (count == 0 ? null : sum.divide(BigDecimal.valueOf(count), RoundingMode.FLOOR).toBigInteger());
 		}
 
 		@Override
 		protected void updateResult(T newValue) {
 			Number number = mapping.apply(newValue);
-			BigInteger bigIntegerValue = BigInteger.valueOf(number.longValue());
-			sum = sum.add(bigIntegerValue);
+			BigDecimal bigDecimalValue;
+			if (number instanceof BigDecimal) {
+				bigDecimalValue = (BigDecimal) number;
+			}
+			else if (number instanceof BigInteger) {
+				bigDecimalValue = new BigDecimal((BigInteger) number);
+			}
+			else {
+				bigDecimalValue = new BigDecimal(number.toString());
+			}
+			sum = sum.add(bigDecimalValue);
 			count++;
 		}
 	}

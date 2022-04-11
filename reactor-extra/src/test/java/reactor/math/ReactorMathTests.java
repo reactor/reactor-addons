@@ -178,6 +178,41 @@ public class ReactorMathTests {
 	}
 
 	@Test
+	public void noOverflowSumBigInteger() {
+		long longValue = 1100000000000000L;
+		String bigValue = "12319800000000000000";
+		verifyResult(MathFlux.sumBigInteger(Mono.just(BigInteger.valueOf(longValue))), BigInteger.valueOf(longValue));
+		verifyResult(MathFlux.sumBigInteger(Mono.just(new BigInteger(bigValue, 10))), new BigInteger(bigValue, 10));
+		verifyResult(
+				MathFlux.sumBigInteger(Flux.just(BigInteger.valueOf(longValue), new BigInteger(bigValue, 10))),
+				new BigInteger(bigValue, 10).add(BigInteger.valueOf(longValue))
+		);
+	}
+
+	@Test
+	public void noProgressivePrecisionLossSumBigInteger() {
+		//smaller than 0.5d, but the fractional parts are individually taken into account
+		double overflowingValue1 = 0.2d;
+		double overflowingValue2 = 0.4d;
+		double overflowingValue3 = 0.4d;
+
+		verifyResult(MathFlux.sumBigInteger(Flux.just(Long.MAX_VALUE, overflowingValue1, overflowingValue2, overflowingValue3)),
+			BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE));
+	}
+
+	@Test
+	public void finalPrecisionLossSumBigInteger() {
+		//smaller than 0.5d, but the fractional parts are individually taken into account
+		//but at the end the extra 0.2 is dropped
+		double overflowingValue1 = 0.4d;
+		double overflowingValue2 = 0.4d;
+		double overflowingValue3 = 0.4d;
+
+		verifyResult(MathFlux.sumBigInteger(Flux.just(Long.MAX_VALUE, overflowingValue1, overflowingValue2, overflowingValue3)),
+			BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE));
+	}
+
+	@Test
 	public void fluxSumBigDecimal() {
 		int count = 10;
 		BigDecimal sumDouble = BigDecimal.valueOf(Double.valueOf(sum(count)));
@@ -315,6 +350,33 @@ public class ReactorMathTests {
 	@Test
 	public void emptyAverageBigInteger() {
 		verifyEmptyResult(MathFlux.averageBigInteger(Mono.empty()));
+	}
+
+	@Test
+	public void noOverflowAverageBigInteger() {
+		long longValue = 1100000000000000L;
+		String bigValue = "12319800000000000000";
+		verifyResult(MathFlux.averageBigInteger(Mono.just(BigInteger.valueOf(longValue))), BigInteger.valueOf(longValue));
+		verifyResult(MathFlux.averageBigInteger(Mono.just(new BigInteger(bigValue, 10))), new BigInteger(bigValue, 10));
+		verifyResult(
+				MathFlux.averageBigInteger(Flux.just(BigInteger.valueOf(longValue), new BigInteger(bigValue, 10))),
+				new BigInteger(bigValue, 10).add(BigInteger.valueOf(longValue)).divide(BigInteger.valueOf(2L))
+		);
+	}
+
+	@Test
+	public void noProgressivePrecisionLossAverageBigInteger() {
+		Flux<Number> numbers = Flux.just(1001.4d, 1000.2d, 1001.4d);
+		//3003 / 3 == 1001. rounding down each number would instead result in 3002 / 3 == 1000
+
+		verifyResult(MathFlux.averageBigInteger(numbers), BigInteger.valueOf(1001));
+	}
+
+	@Test
+	public void finalPrecisionLossAverageBigInteger() {
+		Flux<Number> numbers = Flux.just(1001.4d, 1000.2d, 1000.4d);
+
+		verifyResult(MathFlux.averageBigInteger(numbers), BigInteger.valueOf(1000));
 	}
 
 	@Test

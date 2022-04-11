@@ -143,6 +143,10 @@ public final class MathFlux {
 
 	/**
 	 * Computes the {@link BigInteger} sum of items in the source.
+	 * <p>
+	 * Further conversion of individual elements to {@link BigDecimal} is always applied to
+	 * retain maximum precision. When the sum is ultimately produced, it can be rounded or
+	 * truncated as a {@link BigDecimal#toBigInteger()} final conversion is applied.
 	 *
 	 * @param source the numerical source
 	 * @return {@link Mono} of the sum of items in source
@@ -154,6 +158,10 @@ public final class MathFlux {
 	/**
 	 * Computes the {@link BigInteger} sum of items in the source, which are mapped to
 	 * numerical values using provided mapping.
+	 * <p>
+	 * Further conversion of individual elements to {@link BigDecimal} is always applied to
+	 * retain maximum precision. When the sum is ultimately produced, it can be rounded or
+	 * truncated as a {@link BigDecimal#toBigInteger()} final conversion is applied.
 	 *
 	 * @param source  the source items
 	 * @param mapping a function to map source items to numerical values
@@ -237,6 +245,11 @@ public final class MathFlux {
 
 	/**
 	 * Computes the {@link BigInteger} average of items in the source.
+	 * <p>
+	 * The average is computed by summing {@link BigDecimal}-converted values and ultimately
+	 * dividing that number by the number of elements. Eventually the result of that division
+	 * can be rounded or truncated, as the {@link java.math.RoundingMode#FLOOR FLOOR rounding mode}
+	 * is applied and the {@link BigDecimal#toBigInteger()} final conversion is performed.
 	 *
 	 * @param source the numerical source
 	 * @return {@link Mono} of the average of items in source
@@ -248,6 +261,12 @@ public final class MathFlux {
 	/**
 	 * Computes the {@link BigInteger} average of items in the source, which are mapped to
 	 * numerical values using the provided mapping.
+	 * <p>
+	 * Further conversion of individual elements to {@link BigDecimal} is always applied.
+	 * The average is computed by summing {@link BigDecimal}-converted values and ultimately
+	 * dividing that number by the number of elements. Eventually the result of that division
+	 * can be rounded or truncated, as the {@link java.math.RoundingMode#FLOOR FLOOR rounding mode}
+	 * is applied and the {@link BigDecimal#toBigInteger()} final conversion is performed.
 	 *
 	 * @param source  the source items
 	 * @param mapping a function to map source items to numerical values
@@ -255,7 +274,7 @@ public final class MathFlux {
 	 */
 	public static final <T> Mono<BigInteger> averageBigInteger(Publisher<T> source,
 			Function<? super T, ? extends Number> mapping) {
-		return MathMono.onAssembly(new MonoAverageBigInteger<T>(source, mapping));
+		return MathMono.onAssembly(new MonoAverageBigInteger<>(source, mapping));
 	}
 
 
