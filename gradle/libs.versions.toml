@@ -1,5 +1,5 @@
 [versions]
-reactorCore = "3.4.17-SNAPSHOT"
+reactorCore = "3.4.17"
 # Other shared versions
 kotlin = "1.5.32"
 reactiveStreams = "1.0.3"
