@@ -1,7 +1,7 @@
 [versions]
-reactorCore = "3.5.0-SNAPSHOT"
+reactorCore = "3.5.0-M5"
 # Other shared versions
-reactiveStreams = "1.0.3"
+reactiveStreams = "1.0.4"
 swt = "4.5.2"
 
 [libraries]
