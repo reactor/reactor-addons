@@ -223,7 +223,7 @@ public abstract class RxJava3Adapter {
 
             Subscription s;
 
-            io.reactivex.rxjava3.internal.fuseable.QueueSubscription<T> qs;
+            io.reactivex.rxjava3.operators.QueueSubscription<T> qs;
 
             public FlowableAsFluxSubscriber(Subscriber<? super T> actual) {
                 this.actual = actual;
@@ -234,8 +234,8 @@ public abstract class RxJava3Adapter {
             public void onSubscribe(Subscription s) {
                 if (Operators.validate(this.s, s)) {
                     this.s = s;
-                    if (s instanceof io.reactivex.rxjava3.internal.fuseable.QueueSubscription) {
-                        this.qs = (io.reactivex.rxjava3.internal.fuseable.QueueSubscription<T>)s;
+                    if (s instanceof io.reactivex.rxjava3.operators.QueueSubscription) {
+                        this.qs = (io.reactivex.rxjava3.operators.QueueSubscription<T>)s;
                     }
 
                     actual.onSubscribe(this);
@@ -301,13 +301,13 @@ public abstract class RxJava3Adapter {
         }
 
         static final class FlowableAsFluxConditionalSubscriber<T> implements
-        io.reactivex.rxjava3.internal.fuseable.ConditionalSubscriber<T>, QueueSubscription<T> {
+        io.reactivex.rxjava3.operators.ConditionalSubscriber<T>, QueueSubscription<T> {
 
             final ConditionalSubscriber<? super T> actual;
 
             Subscription s;
 
-            io.reactivex.rxjava3.internal.fuseable.QueueSubscription<T> qs;
+            io.reactivex.rxjava3.operators.QueueSubscription<T> qs;
 
             public FlowableAsFluxConditionalSubscriber(ConditionalSubscriber<? super T> actual) {
                 this.actual = actual;
@@ -318,8 +318,8 @@ public abstract class RxJava3Adapter {
             public void onSubscribe(Subscription s) {
                 if (Operators.validate(this.s, s)) {
                     this.s = s;
-                    if (s instanceof io.reactivex.rxjava3.internal.fuseable.QueueSubscription) {
-                        this.qs = (io.reactivex.rxjava3.internal.fuseable.QueueSubscription<T>)s;
+                    if (s instanceof io.reactivex.rxjava3.operators.QueueSubscription) {
+                        this.qs = (io.reactivex.rxjava3.operators.QueueSubscription<T>)s;
                     }
 
                     actual.onSubscribe(this);
@@ -400,15 +400,15 @@ public abstract class RxJava3Adapter {
 
         @Override
         public void subscribeActual(Subscriber<? super T> s) {
-            if (s instanceof io.reactivex.rxjava3.internal.fuseable.ConditionalSubscriber) {
-                source.subscribe(new FluxAsFlowableConditionalSubscriber<>((io.reactivex.rxjava3.internal.fuseable.ConditionalSubscriber<? super T>)s));
+            if (s instanceof io.reactivex.rxjava3.operators.ConditionalSubscriber) {
+                source.subscribe(new FluxAsFlowableConditionalSubscriber<>((io.reactivex.rxjava3.operators.ConditionalSubscriber<? super T>)s));
             } else {
                 source.subscribe(new FluxAsFlowableSubscriber<>(s));
             }
         }
 
         static final class FluxAsFlowableSubscriber<T> implements CoreSubscriber<T>,
-        io.reactivex.rxjava3.internal.fuseable.QueueSubscription<T> {
+        io.reactivex.rxjava3.operators.QueueSubscription<T> {
 
             final Subscriber<? super T> actual;
 
@@ -493,15 +493,15 @@ public abstract class RxJava3Adapter {
         }
 
         static final class FluxAsFlowableConditionalSubscriber<T> implements
-        Fuseable.ConditionalSubscriber<T>, io.reactivex.rxjava3.internal.fuseable.QueueSubscription<T> {
+        Fuseable.ConditionalSubscriber<T>, io.reactivex.rxjava3.operators.QueueSubscription<T> {
 
-            final io.reactivex.rxjava3.internal.fuseable.ConditionalSubscriber<? super T> actual;
+            final io.reactivex.rxjava3.operators.ConditionalSubscriber<? super T> actual;
 
             Subscription s;
 
-            io.reactivex.rxjava3.internal.fuseable.QueueSubscription<T> qs;
+            io.reactivex.rxjava3.operators.QueueSubscription<T> qs;
 
-            public FluxAsFlowableConditionalSubscriber(io.reactivex.rxjava3.internal.fuseable.ConditionalSubscriber<? super T> actual) {
+            public FluxAsFlowableConditionalSubscriber(io.reactivex.rxjava3.operators.ConditionalSubscriber<? super T> actual) {
                 this.actual = actual;
             }
 
@@ -510,8 +510,8 @@ public abstract class RxJava3Adapter {
             public void onSubscribe(Subscription s) {
                 if (Operators.validate(this.s, s)) {
                     this.s = s;
-                    if (s instanceof io.reactivex.rxjava3.internal.fuseable.QueueSubscription) {
-                        this.qs = (io.reactivex.rxjava3.internal.fuseable.QueueSubscription<T>)s;
+                    if (s instanceof io.reactivex.rxjava3.operators.QueueSubscription) {
+                        this.qs = (io.reactivex.rxjava3.operators.QueueSubscription<T>)s;
                     }
 
                     actual.onSubscribe(this);

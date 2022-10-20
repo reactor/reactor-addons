@@ -33,7 +33,7 @@ import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.internal.fuseable.QueueSubscription;
+import io.reactivex.rxjava3.operators.QueueSubscription;
 import io.reactivex.rxjava3.internal.subscribers.BasicFuseableSubscriber;
 import io.reactivex.rxjava3.observers.BaseTestConsumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
