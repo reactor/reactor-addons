@@ -776,6 +776,7 @@ public abstract class RxJava3Adapter {
             source.subscribe(new MaybeAsMonoObserver<>(s));
         }
 
+        //FIXME this and all other MonoSubscriber-extending classes are fake-fuseable: requestFusion will always reply NONE unless overridden
         static final class MaybeAsMonoObserver<T> extends MonoSubscriber<T, T> implements MaybeObserver<T> {
 
             io.reactivex.rxjava3.disposables.Disposable d;

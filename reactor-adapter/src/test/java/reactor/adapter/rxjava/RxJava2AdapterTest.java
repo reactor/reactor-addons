@@ -117,19 +117,8 @@ public class RxJava2AdapterTest {
 	                .expectComplete()
 	                .verify();
     }
+	//NB: MonoSubscribers like SingleToMonoSubscriber are not fuseable anymore
 
-    @Test
-    public void singleToMonoFused() {
-	    Mono<Integer> m = Single.just(1)
-	                            .to(RxJava2Adapter::singleToMono);
-
-	    StepVerifier.create(m)
-	                .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
-	                .expectNext(1)
-	                .expectComplete()
-	                .verify();
-    }
-    
     @Test
     public void monoToSingle() {
         Mono.just(1)
@@ -233,14 +222,6 @@ public class RxJava2AdapterTest {
 	                .expectErrorMessage("Forced failure")
 	                .verify();
     }
+	//NB: MonoSubscribers like MaybeToMonoSubscriber are not fuseable anymore
 
-    @Test
-    public void maybeToMonoEmptyFused() {
-	    Mono<Void> m = Maybe.<Void>empty().to(RxJava2Adapter::maybeToMono);
-
-	    StepVerifier.create(m)
-	                .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
-	                .expectComplete()
-	                .verify();
-    }
 }

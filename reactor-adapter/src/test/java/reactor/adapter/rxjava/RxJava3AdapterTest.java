@@ -204,16 +204,7 @@ public class RxJava3AdapterTest {
 		            .expectComplete()
 		            .verify();
 	}
-
-	@Test
-	public void maybeToMonoEmptyFused() {
-		Mono<Void> m = Maybe.<Void>empty().to(RxJava3Adapter::maybeToMono);
-
-		StepVerifier.create(m)
-		            .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
-		            .expectComplete()
-		            .verify();
-	}
+	//NB: MonoSubscribers like MaybeToMonoSubscriber are not fuseable anymore
 
 	@Test
 	public void maybeToMonoError() {
@@ -312,19 +303,7 @@ public class RxJava3AdapterTest {
 		            .expectComplete()
 		            .verify();
 	}
-
-	@Test
-	public void singleToMonoFused() {
-		Mono<Integer> m = Single.just(1)
-		                        .to(RxJava3Adapter::singleToMono);
-
-		StepVerifier.create(m)
-		            .expectFusion(Fuseable.ANY, Fuseable.ASYNC)
-		            .expectNext(1)
-		            .expectComplete()
-		            .verify();
-	}
-
+	//NB: MonoSubscribers like SingleToMonoSubscriber are not fuseable anymore
 
 	@Test
 	public void scheduler() {
