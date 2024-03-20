@@ -41,7 +41,7 @@ updates:
   open-pull-requests-limit: 10
   assignees:
       - violetagg
-  target-branch: "0.2.x"
+  target-branch: "3.4.x"
   labels:
       - type/dependency-upgrade
   rebase-strategy: disabled
