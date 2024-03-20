@@ -2,7 +2,7 @@
 reactorCore = "3.4.29-SNAPSHOT"
 # Other shared versions
 kotlin = "1.5.32"
-reactiveStreams = "1.0.3"
+reactiveStreams = "1.0.4"
 swt = "4.5.2"
 
 [libraries]
