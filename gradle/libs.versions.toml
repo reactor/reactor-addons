@@ -27,5 +27,5 @@ swt-mac = { module = "org.eclipse.swt:org.eclipse.swt.cocoa.macosx.x86_64", vers
 testNg = "org.testng:testng:7.5.1"
 
 [plugins]
-artifactory = { id = "com.jfrog.artifactory", version = "4.27.1" }
+artifactory = { id = "com.jfrog.artifactory", version = "4.31.0" }
 bnd = { id = "biz.aQute.bnd.builder", version = "6.4.0" }
