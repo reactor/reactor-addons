@@ -15,7 +15,7 @@ jsr305 = "com.google.code.findbugs:jsr305:3.0.1"
 junit4 = "junit:junit:4.12"
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 logback = "ch.qos.logback:logback-classic:1.2.10"
-mockito = "org.mockito:mockito-core:4.3.1"
+mockito = "org.mockito:mockito-core:4.11.0"
 quickTheories = "org.quicktheories:quicktheories:0.25"
 reactiveStreams-tck = { module = "org.reactivestreams:reactive-streams-tck", version.ref = "reactiveStreams" }
 rxJava2 = "io.reactivex.rxjava2:rxjava:2.2.8"
