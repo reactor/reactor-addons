@@ -33,6 +33,10 @@ updates:
   - dependency-name: "com.jfrog.artifactory"
     versions:
     - ">= 5.0.a"
+  # TestNG: 7.6+ doesn't support JDK8 anymore
+  - dependency-name: "org.testng:testng"
+    versions:
+    - ">= 7.6.a"
   rebase-strategy: disabled
 - package-ecosystem: github-actions
   directory: "/"
