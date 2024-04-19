@@ -12,7 +12,7 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: 8
-    - uses: gradle/gradle-build-action@fe59895742b4f984530980e4f693943577526b61 # renovate: tag=v2
+    - uses: gradle/gradle-build-action@e2097ccd7e8ed48671dc068ac4efa86d25745b39 # renovate: tag=v2
       name: gradle
       with:
         arguments: check javadoc
