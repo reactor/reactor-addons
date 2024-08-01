@@ -12,7 +12,7 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: 8
-    - uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda
-      name: gradle
-      with:
-        arguments: check javadoc
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70
+    - name: gradle
+      run: ./gradlew check javadoc
