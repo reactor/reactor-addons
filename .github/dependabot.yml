@@ -7,7 +7,7 @@ updates:
   open-pull-requests-limit: 10
   assignees:
   - violetagg
-  target-branch: "3.4.x"
+  target-branch: "3.5.x"
   labels:
   - type/dependency-upgrade
   ignore:
@@ -45,7 +45,7 @@ updates:
   open-pull-requests-limit: 10
   assignees:
       - violetagg
-  target-branch: "3.4.x"
+  target-branch: "3.5.x"
   labels:
       - type/dependency-upgrade
   rebase-strategy: disabled
