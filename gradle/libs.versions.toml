@@ -2,7 +2,7 @@
 reactorCore = "3.5.21-SNAPSHOT"
 # Other shared versions
 reactiveStreams = "1.0.4"
-swt = "4.5.2"
+swt = "4.6.1"
 
 [libraries]
 reactorCore = { module = "io.projectreactor:reactor-core", version.ref = "reactorCore" }
