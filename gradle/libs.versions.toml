@@ -1,5 +1,6 @@
 [versions]
-reactorCore = "3.5.21-SNAPSHOT"
+# Reactor Core 3.5.20 is the last OSS release for 3.5.x series
+reactorCore = "3.5.20"
 # Other shared versions
 reactiveStreams = "1.0.4"
 swt = "4.5.2"
