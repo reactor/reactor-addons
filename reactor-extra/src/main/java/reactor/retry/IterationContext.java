@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2025 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,11 @@ import java.time.Duration;
  * Context provided to retry or repeat callbacks.
  *
  * @param <T> Application context type
+ *
+ * @deprecated Use reactor.util.repeat or reactor.util.retry available since
+ * reactor-core 3.8.0 which provides similar capabilities.
  */
+@Deprecated
 public interface IterationContext<T> {
 
 	/**
