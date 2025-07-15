@@ -40,8 +40,6 @@ To add this repo to your Gradle build, specify the URL like the following:
     }
 
     repositories {
-      //maven { url 'https://repo.spring.io/release' }
-      maven { url 'https://repo.spring.io/milestone' }
       //maven { url 'https://repo.spring.io/snapshot' }
       mavenCentral()
     }

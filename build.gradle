@@ -132,6 +132,7 @@ configure(subprojects) { project ->
 			mavenLocal()
 			maven { url 'https://repo.spring.io/snapshot' }
 		}
+		// Spring Milestone repository is required for io.projectreactor:jsr166:1.0.0.RELEASE
 		maven { url 'https://repo.spring.io/milestone' }
 	}
 
