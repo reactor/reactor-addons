@@ -24,8 +24,8 @@ import reactor.core.publisher.Mono;
  * the repeat callback {@link Repeat#doOnRepeat(java.util.function.Consumer)}.
  *
  * @param <T> Application context type
- * @deprecated Use reactor.util.repeat.RepeatSpec available since reactor-core 3.8.0
- * which provides similar capabilities.
+ * @deprecated To be removed in 3.7.0 at the earliest. Use reactor.util.repeat.RepeatSpec
+ * available since reactor-core 3.8.0 which provides similar capabilities.
  */
 @Deprecated
 public interface RepeatContext<T> extends IterationContext<T> {

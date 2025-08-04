@@ -23,8 +23,9 @@ import java.util.function.Function;
 /**
  * Jitter function that is applied to the backoff delay.
  *
- * @deprecated Use reactor.util.repeat or reactor.util.retry available since
- * reactor-core 3.8.0 which provides similar capabilities.
+ * @deprecated To be removed in 3.7.0 at the earliest. Use reactor.util.repeat or
+ * reactor.util.retry available since reactor-core 3.8.0 which provides similar
+ * capabilities.
  */
 @Deprecated
 public interface Jitter extends Function<BackoffDelay, Duration> {

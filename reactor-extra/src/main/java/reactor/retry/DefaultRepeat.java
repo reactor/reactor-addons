@@ -29,8 +29,8 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 
 /*
- * @deprecated Use reactor.util.repeat.RepeatSpec available since reactor-core 3.8.0
- * which provides similar capabilities.
+ * @deprecated To be removed in 3.7.0 at the earliest. Use reactor.util.repeat.RepeatSpec
+ *  available since reactor-core 3.8.0 which provides similar capabilities.
  */
 @Deprecated
 public class DefaultRepeat<T> extends AbstractRetry<T, Long> implements Repeat<T> {

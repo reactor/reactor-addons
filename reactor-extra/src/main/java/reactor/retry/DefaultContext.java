@@ -19,8 +19,9 @@ package reactor.retry;
 import java.time.Duration;
 
 /*
- * @deprecated Use reactor.util.repeat or reactor.util.retry available since
- * reactor-core 3.8.0 which provides similar capabilities.
+ * @deprecated To be removed in 3.7.0 at the earliest. Use reactor.util.repeat or
+ * reactor.util.retry available since reactor-core 3.8.0 which provides similar
+ * capabilities.
  */
 @Deprecated
 public class DefaultContext<T> implements RetryContext<T>, RepeatContext<T> {

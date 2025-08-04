@@ -52,8 +52,8 @@ import reactor.core.scheduler.Scheduler;
  * to change both the timeout and limit the attempts.
  *
  * @param <T> Application context type
- * @deprecated Use reactor.util.repeat.RepeatSpec available since reactor-core 3.8.0
- * which provides similar capabilities.
+ * @deprecated To be removed in 3.7.0 at the earliest. Use reactor.util.repeat.RepeatSpec
+ * available since reactor-core 3.8.0 which provides similar capabilities.
  */
 @Deprecated
 public interface Repeat<T> extends Function<Flux<Long>, Publisher<Long>> {

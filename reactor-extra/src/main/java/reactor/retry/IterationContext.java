@@ -23,8 +23,9 @@ import java.time.Duration;
  *
  * @param <T> Application context type
  *
- * @deprecated Use reactor.util.repeat or reactor.util.retry available since
- * reactor-core 3.8.0 which provides similar capabilities.
+ * @deprecated To be removed in 3.7.0 at the earliest. Use reactor.util.repeat or
+ * reactor.util.retry available since reactor-core 3.8.0 which provides similar
+ * capabilities.
  */
 @Deprecated
 public interface IterationContext<T> {
