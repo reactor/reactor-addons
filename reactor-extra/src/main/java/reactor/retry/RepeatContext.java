@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2025 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ import reactor.core.publisher.Mono;
  * the repeat callback {@link Repeat#doOnRepeat(java.util.function.Consumer)}.
  *
  * @param <T> Application context type
+ * @deprecated To be removed in 3.7.0 at the earliest. Use reactor.util.repeat.RepeatSpec
+ * available since reactor-core 3.8.0 which provides similar capabilities.
  */
+@Deprecated
 public interface RepeatContext<T> extends IterationContext<T> {
 
 	/**
