@@ -5,7 +5,7 @@ on:
       - main
       - 3.5.x
       - 3.4.x
-permissions: read-all
+permissions: {}
 jobs:
   # General job notes: we DON'T want to cancel any previous runs, especially in the case of a "back to snapshots" build right after a release push
   # We specify the ubuntu version to minimize the chances we have to deal with a migration during a release

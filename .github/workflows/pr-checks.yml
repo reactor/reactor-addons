@@ -1,7 +1,7 @@
 name: PR Checks
 on:
   pull_request: {}
-permissions: read-all
+permissions: {}
 jobs:
   checks:
     name: checks
