@@ -9,7 +9,7 @@ swt = "4.5.2"
 reactorCore = { module = "io.projectreactor:reactor-core", version.ref = "reactorCore" }
 reactorTest = { module = "io.projectreactor:reactor-test", version.ref = "reactorCore" }
 akkaActor = "com.typesafe.akka:akka-actor_2.11:2.4.10"
-assertj = "org.assertj:assertj-core:3.27.3"
+assertj = "org.assertj:assertj-core:3.27.4"
 hamcrest = "org.hamcrest:hamcrest-library:3.0"
 jsr305 = "com.google.code.findbugs:jsr305:3.0.1"
 junit4 = "junit:junit:4.13.2"
