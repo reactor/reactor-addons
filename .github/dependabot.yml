@@ -5,8 +5,6 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-  assignees:
-  - violetagg
   target-branch: "3.5.x"
   labels:
   - type/dependency-upgrade
@@ -43,8 +41,6 @@ updates:
   schedule:
       interval: daily
   open-pull-requests-limit: 10
-  assignees:
-      - violetagg
   target-branch: "3.5.x"
   labels:
       - type/dependency-upgrade
