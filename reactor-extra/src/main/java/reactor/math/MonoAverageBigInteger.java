@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2025 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.function.Function;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
@@ -69,7 +70,7 @@ public class MonoAverageBigInteger<T> extends MonoFromFluxOperator<T, BigInteger
 		}
 
 		@Override
-		protected BigInteger result() {
+		protected @Nullable BigInteger result() {
 			return (count == 0 ? null : sum.divide(BigDecimal.valueOf(count), RoundingMode.FLOOR).toBigInteger());
 		}
 

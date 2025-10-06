@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2025 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
 
 import reactor.core.scheduler.Scheduler;
-import reactor.util.annotation.NonNull;
 
 /**
  * Clock adapter around {@link Scheduler}. That adoption gives better integration with
@@ -65,13 +64,11 @@ public class SchedulerClock extends Clock {
 	}
 
 	@Override
-	@NonNull
 	public ZoneId getZone() {
 		return zone;
 	}
 
 	@Override
-	@NonNull
 	public SchedulerClock withZone(ZoneId zone) {
 		return new SchedulerClock(scheduler, zone);
 	}
@@ -81,7 +78,6 @@ public class SchedulerClock extends Clock {
 	 *
 	 * @return {@link Scheduler} instance
 	 */
-	@NonNull
 	public Scheduler getScheduler() {
 		return scheduler;
 	}
@@ -92,7 +88,6 @@ public class SchedulerClock extends Clock {
 	 *
 	 * @return {@link SchedulerClock} instance
 	 */
-	@NonNull
 	public SchedulerClock withScheduler(Scheduler scheduler) {
 		return new SchedulerClock(scheduler, zone);
 	}
@@ -113,7 +108,6 @@ public class SchedulerClock extends Clock {
 	 * @return the current instant from this clock, not null
 	 */
 	@Override
-	@NonNull
 	public Instant instant() {
 		long nano = scheduler.now(TimeUnit.NANOSECONDS);
 		long secs = Math.floorDiv(nano, NANOS_PER_SECOND);
@@ -161,8 +155,7 @@ public class SchedulerClock extends Clock {
 	 *
 	 * @return new {@link SchedulerClock}
 	 */
-	@NonNull
-	public static SchedulerClock of(@NonNull Scheduler scheduler) {
+	public static SchedulerClock of(Scheduler scheduler) {
 		return new SchedulerClock(scheduler, ZoneId.systemDefault());
 	}
 
@@ -174,9 +167,7 @@ public class SchedulerClock extends Clock {
 	 *
 	 * @return new {@link SchedulerClock}
 	 */
-	@NonNull
-	public static SchedulerClock of(@NonNull Scheduler scheduler,
-			@NonNull ZoneId zoneId) {
+	public static SchedulerClock of(Scheduler scheduler, ZoneId zoneId) {
 		return new SchedulerClock(scheduler, zoneId);
 	}
 }

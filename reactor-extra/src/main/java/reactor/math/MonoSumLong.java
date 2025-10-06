@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2025 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package reactor.math;
 
 import java.util.function.Function;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import reactor.core.CoreSubscriber;
 import reactor.core.Fuseable;
@@ -77,7 +78,7 @@ final class MonoSumLong<T> extends MonoFromFluxOperator<T, Long> implements Fuse
 		}
 
 		@Override
-		protected Long result() {
+		protected @Nullable Long result() {
 			return hasValue ? sum : null;
 		}
 

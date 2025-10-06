@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Function;
 
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
 import reactor.core.publisher.Flux;
@@ -29,7 +30,6 @@ import reactor.core.scheduler.Schedulers;
 import reactor.scheduler.clock.SchedulerClock;
 import reactor.util.Logger;
 import reactor.util.Loggers;
-import reactor.util.annotation.Nullable;
 
 /*
  * @deprecated To be removed in 3.7.0 at the earliest. Use reactor.util.repeat or
@@ -51,10 +51,9 @@ public abstract class AbstractRetry<T, S> implements Function<Flux<S>, Publisher
 	final long maxIterations;
 	final Duration timeout;
 	final Backoff backoff;
-	final Jitter jitter;
-	@Nullable
-	final Scheduler backoffScheduler;
-	final SchedulerClock clock;
+	final           Jitter         jitter;
+	final @Nullable Scheduler      backoffScheduler;
+	final           SchedulerClock clock;
 	final T applicationContext;
 
 	AbstractRetry(long maxIterations,

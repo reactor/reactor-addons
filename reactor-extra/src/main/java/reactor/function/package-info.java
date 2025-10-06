@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-/**
- * Adapters between RxJava classes (both 2.x and 3.x) and Reactor classes.
- */
 @NullMarked
-package reactor.adapter.rxjava;
+package reactor.function;
 
 import org.jspecify.annotations.NullMarked;

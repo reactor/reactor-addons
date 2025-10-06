@@ -140,10 +140,6 @@ configure(subprojects) { project ->
 	dependencies {
 		api libs.reactorCore
 
-		// JSR-305 annotations
-		compileOnly libs.jsr305
-		testCompileOnly libs.jsr305
-
 		// Logging
 		compileOnly libs.slf4j
 		testCompileOnly libs.slf4j

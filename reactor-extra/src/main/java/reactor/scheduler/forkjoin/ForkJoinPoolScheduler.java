@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2025 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 
+import org.jspecify.annotations.Nullable;
 import reactor.core.Disposable;
 import reactor.core.Exceptions;
 import reactor.core.scheduler.Scheduler;
@@ -40,7 +41,7 @@ import static reactor.core.Exceptions.unwrap;
 
 public final class ForkJoinPoolScheduler implements Scheduler {
 
-	private static volatile BiConsumer<Thread, ? super Throwable> onHandleErrorHook;
+	private static volatile @Nullable BiConsumer<Thread, ? super Throwable> onHandleErrorHook;
 
 	/**
 	 * {@link Scheduler} that hosts a fixed pool of single-threaded ExecutorService-based
@@ -108,8 +109,9 @@ public final class ForkJoinPoolScheduler implements Scheduler {
 		else {
 			log.error("Scheduler worker failed with an uncaught exception", t);
 		}
-		if (onHandleErrorHook != null) {
-			onHandleErrorHook.accept(thread, t);
+		BiConsumer<Thread, ? super Throwable> errorHook = onHandleErrorHook;
+		if (errorHook != null) {
+			errorHook.accept(thread, t);
 		}
 	}
 
