@@ -16,10 +16,10 @@
 
 package reactor.retry;
 
-import reactor.util.annotation.Nullable;
-
 import java.time.Duration;
 import java.util.function.Function;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Backoff function
