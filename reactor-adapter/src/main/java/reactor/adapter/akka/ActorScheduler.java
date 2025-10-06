@@ -32,7 +32,9 @@ import reactor.util.context.Context;
 /**
  * A Scheduler implementation that given an ActorSystem, creates a single Actor and
  * routes all Scheduler/Worker calls to it.
+ * @deprecated To be removed in 3.7.0 at the earliest.
  */
+@Deprecated
 public class ActorScheduler implements reactor.core.scheduler.Scheduler {
 
 	/**

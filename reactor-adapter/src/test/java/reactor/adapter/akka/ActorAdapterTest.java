@@ -26,7 +26,9 @@ import reactor.test.StepVerifier;
 
 /**
  * @author Stephane Maldini
+ * @deprecated To be removed in 3.7.0 at the earliest.
  */
+@Deprecated
 public class ActorAdapterTest {
 
 	@Test
