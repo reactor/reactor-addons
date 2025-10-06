@@ -37,7 +37,7 @@ updates:
     - ">= 7.6.a"
   - dependency-name: "com.typesafe.akka:akka-actor*"
     versions:
-      - "[4.2.11,)"
+      - "[2.4.11,)"
   rebase-strategy: disabled
 - package-ecosystem: github-actions
   directory: "/"
