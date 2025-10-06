@@ -38,6 +38,9 @@ updates:
   - dependency-name: "com.typesafe.akka:akka-actor*"
     versions:
       - "[2.4.11,)"
+  - dependency-name: "org.eclipse.swt:org.eclipse.swt*"
+    versions:
+      - "[4.5.3,)"
   rebase-strategy: disabled
 - package-ecosystem: github-actions
   directory: "/"
