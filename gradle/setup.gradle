@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2025 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2011-2026 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ static def qualifyVersion(String v) {
 	if (versionNumber.qualifier == null || versionNumber.qualifier.size() == 0) return "RELEASE" //new scheme
 	if (versionNumber.qualifier == "RELEASE") return "RELEASE" //old scheme
 	if (versionNumber.qualifier.matches("(?:M|RC)\\d+")) return "MILESTONE"
-	if (versionNumber.qualifier == "SNAPSHOT" || versionNumber.qualifier == "BUILD-SNAPSHOT") return "SNAPSHOT"
+	if (versionNumber.qualifier == "SNAPSHOT" || versionNumber.qualifier == "BUILD-SNAPSHOT" || versionNumber.qualifier == "INTERNAL-SNAPSHOT") return "SNAPSHOT"
 
 	return "BAD"
 }
@@ -103,16 +103,6 @@ publishing {
 		maven {
 			name = "mock"
 			url = "${rootProject.buildDir}/mockRepo"
-		}
-		if (qualifyVersion("$version") in ["RELEASE", "MILESTONE"]) {
-			maven {
-				name = "sonatype"
-				url = "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
-				credentials {
-					username findProperty("sonatypeUsername")
-					password findProperty("sonatypePassword")
-				}
-			}
 		}
 	}
 
@@ -169,22 +159,5 @@ if (rootProject.hasProperty("artifactory_publish_password")) {
 
 	artifactoryPublish {
 		publications(publishing.publications.mavenJava)
-	}
-}
-
-if (qualifyVersion("$version") in ["RELEASE", "MILESTONE"] || rootProject.hasProperty("forceSigning")) {
-	apply plugin: 'signing'
-
-	signing {
-		//requiring signature if there is a publish task that is not to MavenLocal
-		required {  gradle.taskGraph.allTasks.any { it.name.toLowerCase().contains("publish")	&& !it.name.contains("MavenLocal") } }
-		def signingKey = findProperty("signingKey")
-		def signingPassword = findProperty("signingPassword")
-
-		useInMemoryPgpKeys(signingKey, signingPassword)
-
-		afterEvaluate {
-			sign publishing.publications.mavenJava
-		}
 	}
 }
