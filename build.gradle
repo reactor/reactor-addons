@@ -79,7 +79,7 @@ ext {
 	jdkJavadoc = "https://docs.oracle.com/javase/8/docs/api/"
 	println "JDK Javadoc link for this build is ${rootProject.jdkJavadoc}"
 	javadocLinks = [
-		"https://projectreactor.io/docs/core/${libs.versions.reactorCore.get()}/api/",
+		"https://projectreactor.io/docs/core/release/api/",
 		jdkJavadoc,
 		"https://www.reactive-streams.org/reactive-streams-${libs.versions.reactiveStreams.get()}-javadoc/"
 	] as String[]
@@ -156,11 +156,44 @@ configure(subprojects) { project ->
 	}
 
 	repositories {
-		mavenCentral()
+		if (System.getenv()["GITHUB_ACTION"] != null) {
+			maven {
+				name = "spring-commercial-release"
+				url = System.env.COMMERCIAL_RELEASE_REPO_URL
+				credentials {
+					username = System.env.COMMERCIAL_REPO_USERNAME
+					password = System.env.COMMERCIAL_REPO_PASSWORD
+				}
+			}
+		}
+		// On CI use only USW1 (proxies Maven Central) to avoid 429 from Maven Central
+		if (System.getenv("GITHUB_ACTION") != null && System.getenv("GITHUB_ACTOR") != "dependabot[bot]") {
+			maven {
+				name = "usw1-spring-maven-virtual"
+				url = "https://usw1.packages.broadcom.com/artifactory/spring-maven-virtual"
+				credentials {
+					username = System.getenv("COMMERCIAL_REPO_USERNAME")
+					password = System.getenv("COMMERCIAL_REPO_PASSWORD")
+				}
+			}
+		}
+		else {
+			mavenCentral()
+		}
 		maven { url = "https://oss.sonatype.org/content/repositories/releases/" }
 		if (version.endsWith('-SNAPSHOT')) {
 			mavenLocal()
 			maven { url = 'https://repo.spring.io/snapshot' }
+			if (System.getenv()["GITHUB_ACTION"] != null) {
+				maven {
+					name = "spring-commercial-snapshot"
+					url = System.env.COMMERCIAL_SNAPSHOT_REPO_URL
+					credentials {
+						username = System.env.COMMERCIAL_REPO_USERNAME
+						password = System.env.COMMERCIAL_REPO_PASSWORD
+					}
+				}
+			}
 		}
 		// Spring Milestone repository is required for io.projectreactor:jsr166:1.0.0.RELEASE
 		maven { url = 'https://repo.spring.io/milestone' }
