@@ -2,7 +2,7 @@ import org.gradle.util.VersionNumber
 import java.text.SimpleDateFormat
 
 /*
- * Copyright (c) 2011-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2011-2026 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ ext {
 	}
 	println "JDK Javadoc link for this build is ${rootProject.jdkJavadoc}"
   javadocLinks = [
-		"https://projectreactor.io/docs/core/${libs.versions.reactorCore.get()}/api/",
+		"https://projectreactor.io/docs/core/release/api/",
 		jdkJavadoc,
 		"https://www.reactive-streams.org/reactive-streams-${libs.versions.reactiveStreams.get()}-javadoc/"
 	] as String[]
@@ -127,10 +127,30 @@ configure(subprojects) { project ->
 
 	repositories {
 		mavenCentral()
+		if (System.getenv()["GITHUB_ACTION"] != null) {
+			maven {
+				name "spring-commercial-release"
+				url System.env.COMMERCIAL_RELEASE_REPO_URL
+				credentials {
+					username System.env.COMMERCIAL_REPO_USERNAME
+					password System.env.COMMERCIAL_REPO_PASSWORD
+				}
+			}
+		}
 		maven { url "https://oss.sonatype.org/content/repositories/releases/" }
 		if (version.endsWith('-SNAPSHOT')) {
 			mavenLocal()
 			maven { url 'https://repo.spring.io/snapshot' }
+			if (System.getenv()["GITHUB_ACTION"] != null) {
+				maven {
+					name "spring-commercial-snapshot"
+					url System.env.COMMERCIAL_SNAPSHOT_REPO_URL
+					credentials {
+						username System.env.COMMERCIAL_REPO_USERNAME
+						password System.env.COMMERCIAL_REPO_PASSWORD
+					}
+				}
+			}
 		}
 		// Spring Milestone repository is required for io.projectreactor:jsr166:1.0.0.RELEASE
 		maven { url 'https://repo.spring.io/milestone' }
