@@ -102,6 +102,7 @@ if (project.hasProperty("artifactory_publish_password")) {
 	configure(rootProject) { p ->
 		apply plugin: "com.jfrog.artifactory"
 		def buildNumber = getOrGenerateBuildNumber()
+		def projectVersion = p.version
 		artifactory {
 			publish {
 				contextUrl = "${artifactory_publish_contextUrl}"
@@ -113,8 +114,9 @@ if (project.hasProperty("artifactory_publish_password")) {
 			}
 			clientConfig.includeEnvVars = false
 			buildInfo {
-				setBuildName('Reactor - Addons')
+				setBuildName('reactor-addons-commercial-' + (projectVersion.endsWith('-SNAPSHOT') ? '3.7.x-internal' : projectVersion))
 				setBuildNumber(buildNumber)
+				setProject('spring')
 				if (System.getenv("GITHUB_ACTIONS") == "true") {
 					setBuildUrl(System.getenv("GITHUB_SERVER_URL") + "/" + System.getenv("GITHUB_REPOSITORY") + "/actions/runs/" + System.getenv("GITHUB_RUN_ID"))
 					setVcsRevision(System.getenv("GITHUB_SHA"))
