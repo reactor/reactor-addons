@@ -104,6 +104,12 @@ publishing {
 			name = "mock"
 			url = "${rootProject.buildDir}/mockRepo"
 		}
+		if (project.hasProperty("deploymentRepository")) {
+			maven {
+				name = 'Deployment'
+				url = project.property("deploymentRepository")
+			}
+		}
 	}
 
 	publications {
