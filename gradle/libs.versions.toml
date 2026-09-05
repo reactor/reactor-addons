@@ -5,6 +5,7 @@ reactiveStreams = "1.0.4"
 swt = "4.5.2"
 
 [libraries]
+contextPropagation = "io.micrometer:context-propagation:1.2.1"
 reactorCore = { module = "io.projectreactor:reactor-core", version.ref = "reactorCore" }
 reactorTest = { module = "io.projectreactor:reactor-test", version.ref = "reactorCore" }
 akkaActor = "com.typesafe.akka:akka-actor_2.11:2.4.10"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2025 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2026 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Comparator;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import reactor.core.CoreSubscriber;
-import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
 
 /**
@@ -29,7 +28,7 @@ import reactor.core.publisher.Flux;
  *
  * @param <T> the input value type
  */
-final class MonoMinMax<T> extends MonoFromFluxOperator<T, T> implements Fuseable {
+final class MonoMinMax<T> extends MonoFromFluxOperator<T, T> {
 
 	final Comparator<? super T> comparator;
 

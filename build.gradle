@@ -235,6 +235,7 @@ project('reactor-extra') {
 		testImplementation getSwtPlatform()
 		testImplementation libs.reactiveStreams.tck
 		testImplementation libs.mockito
+		testRuntimeOnly libs.contextPropagation
 	}
 
   jar {

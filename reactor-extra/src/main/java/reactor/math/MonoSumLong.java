@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2025 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2017-2026 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import reactor.core.CoreSubscriber;
-import reactor.core.Fuseable;
 import reactor.core.publisher.Flux;
 
 /**
@@ -29,7 +28,7 @@ import reactor.core.publisher.Flux;
  *
  * @param <T> the input value type
  */
-final class MonoSumLong<T> extends MonoFromFluxOperator<T, Long> implements Fuseable {
+final class MonoSumLong<T> extends MonoFromFluxOperator<T, Long> {
 
 	final Function<? super T, ? extends Number> mapping;
 
