@@ -167,6 +167,7 @@ project('reactor-adapter') {
 	ext {
 		bndOptions = [
 			"-exportcontents": "reactor.*;version=$osgiVersion;-noimport:=true",
+			"-noextraheaders": "true",
 			"Import-Package": [
 				"!*internal*",
 				"!javax.annotation",
@@ -217,6 +218,7 @@ project('reactor-extra') {
 	ext {
 		bndOptions = [
 			"-exportcontents" : "reactor.*;version=$osgiVersion;-noimport:=true",
+			"-noextraheaders": "true",
 			"Import-Package": [
 				"!*internal*",
 				"!javax.annotation",
