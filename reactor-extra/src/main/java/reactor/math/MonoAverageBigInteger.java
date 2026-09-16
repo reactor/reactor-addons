@@ -31,7 +31,7 @@ import reactor.core.publisher.Flux;
  *
  * @param <T> the input value type
  */
-public class MonoAverageBigInteger<T> extends MonoFromFluxOperator<T, BigInteger> {
+final class MonoAverageBigInteger<T> extends MonoFromFluxOperator<T, BigInteger> {
 
 	private final Function<? super T, ? extends Number> mapping;
 

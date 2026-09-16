@@ -29,7 +29,7 @@ import reactor.core.publisher.Flux;
  *
  * @param <T> the input value type
  */
-public class MonoSumBigDecimal<T> extends MonoFromFluxOperator<T, BigDecimal> {
+final class MonoSumBigDecimal<T> extends MonoFromFluxOperator<T, BigDecimal> {
 
 	private final Function<? super T, ? extends Number> mapping;
 
