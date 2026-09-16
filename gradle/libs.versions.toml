@@ -4,6 +4,7 @@ reactorCore = "3.8.8-SNAPSHOT"
 reactiveStreams = "1.0.4"
 
 [libraries]
+contextPropagation = "io.micrometer:context-propagation:1.2.1"
 reactorCore = { module = "io.projectreactor:reactor-core", version.ref = "reactorCore" }
 reactorTest = { module = "io.projectreactor:reactor-test", version.ref = "reactorCore" }
 assertj = "org.assertj:assertj-core:3.27.7"

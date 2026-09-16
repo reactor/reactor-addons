@@ -228,6 +228,7 @@ project('reactor-extra') {
 	dependencies {
 		testImplementation libs.reactiveStreams.tck
 		testImplementation libs.mockito
+		testRuntimeOnly libs.contextPropagation
 	}
 
   jar {
