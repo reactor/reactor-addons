@@ -1,5 +1,5 @@
 [versions]
-reactorCore = "3.9.0-INTERNAL-SNAPSHOT"
+reactorCore = "3.9.0-RC1"
 # Other shared versions
 reactiveStreams = "1.0.4"
 
