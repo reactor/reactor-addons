@@ -10,7 +10,7 @@
 
 # reactor-adapter
 
-Bridge to RxJava 2 Observable, Completable, Flowable, Single, Maybe, Scheduler, and also SWT Scheduler, Akka Scheduler ...
+Bridge to RxJava 2 Observable, Completable, Flowable, Single, Maybe, Scheduler.
 
 # reactor-extra
 
@@ -45,7 +45,7 @@ To add this repo to your Gradle build, specify the URL like the following:
     }
 
     dependencies {
-      // Reactor Adapter (RxJava2, Akka Actors scheduler and more)
+      // Reactor Adapter (RxJava2, RxJava3 scheduler and more)
       compile "io.projectreactor.addons:reactor-adapter:$reactorAddonsVersion"
     }
 
