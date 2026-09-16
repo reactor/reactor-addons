@@ -160,7 +160,7 @@ project('reactor-adapter') {
 	ext {
 		shortDescription = "Reactor Adapter"
 	}
-	description = 'Adapters from/to RxJava2, RxJava3 and Akka'
+	description = 'Adapters from/to RxJava2 and RxJava3'
 
 	apply plugin: "biz.aQute.bnd.builder"
 
@@ -186,9 +186,6 @@ project('reactor-adapter') {
 		//Optional RxJava 3 Converter
 		compileOnly libs.rxJava3
 		testImplementation libs.rxJava3
-
-		compileOnly libs.akkaActor
-		testImplementation libs.akkaActor
 
 		testImplementation libs.reactiveStreams.tck
 	}
@@ -220,8 +217,6 @@ project('reactor-extra') {
 			"Import-Package": [
 				"!*internal*",
 				"!javax.annotation",
-				"org.eclipse.*;resolution:=optional",
-				"javax.swing.*;resolution:=optional",
 				"*"
 			].join(","),
 			"Bundle-Name" : "reactor-extra",
@@ -231,8 +226,6 @@ project('reactor-extra') {
 	}
 
 	dependencies {
-		compileOnly getSwtPlatform()
-		testImplementation getSwtPlatform()
 		testImplementation libs.reactiveStreams.tck
 		testImplementation libs.mockito
 	}
@@ -243,25 +236,4 @@ project('reactor-extra') {
     }
 		bnd(bndOptions)
   }
-}
-
-def getSwtPlatform() {
-	String osname = System.properties['os.name']
-	String osarch = System.properties['os.arch']
-	if (osname.toLowerCase(Locale.ROOT).contains('win')) {
-		if (osarch.contains("64")) {
-			return libs.swt.windows64
-		}
-		return libs.swt.windows
-	}
-	if (osname.toLowerCase(Locale.ROOT).contains("nux")) {
-		if (osarch.contains("64")) {
-			return libs.swt.linux64
-		}
-		return libs.swt.linux
-	}
-	if (osname.toLowerCase(Locale.ROOT).contains("mac")) {
-		return libs.swt.mac
-	}
-	throw new RuntimeException("Unknown OS/Arch: " + osname + ", " + osarch)
 }
