@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+	}
+}
+
+plugins {
+	id "io.spring.develocity.conventions" version "0.0.26"
+}
+
 rootProject.name = 'reactor-addons'
 
 include 'reactor-adapter',
