@@ -5,7 +5,7 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-  target-branch: "main"
+  target-branch: "3.6.x"
   labels:
   - type/dependency-upgrade
   ignore:
@@ -47,7 +47,7 @@ updates:
   schedule:
       interval: daily
   open-pull-requests-limit: 10
-  target-branch: "main"
+  target-branch: "3.6.x"
   labels:
       - type/dependency-upgrade
   rebase-strategy: disabled
