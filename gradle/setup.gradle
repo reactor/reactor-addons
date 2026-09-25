@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2025 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2011-2026 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-import org.gradle.util.VersionNumber
-
 //NOTE: this file is intended to be applied per subproject
 
 apply plugin: 'maven-publish'
 //we also conditionally apply artifactory and signing plugins below
 
-tasks.withType(Jar).configureEach {
-	preserveFileTimestamps = false
-	reproducibleFileOrder = true
-}
-
 jar {
-	manifest.attributes["Build-Jdk-Spec"] = System.getProperty("java.specification.version")
+	manifest.attributes["Build-Jdk-Spec"] = "${System.getProperty("java.specification.version")}"
 	manifest.attributes["Implementation-Title"] = project.name
 	manifest.attributes["Implementation-Version"] = project.version
 	from("${rootDir}/docs/src/docs/dist") {
@@ -55,14 +48,17 @@ task javadocJar(type: Jar) {
 }
 
 static def qualifyVersion(String v) {
-	def versionNumber = VersionNumber.parse(v)
+	// Only the qualifier is needed here, so major/minor/micro/patch use non-capturing
+	// groups (?:...). The qualifier is the sole capturing group → m.group(1).
+	def m = (v =~ /^(?:\d+)\.(?:\d+)\.(?:\d+)(?:\.\d+)?(?:[.-](.+))?$/)
+	if (!m.matches()) return "BAD"
 
-	if (versionNumber == VersionNumber.UNKNOWN) return "BAD";
+	def qualifier = m.group(1)
 
-	if (versionNumber.qualifier == null || versionNumber.qualifier.size() == 0) return "RELEASE" //new scheme
-	if (versionNumber.qualifier == "RELEASE") return "RELEASE" //old scheme
-	if (versionNumber.qualifier.matches("(?:M|RC)\\d+")) return "MILESTONE"
-	if (versionNumber.qualifier == "SNAPSHOT" || versionNumber.qualifier == "BUILD-SNAPSHOT") return "SNAPSHOT"
+	if (qualifier == null || qualifier.isEmpty()) return "RELEASE"
+	if (qualifier == "RELEASE") return "RELEASE"
+	if (qualifier.matches("(?:M|RC)\\d+")) return "MILESTONE"
+	if (qualifier == "SNAPSHOT" || qualifier == "BUILD-SNAPSHOT") return "SNAPSHOT"
 
 	return "BAD"
 }
@@ -91,8 +87,8 @@ task qualifyVersionGha() {
 		//we ensure that if at least _one_ submodule version is BAD, we only output versionType=BAD + job fails
 		if (versionType == "BAD") {
 			outputToGha(versionType, version)
-			println "::error ::Unable to parse $version to a VersionNumber with recognizable qualifier"
-			throw new TaskExecutionException(tasks.getByName("qualifyVersionGha"), new IllegalArgumentException("Unable to parse $version to a VersionNumber with recognizable qualifier"))
+			println "::error ::Unable to parse $version with recognizable qualifier"
+			throw new TaskExecutionException(tasks.getByName("qualifyVersionGha"), new IllegalArgumentException("Unable to parse $version with recognizable qualifier"))
 		}
 		println "Recognized $version as $versionType"
 
@@ -107,7 +103,7 @@ publishing {
 	repositories {
 		maven {
 			name = "mock"
-			url = "${rootProject.buildDir}/mockRepo"
+			url = rootProject.layout.buildDirectory.dir("mockRepo").get().asFile.toURI().toString()
 		}
 		if (qualifyVersion("$version") in ["RELEASE", "MILESTONE"]) {
 			maven {

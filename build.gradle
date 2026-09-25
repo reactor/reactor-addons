@@ -1,8 +1,8 @@
-import org.gradle.util.VersionNumber
 import java.text.SimpleDateFormat
+import org.gradle.api.attributes.java.TargetJvmVersion
 
 /*
- * Copyright (c) 2011-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2011-2026 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,59 +17,82 @@ import java.text.SimpleDateFormat
  * limitations under the License.
  */
 
-buildscript {
-	repositories {
-		mavenCentral()
-		maven { url "https://repo.spring.io/plugins-release" }
-	}
-}
-
 plugins {
 	alias(libs.plugins.bnd) apply false
 	alias(libs.plugins.artifactory) apply false
 }
 
+// The Artifactory plugin (applied from releaser.gradle) adds maven-publish to subprojects
+// in afterEvaluate, which resets TargetJvmVersion on consumable configurations to the
+// running JDK (17). This pre-registers a callback to force JVM 8 on those configurations,
+// keeping them consistent with options.release = 8.
+subprojects {
+	plugins.withType(JavaPlugin) {
+		configurations.matching { it.name == 'apiElements' || it.name == 'runtimeElements' }.configureEach { conf ->
+			conf.attributes {
+				attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+			}
+		}
+	}
+}
+
 description = 'Reactor Core Addons including processors, adapters and more'
+
+def osgiVersion(String v) {
+	def m = (v =~ /^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?(?:[.-](.+))?$/)
+	if (!m.matches()) {
+		throw new GradleException("Cannot parse version: $v")
+	}
+	def major = m.group(1)
+	def minor = m.group(2)
+	def micro = m.group(3)
+	def patch = m.group(4)
+	def qualifier = m.group(5)
+	// OSGi allows only 4 segments (major.minor.micro.qualifier). When patch is present,
+	// base already fills all 4 segments, so any qualifier suffix is joined with '-'.
+	// When absent, the qualifier opens a new OSGi segment with '.'.
+	def base = patch ? "${major}.${minor}.${micro}.${patch}" : "${major}.${minor}.${micro}"
+	def sep  = patch ? "-" : "."
+	def result
+	if (qualifier == null || qualifier.isEmpty()) {
+		result = "${base}${sep}RELEASE"
+		println "$v is a release, will use $result for bnd"
+	}
+	else if (qualifier.equalsIgnoreCase("SNAPSHOT")) {
+		def sdf = new SimpleDateFormat("yyyyMMddHHmm")
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"))
+		def buildTimestamp = sdf.format(new Date())
+		result = "${base}${sep}BUILD-$buildTimestamp"
+		println "$v is a snapshot, will use $result for bnd"
+	}
+	else {
+		result = "${base}${sep}${qualifier}"
+		println "$v is neither release nor snapshot, will use $result for bnd"
+	}
+	return result
+}
 
 ext {
 	//NOTE: all dependencies, including plugins, are defined in gradle/libs.versions.toml catalog
 
 	jdk = JavaVersion.current().majorVersion
-	jdkJavadoc = "https://docs.oracle.com/javase/$jdk/docs/api/"
-	if (JavaVersion.current().isJava11Compatible()) {
-		jdkJavadoc = "https://docs.oracle.com/en/java/javase/$jdk/docs/api/"
-	}
+	jdkJavadoc = "https://docs.oracle.com/en/java/javase/$jdk/docs/api/"
 	println "JDK Javadoc link for this build is ${rootProject.jdkJavadoc}"
-  javadocLinks = [
+	javadocLinks = [
 		"https://projectreactor.io/docs/core/${libs.versions.reactorCore.get()}/api/",
 		jdkJavadoc,
 		"https://www.reactive-streams.org/reactive-streams-${libs.versions.reactiveStreams.get()}-javadoc/"
 	] as String[]
 
 	//OSGI version number
-	versionNumber = VersionNumber.parse(version.toString())
-	if (versionNumber.qualifier == null || versionNumber.qualifier.size() == 0) {
-		osgiVersion = "${version}.RELEASE"
-		println "$version is a release, will use $osgiVersion for bnd"
-	}
-	else if (versionNumber.qualifier.equalsIgnoreCase("SNAPSHOT")) {
-		def sdf = new SimpleDateFormat("yyyyMMddHHmm");
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		def buildTimestamp = sdf.format(new Date())
-		osgiVersion = "${versionNumber.major}.${versionNumber.minor}.${versionNumber.micro}.BUILD-$buildTimestamp"
-		println "$version is a snapshot, will use $osgiVersion for bnd"
-	}
-	else {
-		osgiVersion = "${versionNumber.major}.${versionNumber.minor}.${versionNumber.micro}.${versionNumber.qualifier}"
-		println "$version is neither release nor snapshot, will use $osgiVersion for bnd"
-	}
+	osgiVersion = osgiVersion(version.toString())
 }
 
 apply from: "${rootDir}/gradle/releaser.gradle"
 
 configurations.all {
   // check for updates every build
-  resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+  resolutionStrategy.cacheChangingModulesFor(0, 'seconds')
 }
 
 
@@ -79,6 +102,11 @@ configure(subprojects) { project ->
 	apply plugin: 'java-library'
 	apply from: "${rootDir}/gradle/setup.gradle"
 	apply from: "${rootDir}/gradle/javadoc.gradle"
+
+	tasks.withType(AbstractArchiveTask).configureEach {
+		preserveFileTimestamps = false
+		reproducibleFileOrder = true
+	}
 
   [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:varargs",
 														   "-Xlint:cast",
@@ -101,17 +129,12 @@ configure(subprojects) { project ->
   ]
 
   compileJava {
-	sourceCompatibility = 1.8
-	targetCompatibility = 1.8
+	options.release = 8
   }
 
   compileTestJava {
-	sourceCompatibility = 1.8
-	targetCompatibility = 1.8
-  }
-
-	if (JavaVersion.current().isJava8Compatible()) {
-	compileTestJava.options.compilerArgs += "-parameters"
+	options.release = 8
+	options.compilerArgs += "-parameters"
   }
 
   [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
@@ -123,17 +146,20 @@ configure(subprojects) { project ->
 		include '**/*Tests.*'
 		include '**/*Test.*'
 		exclude '**/*Abstract*.*'
+		javaLauncher = javaToolchains.launcherFor {
+			languageVersion = JavaLanguageVersion.of(8)
+		}
 	}
 
 	repositories {
 		mavenCentral()
-		maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+		maven { url = "https://oss.sonatype.org/content/repositories/releases/" }
 		if (version.endsWith('-SNAPSHOT')) {
 			mavenLocal()
-			maven { url 'https://repo.spring.io/snapshot' }
+			maven { url = 'https://repo.spring.io/snapshot' }
 		}
 		// Spring Milestone repository is required for io.projectreactor:jsr166:1.0.0.RELEASE
-		maven { url 'https://repo.spring.io/milestone' }
+		maven { url = 'https://repo.spring.io/milestone' }
 	}
 
 	// dependencies that are common across all java projects
@@ -198,7 +224,9 @@ project('reactor-adapter') {
     manifest {
       attributes('Automatic-Module-Name': 'reactor.adapter')
     }
-		bnd(bndOptions)
+		bundle {
+			bnd(bndOptions)
+		}
   }
 
 }
@@ -212,7 +240,7 @@ project('reactor-extra') {
 	apply plugin: "biz.aQute.bnd.builder"
 
 	repositories {
-		maven { url "https://maven-eclipse.github.io/maven" }
+		maven { url = "https://maven-eclipse.github.io/maven" }
 	}
 
 	ext {
@@ -243,7 +271,9 @@ project('reactor-extra') {
     manifest {
       attributes('Automatic-Module-Name': 'reactor.extra')
     }
-		bnd(bndOptions)
+		bundle {
+			bnd(bndOptions)
+		}
   }
 }
 

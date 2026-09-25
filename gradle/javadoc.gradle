@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 VMware Inc. or its affiliates, All Rights Reserved.
+ * Copyright (c) 2011-2026 VMware Inc. or its affiliates, All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,8 @@ javadoc {
 	options.author = true
 	options.header = "Reactor Addons: $project.name"
 	options.overview = "$rootDir/docs/api/overview.html"
-	options.stylesheetFile = file("$rootDir/docs/api/stylesheet.css")
 
-	options.memberLevel = JavadocMemberLevel.PROTECTED
+	options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
 
 	options.links(rootProject.ext.javadocLinks)
 
@@ -34,15 +33,13 @@ javadoc {
 									 "implNote:a:Implementation Note:" ]
 
 	maxMemory = "1024m"
-	destinationDir = new File(project.buildDir, "docs/javadoc")
+	destinationDir = layout.buildDirectory.dir("docs/javadoc").get().asFile
 
-
-	if (JavaVersion.current().isJava8Compatible()) {
-		options.addStringOption('Xdoclint:none', '-quiet')
-	}
+	options.addStringOption('Xdoclint:none', '-quiet')
 
 	source project.sourceSets.main.allJava
+	def mainCompileClasspath = project.sourceSets.main.compileClasspath
 	doFirst {
-	  classpath = files(project.sourceSets.main.compileClasspath)
+		classpath = files(mainCompileClasspath)
 	}
 }
