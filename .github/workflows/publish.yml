@@ -22,7 +22,9 @@ jobs:
       uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # tag=v3
       with:
         distribution: 'temurin'
-        java-version: 8
+        java-version: |
+          8
+          17
     - name: configure gradle properties
       run: |
         mkdir -p ${GRADLE_USER_HOME:-$HOME/.gradle}
@@ -51,7 +53,9 @@ jobs:
     - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # tag=v3
       with:
         distribution: 'temurin'
-        java-version: 8
+        java-version: |
+          8
+          17
     - name: configure gradle properties
       run: |
         mkdir -p ${GRADLE_USER_HOME:-$HOME/.gradle}
@@ -76,7 +80,9 @@ jobs:
     - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # tag=v3
       with:
         distribution: 'temurin'
-        java-version: 8
+        java-version: |
+          8
+          17
     - name: configure gradle properties
       run: |
         mkdir -p ${GRADLE_USER_HOME:-$HOME/.gradle}
@@ -120,7 +126,9 @@ jobs:
     - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # tag=v3
       with:
         distribution: 'temurin'
-        java-version: 8
+        java-version: |
+          8
+          17
     - name: configure gradle properties
       run: |
         mkdir -p ${GRADLE_USER_HOME:-$HOME/.gradle}

@@ -17,20 +17,12 @@ updates:
   - dependency-name: org.mockito:mockito-core
     versions:
     - "[5.a, 6]"
-  # Versions > 6 require JDK17+
-  - dependency-name: biz.aQute.bnd.builder
-    versions:
-    - "[7.a, 8]"
   - dependency-name: org.slf4j:*
     versions:
     - "[2.a, 3]"
   - dependency-name: ch.qos.logback:logback-classic
     versions:
     - "[1.3.a, 1.7]"
-  # artifactory: don't upgrade to v5
-  - dependency-name: "com.jfrog.artifactory"
-    versions:
-    - ">= 5.0.a"
   # TestNG: 7.6+ doesn't support JDK8 anymore
   - dependency-name: "org.testng:testng"
     versions:
