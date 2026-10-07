@@ -24,6 +24,7 @@ javadoc {
 	options.author = true
 	options.header = "Reactor Addons: $project.name"
 	options.overview = "$rootDir/docs/api/overview.html"
+	options.stylesheetFile = file("$rootDir/docs/api/stylesheet.css")
 
 	options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
 
