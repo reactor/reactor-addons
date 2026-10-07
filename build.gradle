@@ -25,7 +25,7 @@ plugins {
 // The Artifactory plugin (applied from releaser.gradle) adds maven-publish to subprojects
 // in afterEvaluate, which resets TargetJvmVersion on consumable configurations to the
 // running JDK (17). This pre-registers a callback to force JVM 8 on those configurations,
-// keeping them consistent with options.release = 8.
+// keeping them consistent with the JDK 8 toolchain.
 subprojects {
 	plugins.withType(JavaPlugin) {
 		configurations.matching { it.name == 'apiElements' || it.name == 'runtimeElements' }.configureEach { conf ->
@@ -75,8 +75,8 @@ def osgiVersion(String v) {
 ext {
 	//NOTE: all dependencies, including plugins, are defined in gradle/libs.versions.toml catalog
 
-	jdk = JavaVersion.current().majorVersion
-	jdkJavadoc = "https://docs.oracle.com/en/java/javase/$jdk/docs/api/"
+	// javadoc is generated with the JDK 8 toolchain, so link to the JDK 8 API
+	jdkJavadoc = "https://docs.oracle.com/javase/8/docs/api/"
 	println "JDK Javadoc link for this build is ${rootProject.jdkJavadoc}"
 	javadocLinks = [
 		"https://projectreactor.io/docs/core/${libs.versions.reactorCore.get()}/api/",
@@ -100,6 +100,15 @@ configure(subprojects) { project ->
   group = 'io.projectreactor.addons'
 
 	apply plugin: 'java-library'
+
+	// Compile, test and generate javadoc with JDK 8 so that the produced class files and
+	// javadoc are the same as the ones built by the JDK 8 based build.
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(8)
+		}
+	}
+
 	apply from: "${rootDir}/gradle/setup.gradle"
 	apply from: "${rootDir}/gradle/javadoc.gradle"
 
@@ -128,12 +137,7 @@ configure(subprojects) { project ->
 														   "-Xlint:-rawtypes"     // TODO enable and fix warnings
   ]
 
-  compileJava {
-	options.release = 8
-  }
-
   compileTestJava {
-	options.release = 8
 	options.compilerArgs += "-parameters"
   }
 
