@@ -79,7 +79,7 @@ ext {
 	jdkJavadoc = "https://docs.oracle.com/javase/8/docs/api/"
 	println "JDK Javadoc link for this build is ${rootProject.jdkJavadoc}"
 	javadocLinks = [
-		"https://projectreactor.io/docs/core/${libs.versions.reactorCore.get()}/api/",
+		"https://projectreactor.io/docs/core/release/api/",
 		jdkJavadoc,
 		"https://www.reactive-streams.org/reactive-streams-${libs.versions.reactiveStreams.get()}-javadoc/"
 	] as String[]
